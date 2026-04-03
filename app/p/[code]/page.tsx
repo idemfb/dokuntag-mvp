@@ -12,25 +12,18 @@ type Tag = {
 export default function ProfilePage({
   params,
 }: {
-  params: Promise<{ code: string }>;
+  params: { code: string };
 }) {
   const [tag, setTag] = useState<Tag | null>(null);
-  const [code, setCode] = useState("");
   const [message, setMessage] = useState("");
 
   useEffect(() => {
-    let mounted = true;
-
     async function load() {
-      const resolved = await params;
-      const currentCode = resolved.code.toUpperCase();
-      setCode(currentCode);
+      const code = params.code.toUpperCase();
 
-      const res = await fetch(`/api/tag/${currentCode}`, {
+      const res = await fetch(`/api/tag/${code}`, {
         cache: "no-store",
       });
-
-      if (!mounted) return;
 
       if (!res.ok) {
         setTag(null);
@@ -42,19 +35,15 @@ export default function ProfilePage({
     }
 
     load();
-
-    return () => {
-      mounted = false;
-    };
-  }, [params]);
+  }, [params.code]);
 
   const sendMessage = async () => {
-    if (!message) return;
+    if (!message.trim()) return;
 
     await fetch("/api/notify", {
       method: "POST",
       body: JSON.stringify({
-        code,
+        code: params.code,
         message,
       }),
     });
@@ -70,7 +59,7 @@ export default function ProfilePage({
   return (
     <main className="min-h-screen bg-white px-6 py-12 text-black">
       <div className="mx-auto max-w-xl">
-        <h1 className="text-3xl font-semibold">Kayıp Ürün</h1>
+        <h1 className="text-3xl font-semibold">Dokuntag</h1>
 
         <p className="mt-4 text-lg">
           Bu ürün <strong>{tag.name}</strong> adlı kişiye aittir.
@@ -78,7 +67,7 @@ export default function ProfilePage({
 
         {tag.phone && (
           <p className="mt-2 text-neutral-700">
-            📞 İletişim: <strong>{tag.phone}</strong>
+            📞 Telefon: <strong>{tag.phone}</strong>
           </p>
         )}
 
