@@ -12,38 +12,60 @@ type Tag = {
 export default function ProfilePage({
   params,
 }: {
-  params: { code: string };
+  params: Promise<{ code: string }>;
 }) {
   const [tag, setTag] = useState<Tag | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
   const [message, setMessage] = useState("");
 
   useEffect(() => {
+    let mounted = true;
+
     async function load() {
-      const code = params.code.toUpperCase();
+      try {
+        const resolved = await params;
+        const code = resolved.code.toUpperCase();
 
-      const res = await fetch(`/api/tag/${code}`, {
-        cache: "no-store",
-      });
+        const res = await fetch(`/api/tag/${code}`, {
+          cache: "no-store",
+        });
 
-      if (!res.ok) {
-        setTag(null);
-        return;
+        if (!mounted) return;
+
+        if (!res.ok) {
+          setNotFound(true);
+          setLoading(false);
+          return;
+        }
+
+        const data = (await res.json()) as Tag;
+        setTag(data);
+        setLoading(false);
+      } catch {
+        if (!mounted) return;
+        setNotFound(true);
+        setLoading(false);
       }
-
-      const data = (await res.json()) as Tag;
-      setTag(data);
     }
 
     load();
-  }, [params.code]);
+
+    return () => {
+      mounted = false;
+    };
+  }, [params]);
 
   const sendMessage = async () => {
-    if (!message.trim()) return;
+    if (!message.trim() || !tag) return;
 
     await fetch("/api/notify", {
       method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify({
-        code: params.code,
+        code: tag.code,
         message,
       }),
     });
@@ -52,8 +74,12 @@ export default function ProfilePage({
     setMessage("");
   };
 
-  if (!tag) {
+  if (loading) {
     return <main className="p-10">Yükleniyor...</main>;
+  }
+
+  if (notFound || !tag) {
+    return <main className="p-10">Etiket bulunamadı.</main>;
   }
 
   return (
@@ -71,22 +97,19 @@ export default function ProfilePage({
           </p>
         )}
 
-        {/* 🔥 MESAJ FORMU */}
         <div className="mt-8 border-t pt-6">
-          <h2 className="text-lg font-semibold">
-            Sahibine mesaj gönder
-          </h2>
+          <h2 className="text-lg font-semibold">Sahibine mesaj gönder</h2>
 
           <textarea
             value={message}
             onChange={(e) => setMessage(e.target.value)}
-            className="w-full mt-3 border rounded p-3"
+            className="mt-3 w-full rounded border p-3"
             placeholder="Ürünü buldum, bana ulaşabilirsiniz..."
           />
 
           <button
             onClick={sendMessage}
-            className="mt-3 w-full bg-black text-white p-3 rounded"
+            className="mt-3 w-full rounded bg-black p-3 text-white"
           >
             Gönder
           </button>
