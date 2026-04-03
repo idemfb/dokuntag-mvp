@@ -1,16 +1,24 @@
 import { NextResponse } from "next/server";
 import tags from "@/data/tags.json";
 
-export async function GET(
-  req: Request,
-  { params }: { params: { code: string } }
-) {
-  const code = params.code.toUpperCase();
+type Tag = {
+  code: string;
+  status: "unclaimed" | "active";
+  name?: string;
+  phone?: string;
+};
 
-  const tag = (tags as any[]).find((t) => t.code === code);
+export async function GET(
+  _req: Request,
+  context: { params: Promise<{ code: string }> }
+) {
+  const { code } = await context.params;
+  const normalizedCode = code.toUpperCase();
+
+  const tag = (tags as Tag[]).find((t) => t.code === normalizedCode);
 
   if (!tag) {
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
+    return NextResponse.json({ error: "Tag not found" }, { status: 404 });
   }
 
   return NextResponse.json(tag);

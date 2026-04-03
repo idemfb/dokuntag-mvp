@@ -1,120 +1,93 @@
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
+"use client";
 
-import { notFound, redirect } from "next/navigation";
-import { getTagByCode, normalizeCode, updateTag } from "@/lib/tags";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
-type Props = {
-  params: Promise<{
-    code: string;
-  }>;
+type Tag = {
+  code: string;
+  status: "unclaimed" | "active";
+  name?: string;
+  phone?: string;
 };
 
-async function submitForm(formData: FormData) {
-  'use server';
+export default function SetupPage({
+  params,
+}: {
+  params: Promise<{ code: string }>;
+}) {
+  const router = useRouter();
+  const [code, setCode] = useState("");
+  const [tag, setTag] = useState<Tag | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
 
-  const code = formData.get('code') as string;
-  const name = formData.get('name') as string;
-  const phone = formData.get('phone') as string;
-  const petName = formData.get('petName') as string;
-  const note = formData.get('note') as string;
+  useEffect(() => {
+    let mounted = true;
 
-  const normalizedCode = normalizeCode(code);
-  const existingTag = await getTagByCode(normalizedCode);
+    async function load() {
+      const resolved = await params;
+      const currentCode = resolved.code.toUpperCase();
+      setCode(currentCode);
 
-  if (!existingTag) {
-    throw new Error('Tag not found');
+      const res = await fetch(`/api/tag/${currentCode}`, {
+        cache: "no-store",
+      });
+
+      if (!mounted) return;
+
+      if (!res.ok) {
+        setNotFound(true);
+        setLoading(false);
+        return;
+      }
+
+      const data = (await res.json()) as Tag;
+      setTag(data);
+      setLoading(false);
+    }
+
+    load();
+
+    return () => {
+      mounted = false;
+    };
+  }, [params]);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    router.push(`/p/${code}`);
+  };
+
+  if (loading) {
+    return <main className="p-10">Yükleniyor...</main>;
   }
 
-  await updateTag(normalizedCode, {
-    status: 'active',
-    name: name || existingTag.name,
-    phone,
-    petName,
-    note,
-  });
-
-  redirect(`/p/${normalizedCode}`);
-}
-
-export default async function SetupPage({ params }: Props) {
-  const { code } = await params;
-
-  if (!code) {
-    notFound();
-  }
-
-  const normalizedCode = normalizeCode(code);
-  const tag = await getTagByCode(normalizedCode);
-
-  if (!tag) {
-    notFound();
+  if (notFound || !tag) {
+    return <main className="p-10">Etiket bulunamadı.</main>;
   }
 
   return (
     <main className="min-h-screen bg-white px-6 py-12 text-black">
       <div className="mx-auto max-w-xl">
-        <p className="mb-3 text-sm tracking-[0.2em] text-neutral-500 uppercase">
-          Dokuntag Setup
-        </p>
+        <h1 className="text-3xl font-semibold">Etiketi ayarla</h1>
 
-        <h1 className="text-3xl font-semibold">Etiketi kendin için ayarla</h1>
+        <p className="mt-3">Kod: {tag.code}</p>
+        <p className="mt-2">Ürün: {tag.name}</p>
 
-        <p className="mt-3 text-neutral-600">
-          Ürün kodu: <span className="font-medium">{normalizedCode}</span>
-        </p>
+        <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+          <input
+            type="text"
+            placeholder="Ad Soyad"
+            className="w-full rounded border p-3"
+          />
 
-        <p className="mt-2 text-neutral-600">
-          Ürün adı: <span className="font-medium">{tag.name}</span>
-        </p>
+          <input
+            type="tel"
+            placeholder="Telefon"
+            className="w-full rounded border p-3"
+          />
 
-        <form action={submitForm} className="mt-8 space-y-4 rounded-2xl border border-neutral-200 p-6">
-          <input type="hidden" name="code" value={normalizedCode} />
-          <div>
-            <label className="mb-2 block text-sm font-medium">Ad Soyad</label>
-            <input
-              name="name"
-              type="text"
-              className="w-full rounded-xl border border-neutral-300 px-4 py-3 outline-none"
-              placeholder="Adınızı girin"
-            />
-          </div>
-
-          <div>
-            <label className="mb-2 block text-sm font-medium">Telefon</label>
-            <input
-              name="phone"
-              type="tel"
-              className="w-full rounded-xl border border-neutral-300 px-4 py-3 outline-none"
-              placeholder="Telefon numaranızı girin"
-            />
-          </div>
-
-          <div>
-            <label className="mb-2 block text-sm font-medium">
-              Evcil Hayvan Adı
-            </label>
-            <input
-              name="petName"
-              type="text"
-              className="w-full rounded-xl border border-neutral-300 px-4 py-3 outline-none"
-              placeholder="Örn. Leo"
-            />
-          </div>
-
-          <div>
-            <label className="mb-2 block text-sm font-medium">Not</label>
-            <textarea
-              name="note"
-              className="min-h-[120px] w-full rounded-xl border border-neutral-300 px-4 py-3 outline-none"
-              placeholder="Ek bilgi yazın"
-            />
-          </div>
-
-          <button
-            type="submit"
-            className="w-full rounded-xl bg-black px-4 py-3 text-white"
-          >
+          <button className="w-full rounded bg-black p-3 text-white">
             Kaydet
           </button>
         </form>

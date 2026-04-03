@@ -1,24 +1,57 @@
-import { redirect } from "next/navigation";
+"use client";
 
-export default async function TPage({
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+
+type Tag = {
+  code: string;
+  status: "unclaimed" | "active";
+  name?: string;
+  phone?: string;
+};
+
+export default function TagRedirectPage({
   params,
 }: {
-  params: { code: string };
+  params: Promise<{ code: string }>;
 }) {
-  const res = await fetch(
-    `${process.env.NEXT_PUBLIC_BASE_URL}/api/tag/${params.code}`,
-    { cache: "no-store" }
-  );
+  const router = useRouter();
+  const [message, setMessage] = useState("Yönlendiriliyor...");
 
-  if (!res.ok) {
-    return <div>Tag not found</div>;
-  }
+  useEffect(() => {
+    let mounted = true;
 
-  const tag = await res.json();
+    async function run() {
+      const resolved = await params;
+      const code = resolved.code.toUpperCase();
 
-  if (tag.status === "unclaimed") {
-    redirect(`/setup/${params.code}`);
-  }
+      const res = await fetch(`/api/tag/${code}`, {
+        cache: "no-store",
+      });
 
-  redirect(`/p/${params.code}`);
+      if (!mounted) return;
+
+      if (!res.ok) {
+        setMessage("Etiket bulunamadı.");
+        return;
+      }
+
+      const tag = (await res.json()) as Tag;
+
+      if (tag.status === "unclaimed") {
+        router.replace(`/setup/${code}`);
+        return;
+      }
+
+      router.replace(`/p/${code}`);
+    }
+
+    run();
+
+    return () => {
+      mounted = false;
+    };
+  }, [params, router]);
+
+  return <main className="p-10">{message}</main>;
 }
