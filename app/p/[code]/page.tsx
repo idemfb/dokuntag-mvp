@@ -1,85 +1,106 @@
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
+"use client";
 
-import { notFound } from "next/navigation";
-import { getTagByCode, normalizeCode } from "@/lib/tags";
+import { useEffect, useState } from "react";
 
-type Props = {
-  params: Promise<{
-    code: string;
-  }>;
+type Tag = {
+  code: string;
+  status: "unclaimed" | "active";
+  name?: string;
+  phone?: string;
 };
 
-export default async function ProfilePage({ params }: Props) {
-  const { code } = await params;
+export default function ProfilePage({
+  params,
+}: {
+  params: Promise<{ code: string }>;
+}) {
+  const [tag, setTag] = useState<Tag | null>(null);
+  const [code, setCode] = useState("");
+  const [message, setMessage] = useState("");
 
-  if (!code) {
-    notFound();
-  }
+  useEffect(() => {
+    let mounted = true;
 
-  const normalizedCode = normalizeCode(code);
-  const tag = await getTagByCode(normalizedCode);
+    async function load() {
+      const resolved = await params;
+      const currentCode = resolved.code.toUpperCase();
+      setCode(currentCode);
+
+      const res = await fetch(`/api/tag/${currentCode}`, {
+        cache: "no-store",
+      });
+
+      if (!mounted) return;
+
+      if (!res.ok) {
+        setTag(null);
+        return;
+      }
+
+      const data = (await res.json()) as Tag;
+      setTag(data);
+    }
+
+    load();
+
+    return () => {
+      mounted = false;
+    };
+  }, [params]);
+
+  const sendMessage = async () => {
+    if (!message) return;
+
+    await fetch("/api/notify", {
+      method: "POST",
+      body: JSON.stringify({
+        code,
+        message,
+      }),
+    });
+
+    alert("Mesaj gönderildi");
+    setMessage("");
+  };
 
   if (!tag) {
-    notFound();
+    return <main className="p-10">Yükleniyor...</main>;
   }
 
   return (
     <main className="min-h-screen bg-white px-6 py-12 text-black">
       <div className="mx-auto max-w-xl">
-        <p className="mb-3 text-sm uppercase tracking-[0.2em] text-neutral-500">
-          Dokuntag Profile
+        <h1 className="text-3xl font-semibold">Kayıp Ürün</h1>
+
+        <p className="mt-4 text-lg">
+          Bu ürün <strong>{tag.name}</strong> adlı kişiye aittir.
         </p>
 
-        <h1 className="text-3xl font-semibold">Kayıp ürün sahibine ulaşın</h1>
+        {tag.phone && (
+          <p className="mt-2 text-neutral-700">
+            📞 İletişim: <strong>{tag.phone}</strong>
+          </p>
+        )}
 
-        <div className="mt-8 rounded-2xl border border-neutral-200 p-6">
-          <div className="space-y-3 text-neutral-700">
-            <p>
-              <span className="font-medium text-black">Kod:</span>{" "}
-              {normalizedCode}
-            </p>
-            <p>
-              <span className="font-medium text-black">Durum:</span>{" "}
-              {tag.status}
-            </p>
-            <p>
-              <span className="font-medium text-black">Ad:</span> {tag.name}
-            </p>
-            {tag.phone && (
-              <p>
-                <span className="font-medium text-black">Telefon:</span>{" "}
-                {tag.phone}
-              </p>
-            )}
-            {tag.petName && (
-              <p>
-                <span className="font-medium text-black">Evcil Hayvan:</span>{" "}
-                {tag.petName}
-              </p>
-            )}
-            {tag.note && (
-              <p>
-                <span className="font-medium text-black">Not:</span> {tag.note}
-              </p>
-            )}
-          </div>
+        {/* 🔥 MESAJ FORMU */}
+        <div className="mt-8 border-t pt-6">
+          <h2 className="text-lg font-semibold">
+            Sahibine mesaj gönder
+          </h2>
 
-          <div className="mt-6 grid gap-3 sm:grid-cols-2">
-            <a
-              href={`tel:${tag.phone ?? "+905555555555"}`}
-              className="rounded-xl border border-black px-4 py-3 text-center font-medium"
-            >
-              Telefon Et
-            </a>
+          <textarea
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            className="w-full mt-3 border rounded p-3"
+            placeholder="Ürünü buldum, bana ulaşabilirsiniz..."
+          />
 
-            <a
-              href={`https://wa.me/${(tag.phone ?? "905555555555").replace(/\D/g, "")}`}
-              className="rounded-xl bg-black px-4 py-3 text-center font-medium text-white"
-            >
-              WhatsApp ile Yaz
-            </a>
-          </div>
+          <button
+            onClick={sendMessage}
+            className="mt-3 w-full bg-black text-white p-3 rounded"
+          >
+            Gönder
+          </button>
         </div>
       </div>
     </main>
