@@ -1,5 +1,5 @@
 import { notFound, redirect } from "next/navigation";
-import { tags } from "@/data/tags";
+import { getTagByCode, normalizeCode } from "@/lib/tags";
 
 type Props = {
   params: Promise<{
@@ -14,8 +14,8 @@ export default async function TagRoute({ params }: Props) {
     notFound();
   }
 
-  const normalizedCode = code.toUpperCase();
-  const tag = tags.find((item) => item.code === normalizedCode);
+  const normalizedCode = normalizeCode(code);
+  const tag = await getTagByCode(normalizedCode);
 
   if (!tag) {
     notFound();
@@ -25,5 +25,9 @@ export default async function TagRoute({ params }: Props) {
     redirect(`/setup/${normalizedCode}`);
   }
 
-  redirect(`/p/${normalizedCode}`);
+  if (tag.status === "active") {
+    redirect(`/p/${normalizedCode}`);
+  }
+
+  notFound();
 }

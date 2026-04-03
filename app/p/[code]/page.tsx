@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { tags } from "@/data/tags";
+import { getTagByCode, normalizeCode } from "@/lib/tags";
 
 type Props = {
   params: Promise<{
@@ -14,8 +14,8 @@ export default async function ProfilePage({ params }: Props) {
     notFound();
   }
 
-  const normalizedCode = code.toUpperCase();
-  const tag = tags.find((item) => item.code === normalizedCode);
+  const normalizedCode = normalizeCode(code);
+  const tag = await getTagByCode(normalizedCode);
 
   if (!tag) {
     notFound();
@@ -24,7 +24,7 @@ export default async function ProfilePage({ params }: Props) {
   return (
     <main className="min-h-screen bg-white px-6 py-12 text-black">
       <div className="mx-auto max-w-xl">
-        <p className="mb-3 text-sm tracking-[0.2em] text-neutral-500 uppercase">
+        <p className="mb-3 text-sm uppercase tracking-[0.2em] text-neutral-500">
           Dokuntag Profile
         </p>
 
@@ -43,18 +43,35 @@ export default async function ProfilePage({ params }: Props) {
             <p>
               <span className="font-medium text-black">Ad:</span> {tag.name}
             </p>
+            {tag.phone && (
+              <p>
+                <span className="font-medium text-black">Telefon:</span>{" "}
+                {tag.phone}
+              </p>
+            )}
+            {tag.petName && (
+              <p>
+                <span className="font-medium text-black">Evcil Hayvan:</span>{" "}
+                {tag.petName}
+              </p>
+            )}
+            {tag.note && (
+              <p>
+                <span className="font-medium text-black">Not:</span> {tag.note}
+              </p>
+            )}
           </div>
 
           <div className="mt-6 grid gap-3 sm:grid-cols-2">
             <a
-              href="tel:+905555555555"
+              href={`tel:${tag.phone ?? "+905555555555"}`}
               className="rounded-xl border border-black px-4 py-3 text-center font-medium"
             >
               Telefon Et
             </a>
 
             <a
-              href="https://wa.me/905555555555"
+              href={`https://wa.me/${(tag.phone ?? "905555555555").replace(/\D/g, "")}`}
               className="rounded-xl bg-black px-4 py-3 text-center font-medium text-white"
             >
               WhatsApp ile Yaz

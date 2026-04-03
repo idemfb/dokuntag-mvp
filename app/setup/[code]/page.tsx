@@ -1,44 +1,66 @@
-import { notFound } from "next/navigation";
-import { tags } from "@/data/tags";
+"use client";
 
-type Props = {
-  params: Promise<{
-    code: string;
-  }>;
+import { useRouter } from "next/navigation";
+import { notFound } from "next/navigation";
+import { getTagByCode, normalizeCode } from "@/lib/tags";
+import { useEffect, useState } from "react";
+
+type Tag = {
+  code: string;
+  status: "unclaimed" | "active";
+  name?: string;
+  phone?: string;
 };
 
-export default async function SetupPage({ params }: Props) {
-  const { code } = await params;
+export default function SetupPage({ params }: { params: { code: string } }) {
+  const router = useRouter();
 
-  if (!code) {
-    notFound();
-  }
+  const [tag, setTag] = useState<Tag | null>(null);
+  const [code, setCode] = useState("");
 
-  const normalizedCode = code.toUpperCase();
-  const tag = tags.find((item) => item.code === normalizedCode);
+  useEffect(() => {
+    const normalizedCode = normalizeCode(params.code);
+    const foundTag = getTagByCode(normalizedCode);
 
-  if (!tag) {
-    notFound();
-  }
+    if (!foundTag) {
+      notFound();
+      return;
+    }
+
+    setTag(foundTag);
+    setCode(normalizedCode);
+  }, [params.code]);
+
+  if (!tag) return null;
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    // 🔥 MVP: direkt profile yönlendir
+    router.push(`/p/${code}`);
+  };
 
   return (
     <main className="min-h-screen bg-white px-6 py-12 text-black">
       <div className="mx-auto max-w-xl">
-        <p className="mb-3 text-sm tracking-[0.2em] text-neutral-500 uppercase">
+        <p className="mb-3 text-sm uppercase tracking-[0.2em] text-neutral-500">
           Dokuntag Setup
         </p>
 
         <h1 className="text-3xl font-semibold">Etiketi kendin için ayarla</h1>
 
         <p className="mt-3 text-neutral-600">
-          Ürün kodu: <span className="font-medium">{normalizedCode}</span>
+          Ürün kodu: <span className="font-medium">{code}</span>
         </p>
 
         <p className="mt-2 text-neutral-600">
           Ürün adı: <span className="font-medium">{tag.name}</span>
         </p>
 
-        <form className="mt-8 space-y-4 rounded-2xl border border-neutral-200 p-6">
+        <form
+          onSubmit={handleSubmit}
+          className="mt-8 space-y-4 rounded-2xl border border-neutral-200 p-6"
+        >
           <div>
             <label className="mb-2 block text-sm font-medium">Ad Soyad</label>
             <input
