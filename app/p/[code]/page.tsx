@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
 
 type Tag = {
   code: string;
@@ -9,41 +10,50 @@ type Tag = {
   phone?: string;
 };
 
-export default function ProfilePage({
-  params,
-}: {
-  params: Promise<{ code: string }>;
-}) {
+export default function ProfilePage() {
+  const params = useParams();
+  const codeParam = params?.code;
+  const code = Array.isArray(codeParam)
+    ? codeParam[0]?.toUpperCase()
+    : String(codeParam || "").toUpperCase();
+
   const [tag, setTag] = useState<Tag | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [message, setMessage] = useState("");
 
   useEffect(() => {
-    let mounted = true;
+    if (!code) return;
+
+    let cancelled = false;
 
     async function load() {
       try {
-        const resolved = await params;
-        const code = resolved.code.toUpperCase();
+        setLoading(true);
+        setNotFound(false);
 
         const res = await fetch(`/api/tag/${code}`, {
           cache: "no-store",
         });
 
-        if (!mounted) return;
+        if (cancelled) return;
 
         if (!res.ok) {
+          setTag(null);
           setNotFound(true);
           setLoading(false);
           return;
         }
 
         const data = (await res.json()) as Tag;
+
+        if (cancelled) return;
+
         setTag(data);
         setLoading(false);
       } catch {
-        if (!mounted) return;
+        if (cancelled) return;
+        setTag(null);
         setNotFound(true);
         setLoading(false);
       }
@@ -52,9 +62,9 @@ export default function ProfilePage({
     load();
 
     return () => {
-      mounted = false;
+      cancelled = true;
     };
-  }, [params]);
+  }, [code]);
 
   const sendMessage = async () => {
     if (!message.trim() || !tag) return;
@@ -73,6 +83,10 @@ export default function ProfilePage({
     alert("Mesaj gönderildi");
     setMessage("");
   };
+
+  if (!code) {
+    return <main className="p-10">Kod bulunamadı.</main>;
+  }
 
   if (loading) {
     return <main className="p-10">Yükleniyor...</main>;
