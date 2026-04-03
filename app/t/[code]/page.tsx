@@ -1,33 +1,24 @@
-import { notFound, redirect } from "next/navigation";
-import { getTagByCode, normalizeCode } from "@/lib/tags";
+import { redirect } from "next/navigation";
 
-type Props = {
-  params: Promise<{
-    code: string;
-  }>;
-};
+export default async function TPage({
+  params,
+}: {
+  params: { code: string };
+}) {
+  const res = await fetch(
+    `${process.env.NEXT_PUBLIC_BASE_URL}/api/tag/${params.code}`,
+    { cache: "no-store" }
+  );
 
-export default async function TagRoute({ params }: Props) {
-  const { code } = await params;
-
-  if (!code) {
-    notFound();
+  if (!res.ok) {
+    return <div>Tag not found</div>;
   }
 
-  const normalizedCode = normalizeCode(code);
-  const tag = await getTagByCode(normalizedCode);
-
-  if (!tag) {
-    notFound();
-  }
+  const tag = await res.json();
 
   if (tag.status === "unclaimed") {
-    redirect(`/setup/${normalizedCode}`);
+    redirect(`/setup/${params.code}`);
   }
 
-  if (tag.status === "active") {
-    redirect(`/p/${normalizedCode}`);
-  }
-
-  notFound();
+  redirect(`/p/${params.code}`);
 }
