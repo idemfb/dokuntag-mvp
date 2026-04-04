@@ -1,55 +1,88 @@
-import { notFound } from "next/navigation";
-import tags from "@/data/tags.json";
-import NotifyForm from "@/components/NotifyForm";
+import { findTagByCode } from "@/lib/tags";
 
-type Tag = {
-  code: string;
-  status: "unclaimed" | "active";
-  name?: string;
-  phone?: string;
-};
-
-export default async function ProfilePage({
-  params,
+export default async function PublicPage({
+  params
 }: {
   params: Promise<{ code: string }>;
 }) {
   const { code } = await params;
-  const normalizedCode = code.toUpperCase();
-
-  const tag = (tags as Tag[]).find((t) => t.code === normalizedCode);
+  const tag = findTagByCode(code);
 
   if (!tag) {
-    notFound();
+    return (
+      <main className="min-h-screen flex items-center justify-center">
+        <p>Tag bulunamadı.</p>
+      </main>
+    );
   }
 
+  const { profile, visibility, alerts } = tag;
+
   return (
-    <main className="min-h-screen bg-white px-6 py-12 text-black">
-      <div className="mx-auto max-w-xl">
-        <p className="mb-3 text-sm uppercase tracking-[0.2em] text-neutral-500">
-          Dokuntag Profile
-        </p>
+    <main className="min-h-screen bg-white px-4 py-10 text-neutral-900">
+      <div className="mx-auto max-w-xl space-y-6">
+        <h1 className="text-2xl font-semibold">Dokuntag</h1>
 
-        <h1 className="text-3xl font-semibold">Kayıp ürün sahibine ulaşın</h1>
+        <div className="rounded-2xl border p-5 space-y-3">
+          {visibility.showName && profile.name && (
+            <p><strong>İsim:</strong> {profile.name}</p>
+          )}
 
-        <div className="mt-6 space-y-2 rounded-2xl border border-neutral-200 p-6">
-          <p>
-            <span className="font-medium">Kod:</span> {tag.code}
-          </p>
-          <p>
-            <span className="font-medium">Durum:</span> {tag.status}
-          </p>
-          <p>
-            <span className="font-medium">Ad:</span> {tag.name}
-          </p>
-          {tag.phone && (
-            <p>
-              <span className="font-medium">Telefon:</span> {tag.phone}
-            </p>
+          {visibility.showPetName && profile.petName && (
+            <p><strong>Ad:</strong> {profile.petName}</p>
+          )}
+
+          {visibility.showPhone && profile.phone && (
+            <p><strong>Telefon:</strong> {profile.phone}</p>
+          )}
+
+          {visibility.showEmail && profile.email && (
+            <p><strong>Email:</strong> {profile.email}</p>
+          )}
+
+          {visibility.showNote && profile.note && (
+            <p><strong>Not:</strong> {profile.note}</p>
           )}
         </div>
 
-        <NotifyForm code={normalizedCode} />
+        {alerts.length > 0 && (
+          <div className="rounded-2xl border border-red-200 bg-red-50 p-4">
+            <p className="font-medium text-red-700 mb-2">Uyarılar</p>
+            <ul className="text-sm space-y-1">
+              {alerts.map((a) => (
+                <li key={a}>• {a}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        <div className="rounded-2xl border p-5">
+          <p className="text-sm text-neutral-600">
+            Sahibe ulaşmak için mesaj gönder:
+          </p>
+
+          <form className="mt-4 space-y-3" method="POST" action="/api/notify">
+            <input
+              type="hidden"
+              name="code"
+              value={code}
+            />
+
+            <textarea
+              name="message"
+              required
+              placeholder="Mesajınızı yazın"
+              className="w-full border rounded-xl p-3"
+            />
+
+            <button
+              type="submit"
+              className="w-full bg-black text-white py-3 rounded-xl"
+            >
+              Mesaj gönder
+            </button>
+          </form>
+        </div>
       </div>
     </main>
   );

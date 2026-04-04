@@ -6,6 +6,7 @@
     "profile": {
       "name": "İbrahim",
       "phone": "+905551112233",
+      "email": "ibrahim@example.com",
       "petName": "Milo",
       "note": "Bulduysanız lütfen mesaj gönderin."
     },
@@ -15,35 +16,41 @@
     ],
     "visibility": {
       "showName": true,
-      "showPhone": false,
+      "showPhone": true,
+      "showEmail": true,
       "showPetName": true,
       "showNote": true
     },
     "recovery": {
       "phone": "+905551112233",
-      "email": "ornek@example.com"
+      "email": "ibrahim@example.com"
     }
   },
   {
     "code": "DT002",
-    "status": "unclaimed",
+    "status": "active",
     "manageToken": "mg_3a9d1f8b5c7e2k4m",
     "profile": {
-      "name": "",
-      "phone": "",
-      "petName": "",
-      "note": ""
+      "name": "asel",
+      "phone": "5063509722",
+      "email": "",
+      "petName": "pamuş",
+      "note": "beni ara"
     },
-    "alerts": [],
+    "alerts": [
+      "Acil bana ulaşın",
+      "Alerjisi var"
+    ],
     "visibility": {
-      "showName": false,
+      "showName": true,
       "showPhone": false,
-      "showPetName": false,
-      "showNote": false
+      "showEmail": false,
+      "showPetName": true,
+      "showNote": true
     },
     "recovery": {
-      "phone": "",
-      "email": ""
+      "phone": "5063509722",
+      "email": "i.dem@hotmail.com"
     }
   },
   {
@@ -53,6 +60,7 @@
     "profile": {
       "name": "Ayşe",
       "phone": "+905554445566",
+      "email": "ayse@example.com",
       "petName": "Luna",
       "note": "Alerjisi var. Lütfen mama vermeyin."
     },
@@ -63,6 +71,7 @@
     "visibility": {
       "showName": true,
       "showPhone": false,
+      "showEmail": true,
       "showPetName": true,
       "showNote": true
     },

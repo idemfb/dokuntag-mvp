@@ -21,6 +21,7 @@ export async function GET(_: Request, { params }: Params) {
     profile: {
       name: tag.visibility.showName ? tag.profile.name : "",
       phone: tag.visibility.showPhone ? tag.profile.phone : "",
+      email: tag.visibility.showEmail ? tag.profile.email : "",
       petName: tag.visibility.showPetName ? tag.profile.petName : "",
       note: tag.visibility.showNote ? tag.profile.note : ""
     },
