@@ -1,25 +1,30 @@
 import { NextResponse } from "next/server";
-import tags from "@/data/tags.json";
+import { findTagByCode } from "@/lib/tags";
 
-type Tag = {
-  code: string;
-  status: "unclaimed" | "active";
-  name?: string;
-  phone?: string;
+type Params = {
+  params: Promise<{
+    code: string;
+  }>;
 };
 
-export async function GET(
-  _req: Request,
-  context: { params: Promise<{ code: string }> }
-) {
-  const { code } = await context.params;
-  const normalizedCode = code.toUpperCase();
-
-  const tag = (tags as Tag[]).find((t) => t.code === normalizedCode);
+export async function GET(_: Request, { params }: Params) {
+  const { code } = await params;
+  const tag = findTagByCode(code);
 
   if (!tag) {
     return NextResponse.json({ error: "Tag not found" }, { status: 404 });
   }
 
-  return NextResponse.json(tag);
+  return NextResponse.json({
+    code: tag.code,
+    status: tag.status,
+    profile: {
+      name: tag.visibility.showName ? tag.profile.name : "",
+      phone: tag.visibility.showPhone ? tag.profile.phone : "",
+      petName: tag.visibility.showPetName ? tag.profile.petName : "",
+      note: tag.visibility.showNote ? tag.profile.note : ""
+    },
+    alerts: tag.alerts,
+    messageEnabled: true
+  });
 }

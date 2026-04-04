@@ -2,22 +2,73 @@
   {
     "code": "DT001",
     "status": "active",
-    "name": "Dokuntag 001",
-    "phone": "05555555555",
-    "petName": "Leo",
-    "note": "Test kayıt"
+    "manageToken": "mg_8f2b7c1a9d4e6f3b",
+    "profile": {
+      "name": "İbrahim",
+      "phone": "+905551112233",
+      "petName": "Milo",
+      "note": "Bulduysanız lütfen mesaj gönderin."
+    },
+    "alerts": [
+      "Acil bana ulaşın",
+      "Ürkek / yaklaşmayın"
+    ],
+    "visibility": {
+      "showName": true,
+      "showPhone": false,
+      "showPetName": true,
+      "showNote": true
+    },
+    "recovery": {
+      "phone": "+905551112233",
+      "email": "ornek@example.com"
+    }
   },
   {
     "code": "DT002",
-    "status": "active",
-    "name": "Dokuntag 002",
-    "phone": "05555555555",
-    "petName": "Boncuk",
-    "note": "Aktif profil örneği"
+    "status": "unclaimed",
+    "manageToken": "mg_3a9d1f8b5c7e2k4m",
+    "profile": {
+      "name": "",
+      "phone": "",
+      "petName": "",
+      "note": ""
+    },
+    "alerts": [],
+    "visibility": {
+      "showName": false,
+      "showPhone": false,
+      "showPetName": false,
+      "showNote": false
+    },
+    "recovery": {
+      "phone": "",
+      "email": ""
+    }
   },
   {
     "code": "DT003",
-    "status": "unclaimed",
-    "name": "Boş Etiket"
+    "status": "active",
+    "manageToken": "mg_7c4e1b9a2f6d8h5p",
+    "profile": {
+      "name": "Ayşe",
+      "phone": "+905554445566",
+      "petName": "Luna",
+      "note": "Alerjisi var. Lütfen mama vermeyin."
+    },
+    "alerts": [
+      "Hayvanım hasta",
+      "Alerjisi var"
+    ],
+    "visibility": {
+      "showName": true,
+      "showPhone": false,
+      "showPetName": true,
+      "showNote": true
+    },
+    "recovery": {
+      "phone": "+905554445566",
+      "email": "ayse@example.com"
+    }
   }
 ]
