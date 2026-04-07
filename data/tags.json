@@ -2,17 +2,50 @@
   {
     "code": "DT001",
     "status": "active",
-    "manageToken": "mg_8f2b7c1a9d4e6f3b",
+    "manageToken": "mg_2b46fae541aa821b0031e7cb93414228",
     "profile": {
       "name": "İbrahim",
-      "phone": "+905551112233",
-      "email": "ibrahim@example.com",
-      "petName": "Milo",
+      "phone": "+905063509722",
+      "email": "dokuntag@gmail.com",
+      "petName": "aseldefne",
       "note": "Bulduysanız lütfen mesaj gönderin."
     },
     "alerts": [
+      "Acil bana ulaşın"
+    ],
+    "visibility": {
+      "showName": false,
+      "showPhone": false,
+      "showEmail": true,
+      "showPetName": true,
+      "showNote": true
+    },
+    "recovery": {
+      "phone": "+905063509722",
+      "email": "i.dem@hotmail.com"
+    },
+    "productType": "person",
+    "contactOptions": {
+      "allowDirectCall": false,
+      "allowDirectWhatsapp": false
+    }
+  },
+  {
+    "code": "DT002",
+    "status": "active",
+    "manageToken": "mg_c7f34e3e1e4e24af54a538350a4e8d5d",
+    "profile": {
+      "name": "asel",
+      "phone": "5063509722",
+      "email": "dokuntag@gmail.com",
+      "petName": "idem",
+      "note": "beni ara"
+    },
+    "alerts": [
+      "Ödül verilecektir",
+      "Hayvanım hasta",
       "Acil bana ulaşın",
-      "Ürkek / yaklaşmayın"
+      "Alerjisi var"
     ],
     "visibility": {
       "showName": true,
@@ -22,36 +55,10 @@
       "showNote": true
     },
     "recovery": {
-      "phone": "+905551112233",
-      "email": "ibrahim@example.com"
-    }
-  },
-  {
-    "code": "DT002",
-    "status": "active",
-    "manageToken": "mg_3a9d1f8b5c7e2k4m",
-    "profile": {
-      "name": "asel",
-      "phone": "5063509722",
-      "email": "",
-      "petName": "pamuş",
-      "note": "beni ara"
-    },
-    "alerts": [
-      "Acil bana ulaşın",
-      "Alerjisi var"
-    ],
-    "visibility": {
-      "showName": true,
-      "showPhone": false,
-      "showEmail": false,
-      "showPetName": true,
-      "showNote": true
-    },
-    "recovery": {
       "phone": "5063509722",
       "email": "i.dem@hotmail.com"
-    }
+    },
+    "productType": "person"
   },
   {
     "code": "DT003",

@@ -1,31 +1,43 @@
 import { NextResponse } from "next/server";
 import { findTagByCode } from "@/lib/tags";
 
-type Params = {
+type RouteContext = {
   params: Promise<{
     code: string;
   }>;
 };
 
-export async function GET(_: Request, { params }: Params) {
-  const { code } = await params;
-  const tag = findTagByCode(code);
+export async function GET(_req: Request, context: RouteContext) {
+  try {
+    const { code } = await context.params;
+    const normalizedCode = String(code ?? "").trim().toUpperCase();
 
-  if (!tag) {
-    return NextResponse.json({ error: "Tag not found" }, { status: 404 });
+    if (!normalizedCode) {
+      return NextResponse.json(
+        { ok: false, error: "Kod gerekli." },
+        { status: 400 }
+      );
+    }
+
+    const tag = findTagByCode(normalizedCode);
+
+    if (!tag) {
+      return NextResponse.json(
+        { ok: false, error: "Etiket bulunamadı." },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json({
+      ok: true,
+      tag,
+    });
+  } catch (error) {
+    console.error("TAG_GET_ERROR", error);
+
+    return NextResponse.json(
+      { ok: false, error: "Etiket bilgisi alınamadı." },
+      { status: 500 }
+    );
   }
-
-  return NextResponse.json({
-    code: tag.code,
-    status: tag.status,
-    profile: {
-      name: tag.visibility.showName ? tag.profile.name : "",
-      phone: tag.visibility.showPhone ? tag.profile.phone : "",
-      email: tag.visibility.showEmail ? tag.profile.email : "",
-      petName: tag.visibility.showPetName ? tag.profile.petName : "",
-      note: tag.visibility.showNote ? tag.profile.note : ""
-    },
-    alerts: tag.alerts,
-    messageEnabled: true
-  });
 }

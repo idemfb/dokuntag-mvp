@@ -1,127 +1,98 @@
-import { NextResponse } from "next/server";
-import { findTagByCode, setupTag } from "@/lib/tags";
+import { NextRequest, NextResponse } from "next/server";
+import { findTagByCode, upsertTag } from "@/lib/tags";
 
-type Params = {
+type SetupBody = {
+  tagName?: string;
+  ownerName?: string;
+  phone?: string;
+  email?: string;
+  note?: string;
+  allowPhone?: boolean;
+  allowEmail?: boolean;
+  allowWhatsapp?: boolean;
+  allowDirectSms?: boolean;
+  allowDirectEmail?: boolean;
+};
+
+type RouteContext = {
   params: Promise<{
     code: string;
   }>;
 };
 
-const ALERT_OPTIONS = [
-  "Acil bana ulaşın",
-  "Hayvanım hasta",
-  "Alerjisi var",
-  "Ürkek / yaklaşmayın",
-  "Ödül verilecektir"
-];
+export async function GET(_req: NextRequest, context: RouteContext) {
+  try {
+    const { code } = await context.params;
+    const normalizedCode = String(code ?? "").trim().toUpperCase();
 
-export async function GET(_: Request, { params }: Params) {
-  const { code } = await params;
-  const tag = findTagByCode(code);
+    const tag = findTagByCode(normalizedCode);
 
-  if (!tag) {
-    return NextResponse.json({ error: "Tag not found" }, { status: 404 });
+    if (!tag) {
+      return NextResponse.json(
+        { ok: false, error: "Etiket bulunamadı." },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json({
+      ok: true,
+      tag,
+    });
+  } catch (error) {
+    console.error("SETUP_CODE_GET_ERROR", error);
+
+    return NextResponse.json(
+      { ok: false, error: "Veri alınamadı." },
+      { status: 500 }
+    );
   }
-
-  return NextResponse.json({
-    code: tag.code,
-    status: tag.status,
-    profile: tag.profile,
-    alerts: tag.alerts,
-    visibility: tag.visibility,
-    recovery: tag.recovery
-  });
 }
 
-export async function POST(request: Request, { params }: Params) {
-  const { code } = await params;
-  const existing = findTagByCode(code);
+export async function PUT(req: NextRequest, context: RouteContext) {
+  try {
+    const { code } = await context.params;
+    const normalizedCode = String(code ?? "").trim().toUpperCase();
 
-  if (!existing) {
-    return NextResponse.json({ error: "Tag not found" }, { status: 404 });
-  }
+    const existing = findTagByCode(normalizedCode);
 
-  const body = await request.json();
+    if (!existing) {
+      return NextResponse.json(
+        { ok: false, error: "Etiket bulunamadı." },
+        { status: 404 }
+      );
+    }
 
-  const name = typeof body.name === "string" ? body.name : "";
-  const phone = typeof body.phone === "string" ? body.phone : "";
-  const email = typeof body.email === "string" ? body.email : "";
-  const petName = typeof body.petName === "string" ? body.petName : "";
-  const note = typeof body.note === "string" ? body.note : "";
+    const body = (await req.json()) as SetupBody;
 
-  const alerts = Array.isArray(body.alerts)
-    ? body.alerts.filter(
-        (item: unknown): item is string =>
-          typeof item === "string" && ALERT_OPTIONS.includes(item)
-      )
-    : [];
+    const saved = upsertTag({
+      code: normalizedCode,
 
-  const visibility = {
-    showName: Boolean(body.visibility?.showName),
-    showPhone: Boolean(body.visibility?.showPhone),
-    showEmail: Boolean(body.visibility?.showEmail),
-    showPetName: Boolean(body.visibility?.showPetName),
-    showNote: Boolean(body.visibility?.showNote)
-  };
+      // 🔥 DÜZELTME BURASI
+      tagName: body.tagName,
+      ownerName: body.ownerName,
+      phone: body.phone,
+      email: body.email,
+      note: body.note,
 
-  const recovery = {
-    phone: typeof body.recovery?.phone === "string" ? body.recovery.phone : "",
-    email: typeof body.recovery?.email === "string" ? body.recovery.email : ""
-  };
+      allowDirectCall: body.allowPhone,
+      allowDirectWhatsapp: body.allowWhatsapp,
 
-  if (!name.trim()) {
+      recoveryPhone: body.phone,
+      recoveryEmail: body.email,
+
+      status: "active"
+    });
+
+    return NextResponse.json({
+      ok: true,
+      tag: saved,
+    });
+  } catch (error) {
+    console.error("SETUP_CODE_PUT_ERROR", error);
+
     return NextResponse.json(
-      { error: "İsim / etiket adı zorunludur." },
-      { status: 400 }
+      { ok: false, error: "Güncelleme sırasında hata oluştu." },
+      { status: 500 }
     );
   }
-
-  if (!phone.trim()) {
-    return NextResponse.json(
-      { error: "Telefon zorunludur." },
-      { status: 400 }
-    );
-  }
-
-  if (!petName.trim()) {
-    return NextResponse.json(
-      { error: "Evcil hayvan adı / ürün adı zorunludur." },
-      { status: 400 }
-    );
-  }
-
-  if (!recovery.phone.trim() && !recovery.email.trim()) {
-    return NextResponse.json(
-      { error: "En az bir recovery alanı girilmelidir." },
-      { status: 400 }
-    );
-  }
-
-  const updated = setupTag(code, {
-    name,
-    phone,
-    email,
-    petName,
-    note,
-    alerts,
-    visibility,
-    recovery
-  });
-
-  if (!updated) {
-    return NextResponse.json({ error: "Tag not found" }, { status: 404 });
-  }
-
-  const origin = request.headers.get("origin") || "";
-  const managePath = `/manage/${updated.code}?token=${updated.manageToken}`;
-
-  return NextResponse.json({
-    success: true,
-    code: updated.code,
-    redirectTo: `/p/${updated.code}`,
-    managePath,
-    manageLink: origin ? `${origin}${managePath}` : managePath,
-    warning:
-      "Bu size özel yönetim linkidir. Profil bilgilerinizi güncellemek için kullanılır. Lütfen güvenli şekilde saklayın ve başkalarıyla paylaşmayın."
-  });
 }
