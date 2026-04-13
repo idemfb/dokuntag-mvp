@@ -49,6 +49,15 @@ function normalizePhoneInput(value: string) {
   return value.replace(/[^0-9]/g, "");
 }
 
+function getMainSiteUrl() {
+  const value =
+    process.env.NEXT_PUBLIC_MAIN_SITE_URL?.trim() ||
+    process.env.NEXT_PUBLIC_SITE_URL?.trim() ||
+    "https://dokuntag.com";
+
+  return value.replace(/\/+$/, "");
+}
+
 function GuideStep({
   step,
   title,
@@ -70,6 +79,8 @@ function GuideStep({
 }
 
 export default function RecoverPage() {
+  const mainSiteUrl = getMainSiteUrl();
+
   const [code, setCode] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
@@ -203,9 +214,23 @@ export default function RecoverPage() {
       <div className="mx-auto max-w-5xl space-y-6">
         <section className="overflow-hidden rounded-[2rem] border border-neutral-200 bg-white shadow-sm">
           <div className="border-b border-neutral-200 bg-gradient-to-br from-white via-neutral-50 to-neutral-100/80 px-6 py-7">
-            <a href="/my" className="text-sm text-neutral-500 hover:underline">
-              ← Ürünlerime git
-            </a>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <a
+                href="/my"
+                className="text-sm text-neutral-500 transition hover:text-neutral-900 hover:underline"
+              >
+                ← Ürünlerime git
+              </a>
+
+              <a
+                href={mainSiteUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="text-sm text-neutral-500 transition hover:text-neutral-900 hover:underline"
+              >
+                Dokuntag ana sayfa
+              </a>
+            </div>
 
             <p className="mt-4 text-xs uppercase tracking-[0.2em] text-neutral-400">
               Dokuntag
