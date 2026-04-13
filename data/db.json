@@ -2,21 +2,21 @@
   "products": [
     {
       "publicCode": "TEST01",
-      "manageToken": "c181a78d-55cf-460f-88ad-78f3365e60d8",
-      "productType": "item",
-      "name": "pamuk",
+      "manageToken": "1a92908e-b215-4d90-b943-ee728568f463",
+      "productType": "person",
+      "name": "telefon",
       "phone": "05063509722",
       "email": "i.dem@hotmail.com",
-      "note": "arabamın anahtarını bana ulaştırşişlkj",
+      "note": "bana ulaştır",
       "alerts": [
         "Ödül verilecektir"
       ],
       "allowDirectCall": true,
       "allowDirectWhatsapp": true,
       "status": "active",
-      "petName": "pam",
-      "updatedAt": "2026-04-12T14:56:09.584Z",
-      "ownerName": "DEMİR",
+      "petName": "ahmet",
+      "updatedAt": "2026-04-13T15:06:46.112Z",
+      "ownerName": "idem",
       "recovery": {
         "phone": "05063509722",
         "email": "i.dem@hotmail.com"
@@ -24,7 +24,7 @@
       "visibility": {
         "showName": true,
         "showPhone": true,
-        "showEmail": true,
+        "showEmail": false,
         "showCity": true,
         "showAddressDetail": true,
         "showPetName": true,
@@ -32,29 +32,44 @@
       },
       "showName": true,
       "showPhone": true,
-      "showEmail": true,
+      "showEmail": false,
       "showPetName": true,
       "showNote": true,
-      "city": "İSTANBUL",
-      "addressDetail": "osmaniye mahallesi fabrikalar geçidi sokak no:9/a (Özel Zirve Sağlık Kabini)",
+      "city": "İstanbul",
+      "addressDetail": "Tahtakale Mahallesi",
       "showCity": true,
       "showAddressDetail": true,
-      "distinctiveFeature": "mont",
+      "distinctiveFeature": "mavi tel",
       "profile": {
-        "name": "pamuk",
-        "ownerName": "DEMİR",
+        "name": "telefon",
+        "ownerName": "idem",
         "phone": "05063509722",
         "email": "i.dem@hotmail.com",
-        "city": "İSTANBUL",
-        "addressDetail": "osmaniye mahallesi fabrikalar geçidi sokak no:9/a (Özel Zirve Sağlık Kabini)",
-        "distinctiveFeature": "mont",
-        "petName": "pam",
-        "note": "arabamın anahtarını bana ulaştırşişlkj",
-        "tagName": "pamuk"
+        "city": "İstanbul",
+        "addressDetail": "Tahtakale Mahallesi",
+        "distinctiveFeature": "mavi tel",
+        "petName": "ahmet",
+        "note": "bana ulaştır",
+        "tagName": "telefon"
       },
       "contactOptions": {
         "allowDirectCall": true,
         "allowDirectWhatsapp": true
+      },
+      "transfer": {
+        "token": "73ad10ed-3eeb-463e-b583-126ab7a154a9",
+        "status": "pending",
+        "createdAt": "2026-04-13T10:54:51.434Z",
+        "expiresAt": "2026-04-15T10:54:51.434Z",
+        "fromManageToken": "e0355fe4-4af7-463e-ae42-089f6a9421b1"
+      },
+      "recoverySession": {
+        "token": "9c89210a-b941-4375-adf7-a7a237f58c23",
+        "email": "i.dem@hotmail.com",
+        "entryType": "my",
+        "status": "pending",
+        "createdAt": "2026-04-13T15:06:46.112Z",
+        "expiresAt": "2026-04-13T15:26:46.112Z"
       }
     },
     {
@@ -74,36 +89,75 @@
     },
     {
       "publicCode": "GSLWY6",
-      "manageToken": "06cfa46e-221d-424b-973e-1e081d39f365",
+      "manageToken": "e72aa340-3e48-4052-a4ae-1461acebcf24",
       "productType": "item",
-      "name": "yeni",
-      "phone": "905063509722",
+      "name": "defneasel",
+      "phone": "05515551553",
       "email": "i.dem@hotmail.com",
-      "note": "deneme",
+      "note": "sdfsdf",
       "alerts": [],
-      "allowDirectCall": true,
-      "allowDirectWhatsapp": true,
+      "allowDirectCall": false,
+      "allowDirectWhatsapp": false,
       "status": "active",
       "createdAt": "2026-04-05T15:23:13.729Z",
-      "ownerName": "",
-      "petName": "yeni",
-      "updatedAt": "2026-04-12T15:18:18.583Z",
+      "ownerName": "ibragim",
+      "petName": "devir",
+      "updatedAt": "2026-04-13T15:06:46.112Z",
       "recovery": {
-        "phone": "905063509722",
+        "phone": "05515551553",
         "email": "i.dem@hotmail.com"
       },
       "visibility": {
-        "showName": false,
+        "showName": true,
         "showPhone": false,
-        "showEmail": false,
-        "showPetName": false,
-        "showNote": false
+        "showEmail": true,
+        "showCity": true,
+        "showAddressDetail": true,
+        "showPetName": true,
+        "showNote": true
       },
-      "showName": false,
+      "showName": true,
       "showPhone": false,
-      "showEmail": false,
-      "showPetName": false,
-      "showNote": false
+      "showEmail": true,
+      "showPetName": true,
+      "showNote": true,
+      "transfer": {
+        "token": "38b9ac2b-a8f1-4465-85f1-b93ef08131df",
+        "status": "used",
+        "createdAt": "2026-04-13T10:56:30.930Z",
+        "expiresAt": "2026-04-15T10:56:30.930Z",
+        "fromManageToken": "4722c079-df77-451c-9f5b-f500ca9c2b3f",
+        "usedAt": "2026-04-13T10:57:09.701Z"
+      },
+      "city": "İstanbul",
+      "addressDetail": "Tahtakale Mahallesi",
+      "distinctiveFeature": "ev",
+      "profile": {
+        "name": "defneasel",
+        "ownerName": "ibragim",
+        "phone": "05515551553",
+        "email": "i.dem@hotmail.com",
+        "city": "İstanbul",
+        "addressDetail": "Tahtakale Mahallesi",
+        "distinctiveFeature": "ev",
+        "petName": "devir",
+        "note": "sdfsdf",
+        "tagName": "defneasel"
+      },
+      "contactOptions": {
+        "allowDirectCall": false,
+        "allowDirectWhatsapp": false
+      },
+      "showCity": true,
+      "showAddressDetail": true,
+      "recoverySession": {
+        "token": "9c89210a-b941-4375-adf7-a7a237f58c23",
+        "email": "i.dem@hotmail.com",
+        "entryType": "my",
+        "status": "pending",
+        "createdAt": "2026-04-13T15:06:46.112Z",
+        "expiresAt": "2026-04-13T15:26:46.112Z"
+      }
     },
     {
       "publicCode": "TKERNB",
@@ -125,7 +179,7 @@
       "addressDetail": "osmaniye mahallesi fabrikalar geçidi sokak no:9/a (Özel Zirve Sağlık Kabini)",
       "distinctiveFeature": "mavi halkalı",
       "petName": "kabin anahtarı",
-      "updatedAt": "2026-04-11T20:54:48.001Z",
+      "updatedAt": "2026-04-13T15:06:46.112Z",
       "recovery": {
         "phone": "05063509722",
         "email": "i.dem@hotmail.com"
@@ -161,7 +215,15 @@
       "showCity": false,
       "showAddressDetail": false,
       "showPetName": false,
-      "showNote": true
+      "showNote": true,
+      "recoverySession": {
+        "token": "9c89210a-b941-4375-adf7-a7a237f58c23",
+        "email": "i.dem@hotmail.com",
+        "entryType": "my",
+        "status": "pending",
+        "createdAt": "2026-04-13T15:06:46.112Z",
+        "expiresAt": "2026-04-13T15:26:46.112Z"
+      }
     },
     {
       "publicCode": "TEST02",
@@ -186,7 +248,7 @@
       "addressDetail": "avcılar",
       "distinctiveFeature": "gözlük",
       "petName": "asel",
-      "updatedAt": "2026-04-12T13:17:38.414Z",
+      "updatedAt": "2026-04-13T15:06:46.112Z",
       "recovery": {
         "phone": "05063509722",
         "email": "i.dem@hotmail.com"
@@ -222,7 +284,15 @@
       "showCity": true,
       "showAddressDetail": true,
       "showPetName": true,
-      "showNote": true
+      "showNote": true,
+      "recoverySession": {
+        "token": "9c89210a-b941-4375-adf7-a7a237f58c23",
+        "email": "i.dem@hotmail.com",
+        "entryType": "my",
+        "status": "pending",
+        "createdAt": "2026-04-13T15:06:46.112Z",
+        "expiresAt": "2026-04-13T15:26:46.112Z"
+      }
     },
     {
       "publicCode": "7FUFPC",

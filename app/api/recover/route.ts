@@ -1,109 +1,74 @@
-import { NextResponse } from "next/server";
-import { findTagByCode, recoverManageAccess, readTags } from "@/lib/tags";
+import { NextRequest, NextResponse } from "next/server";
+import { sendRecoveryMagicLinkEmail, isMailConfigured } from "@/lib/mailer";
+import { createRecoverySessionByEmail } from "@/lib/tags";
 
-function normalize(value: unknown) {
+function normalizeEmail(value: unknown) {
   return typeof value === "string" ? value.trim().toLowerCase() : "";
 }
 
-function normalizePhone(value: unknown) {
-  return typeof value === "string" ? value.replace(/[^0-9]/g, "") : "";
+function getBaseUrl(request: NextRequest) {
+  const envBaseUrl =
+    process.env.NEXT_PUBLIC_BASE_URL?.trim() ||
+    process.env.NEXT_PUBLIC_SITE_URL?.trim() ||
+    "";
+
+  if (envBaseUrl) {
+    return envBaseUrl.replace(/\/+$/, "");
+  }
+
+  return request.nextUrl.origin.replace(/\/+$/, "");
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
+    const body = (await request.json()) as {
+      email?: string;
+      entryType?: "my" | "recover";
+    };
 
-    const code =
-      typeof body.code === "string" ? body.code.trim().toUpperCase() : "";
-    const phone = normalizePhone(body.phone);
-    const email =
-      typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
-    const mode = body.mode === "list" ? "list" : "single";
+    const email = normalizeEmail(body?.email);
+    const entryType = body?.entryType === "recover" ? "recover" : "my";
 
-    if (!phone && !email) {
+    if (!email) {
       return NextResponse.json(
-        { error: "Telefon veya email ile doğrulama yapmalısınız." },
+        { error: "E-posta zorunludur." },
         { status: 400 }
       );
     }
 
-    if (mode === "list") {
-      const tags = readTags();
-
-      const matched = tags.filter((tag) => {
-        const phoneMatch =
-          phone && normalizePhone(tag.recovery.phone) === normalizePhone(phone);
-
-        const emailMatch =
-          email && normalize(tag.recovery.email) === normalize(email);
-
-        return phoneMatch || emailMatch;
-      });
-
-      if (!matched.length) {
-        return NextResponse.json(
-          { error: "Eşleşen ürün bulunamadı." },
-          { status: 404 }
-        );
-      }
-
-      return NextResponse.json({
-        success: true,
-        count: matched.length,
-        items: matched.map((tag) => ({
-          code: tag.code,
-          petName: tag.profile?.petName || "",
-          status: tag.status,
-          productType: tag.productType || "item"
-        }))
-      });
-    }
-
-    if (!code) {
+    if (!isMailConfigured()) {
       return NextResponse.json(
-        { error: "Kod zorunludur." },
-        { status: 400 }
+        { error: "Mail sistemi şu an hazır değil." },
+        { status: 500 }
       );
     }
 
-    const tag = findTagByCode(code);
-
-    if (!tag) {
-      return NextResponse.json(
-        { error: "Ürün bulunamadı." },
-        { status: 404 }
-      );
-    }
-
-    const recovered = recoverManageAccess({
-      code,
-      phone,
-      email
+    const session = createRecoverySessionByEmail({
+      email,
+      entryType
     });
 
-    if (!recovered) {
-      return NextResponse.json(
-        { error: "Doğrulama başarısız. Bilgileri kontrol edin." },
-        { status: 401 }
-      );
-    }
+    if (session) {
+      const baseUrl = getBaseUrl(request);
+      const verifyLink = `${baseUrl}/recover/verify?token=${encodeURIComponent(
+        session.token
+      )}`;
 
-    const fallbackOrigin = new URL(request.url).origin;
-    const origin = request.headers.get("origin") || fallbackOrigin;
-    const managePath = `/manage/${recovered.code}?token=${recovered.manageToken}`;
+      await sendRecoveryMagicLinkEmail({
+        to: email,
+        verifyLink,
+        expiresAt: session.expiresAt,
+        entryType
+      });
+    }
 
     return NextResponse.json({
       success: true,
-      code: recovered.code,
-      managePath,
-      manageLink: `${origin}${managePath}`,
       message:
-        "Doğrulama başarılı. Eski yönetim bağlantısı geçersiz hale getirildi. Yeni bir yönetim bağlantısı oluşturuldu.",
-      warning:
-        "Bu size özel yönetim bağlantısıdır. Lütfen güvenli şekilde saklayın ve başkalarıyla paylaşmayın."
+        "Bu e-posta sistemde kayıtlıysa, güvenli giriş bağlantısı gönderildi."
     });
   } catch (error) {
-    console.error("RECOVER_POST_ERROR", error);
+    console.error("RECOVER_MAGIC_LINK_REQUEST_ERROR", error);
 
     return NextResponse.json(
       { error: "İşlem sırasında bir hata oluştu." },

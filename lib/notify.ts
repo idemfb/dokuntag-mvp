@@ -179,6 +179,53 @@ export function addNotifyLog(input: {
   writeNotifyLog(cleaned);
 }
 
+export function getNotifyLogsByTagCode(tagCode: string) {
+  const normalizedTagCode = normalizeTagCode(tagCode);
+
+  if (!normalizedTagCode) {
+    return [];
+  }
+
+  return readNotifyLog()
+    .filter((item) => normalizeTagCode(item.tagCode) === normalizedTagCode && !item.deletedAt)
+    .sort((a, b) => {
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    });
+}
+
+export function deleteAllNotifyLogsByTagCode(tagCode: string) {
+  const normalizedTagCode = normalizeTagCode(tagCode);
+
+  if (!normalizedTagCode) {
+    return { deletedCount: 0 };
+  }
+
+  const items = readNotifyLog();
+  let deletedCount = 0;
+  const deletedAt = new Date().toISOString();
+
+  const updatedItems = items.map((item) => {
+    if (normalizeTagCode(item.tagCode) !== normalizedTagCode || item.deletedAt) {
+      return item;
+    }
+
+    deletedCount += 1;
+
+    return {
+      ...item,
+      deletedAt,
+      pinnedAt: "",
+      archivedAt: ""
+    };
+  });
+
+  if (deletedCount > 0) {
+    writeNotifyLog(updatedItems);
+  }
+
+  return { deletedCount };
+}
+
 export function markNotifyLogsAsRead(tagCode: string) {
   const normalizedTagCode = normalizeTagCode(tagCode);
 

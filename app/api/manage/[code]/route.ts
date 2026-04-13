@@ -8,6 +8,7 @@ type Params = {
 };
 
 type ProductType = "pet" | "item" | "key" | "person";
+type TagStatus = "active" | "inactive";
 
 const ALERT_OPTIONS_BY_TYPE: Record<ProductType, string[]> = {
   pet: [
@@ -49,6 +50,12 @@ function normalizeProductType(value: unknown): ProductType {
   return "item";
 }
 
+function normalizeStatus(value: unknown, fallback: TagStatus = "active"): TagStatus {
+  if (value === "inactive") return "inactive";
+  if (value === "active") return "active";
+  return fallback;
+}
+
 export async function GET(request: Request, { params }: Params) {
   try {
     const { code } = await params;
@@ -86,6 +93,7 @@ export async function GET(request: Request, { params }: Params) {
         allowDirectWhatsapp: Boolean(tag.contactOptions?.allowDirectWhatsapp)
       },
       recovery: tag.recovery,
+      status: tag.status === "inactive" ? "inactive" : "active",
       managePath,
       manageLink: `${origin}${managePath}`
     });
@@ -169,6 +177,11 @@ export async function POST(request: Request, { params }: Params) {
       email: getString(body.recovery?.email)
     };
 
+    const nextStatus = normalizeStatus(
+      body.status,
+      existing.status === "inactive" ? "inactive" : "active"
+    );
+
     if (!name) {
       return NextResponse.json(
         { error: "İsim / etiket adı zorunludur." },
@@ -236,7 +249,7 @@ export async function POST(request: Request, { params }: Params) {
       allowDirectWhatsapp: contactOptions.allowDirectWhatsapp,
       recoveryPhone: recovery.phone,
       recoveryEmail: recovery.email,
-      status: "active",
+      status: nextStatus,
       visibility,
       showName: visibility.showName,
       showPhone: visibility.showPhone,
@@ -263,6 +276,7 @@ export async function POST(request: Request, { params }: Params) {
       publicLink: `${origin}/p/${updated.code}`,
       managePath,
       manageLink: `${origin}${managePath}`,
+      status: updated.status === "inactive" ? "inactive" : "active",
       warning:
         "Bu size özel yönetim bağlantısıdır. Lütfen güvenli şekilde saklayın ve başkalarıyla paylaşmayın."
     });

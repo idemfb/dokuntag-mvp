@@ -3,6 +3,7 @@
 import { use, useEffect, useMemo, useState } from "react";
 
 type ProductType = "pet" | "item" | "key" | "person";
+type TagStatus = "unclaimed" | "active" | "inactive";
 
 type Visibility = {
   showName?: boolean;
@@ -21,7 +22,6 @@ type PublicProfile = {
   name: string;
   ownerName: string;
   phone: string;
-  email: string;
   city?: string;
   addressDetail?: string;
   distinctiveFeature?: string;
@@ -34,7 +34,7 @@ type PublicProfile = {
     allowDirectCall?: boolean;
     allowDirectWhatsapp?: boolean;
   };
-  status?: "unclaimed" | "active";
+  status?: TagStatus;
   visibility?: Visibility;
   showName?: boolean;
   showPhone?: boolean;
@@ -68,7 +68,7 @@ function getSubtitle(productType?: ProductType) {
   }
 
   if (productType === "key") {
-    return "Anahtarın sahibine güvenli şekilde ulaşmasına yardımcı olabilirsiniz.";
+    return "Anahtarın sahibine güvenli şekilde ulaşmasına yardımcı olun.";
   }
 
   return "Eşyanın sahibine güvenli şekilde ulaşmasına yardımcı olabilirsiniz.";
@@ -98,7 +98,7 @@ function getHelpText(productType?: ProductType) {
   }
 
   if (productType === "key") {
-    return "Bu sayfa, bu anahtarın sahibine güvenli şekilde ulaşılmasına yardımcı olmak için oluşturulmuştur.";
+    return "Bu sayfa, bu anahtarın sahibine güvenli şekilde ulaşmasına yardımcı olmak için oluşturulmuştur.";
   }
 
   return "Bu sayfa, bu eşyanın sahibine güvenli şekilde ulaşmasına yardımcı olmak için oluşturulmuştur.";
@@ -317,6 +317,12 @@ export default function PublicPage({
   async function handleSendMessage(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
 
+    if (data?.status === "inactive") {
+      setSendError("Bu ürün şu an aktif değil. İletişim geçici olarak kapatılmıştır.");
+      setSendSuccess("");
+      return;
+    }
+
     try {
       setSending(true);
       setSendError("");
@@ -405,9 +411,139 @@ export default function PublicPage({
     );
   }
 
+  if (data.status === "inactive") {
+    return (
+      <main className="min-h-screen bg-neutral-100 px-4 py-8 text-neutral-900 sm:px-5 sm:py-10">
+        <div className="mx-auto max-w-2xl space-y-5 sm:space-y-6">
+          <section className="overflow-hidden rounded-[32px] border border-neutral-200 bg-white shadow-sm">
+            <div className="border-b border-neutral-200 bg-gradient-to-br from-white via-neutral-50 to-neutral-100/80 px-6 py-7 sm:px-8 sm:py-9">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <a
+                  href={dokuntagHref}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center rounded-full border border-neutral-200 bg-white px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-neutral-600 transition hover:border-neutral-300 hover:bg-neutral-50"
+                >
+                  Dokuntag
+                </a>
+
+                <div className="inline-flex items-center gap-2 rounded-full bg-neutral-800 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-white shadow-sm">
+                  <span aria-hidden="true">{getProductIcon(data.productType)}</span>
+                  <span>{getBadgeLabel(data.productType)}</span>
+                </div>
+              </div>
+
+              <div className="mt-6 flex items-start gap-4">
+                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-[20px] border border-neutral-200 bg-neutral-50 text-2xl shadow-sm">
+                  {getProductIcon(data.productType)}
+                </div>
+
+                <div className="min-w-0">
+                  <h1 className="text-2xl font-semibold leading-tight sm:text-[32px]">
+                    Bu ürün şu an aktif değil
+                  </h1>
+                  <p className="mt-2 max-w-xl text-sm leading-6 text-neutral-600 sm:text-[15px]">
+                    Bu ürüne ait public profil ve iletişim seçenekleri geçici olarak kapatılmıştır.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="px-6 py-5 sm:px-8">
+              <div className="rounded-[22px] border border-amber-200 bg-amber-50 px-4 py-4 text-sm leading-6 text-amber-900">
+                Profil sahibi bu ürünü pasif duruma almıştır. Bu nedenle iletişim formu ve hızlı iletişim seçenekleri şu an kullanılamaz.
+              </div>
+
+              <div className="mt-4 rounded-[22px] border border-neutral-200 bg-neutral-50 px-4 py-4 text-sm leading-6 text-neutral-700">
+                Etiket yanlışlıkla bulunduysa veya ürün artık kullanımda değilse bu ekran normaldir.
+              </div>
+            </div>
+          </section>
+
+          <section className="overflow-hidden rounded-[30px] border border-neutral-200 bg-white shadow-sm">
+            <div className="border-b border-neutral-200 bg-gradient-to-br from-white via-neutral-50 to-neutral-100/80 px-6 py-6 sm:px-7">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">
+                    Dokuntag
+                  </p>
+                  <h2 className="mt-2 text-xl font-semibold text-neutral-900">
+                    Kayıp olanı sahibine ulaştıran güvenli köprü
+                  </h2>
+                  <p className="mt-2 max-w-xl text-sm leading-6 text-neutral-600">
+                    Dokuntag, fiziksel ürün ile dijital profil arasında bağlantı kurar. Profil sahibi ürünü aktif ettiğinde public bilgiler ve iletişim seçenekleri yeniden açılabilir.
+                  </p>
+                </div>
+
+                <div className="inline-flex items-center rounded-full border border-neutral-200 bg-white px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-neutral-600">
+                  NFC / QR destekli
+                </div>
+              </div>
+            </div>
+
+            <div className="px-6 py-6 sm:px-7">
+              <div className="grid gap-3 sm:grid-cols-3">
+                <StepCard
+                  step="1. Adım"
+                  title="Etikete dokun veya kodu tara"
+                  text="Ürün üzerindeki Dokuntag etiketi okutulur ve güvenli profil sayfası açılır."
+                />
+                <StepCard
+                  step="2. Adım"
+                  title="Public durum kontrol edilir"
+                  text="Ürün pasifse yalnızca kısıtlı bilgilendirme ekranı gösterilir."
+                />
+                <StepCard
+                  step="3. Adım"
+                  title="Aktif olduğunda iletişim açılır"
+                  text="Profil sahibi ürünü yeniden aktive ettiğinde iletişim ve paylaşılan bilgiler geri gelir."
+                />
+              </div>
+
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                <FeatureCard
+                  title="Neden bu ekran görünüyor?"
+                  text="Profil sahibi ürünü tamamen silmeden geçici olarak devre dışı bırakmış olabilir."
+                />
+                <FeatureCard
+                  title="Ne işe yarar?"
+                  text="Kullanılmayan, kaybolmayan ya da geçici olarak kapatılmak istenen ürünlerde public erişimi durdurur."
+                />
+              </div>
+
+              <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="text-sm leading-6 text-neutral-600">
+                  Dokuntag hakkında daha fazla bilgi almak veya sistemin nasıl çalıştığını görmek için aşağıdaki bağlantıları kullanabilirsiniz.
+                </div>
+
+                <div className="flex flex-wrap gap-3">
+                  <a
+                    href={dokuntagHref}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="rounded-2xl bg-neutral-800 px-4 py-3 text-sm font-medium text-white transition hover:bg-neutral-700"
+                  >
+                    Dokuntag’ı incele
+                  </a>
+                  <a
+                    href={howItWorksHref}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm font-medium transition hover:border-neutral-400 hover:bg-neutral-50"
+                  >
+                    Nasıl çalışır
+                  </a>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+      </main>
+    );
+  }
+
   const showName = getVisibleFlag(data, "showName");
   const showPhone = getVisibleFlag(data, "showPhone");
-  const showEmail = getVisibleFlag(data, "showEmail");
   const showCity = getVisibleFlag(data, "showCity");
   const showAddressDetail = getVisibleFlag(data, "showAddressDetail");
   const showPetName = getVisibleFlag(data, "showPetName");
@@ -424,7 +560,6 @@ export default function PublicPage({
     (showName && Boolean(data.ownerName)) ||
     showSecondaryNameSeparately ||
     (showPhone && Boolean(data.phone)) ||
-    (showEmail && Boolean(data.email)) ||
     (showCity && Boolean(data.city)) ||
     (showAddressDetail && Boolean(data.addressDetail)) ||
     Boolean(data.distinctiveFeature) ||
@@ -538,10 +673,6 @@ export default function PublicPage({
 
               {showPhone && data.phone ? (
                 <InfoRow label="Telefon" value={data.phone} />
-              ) : null}
-
-              {showEmail && data.email ? (
-                <InfoRow label="E-posta" value={data.email} />
               ) : null}
 
               {showCity && data.city ? (
@@ -677,10 +808,9 @@ export default function PublicPage({
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-medium text-neutral-900">
+              <label className="mb-3 block text-sm font-medium text-neutral-900">
                 Size nasıl ulaşılmasını istersiniz?
               </label>
-
               <div className="grid gap-3 sm:grid-cols-3">
                 <ContactOptionCard
                   label="Telefon"
@@ -698,6 +828,9 @@ export default function PublicPage({
                   onChange={setContactEmail}
                 />
               </div>
+              <p className="mt-3 text-xs leading-5 text-neutral-500">
+                İsterseniz birden fazla seçenek işaretleyebilirsiniz.
+              </p>
             </div>
 
             <div>
@@ -713,96 +846,14 @@ export default function PublicPage({
               />
             </div>
 
-            <div className="rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-4 text-xs leading-5 text-neutral-600">
-              Bu form kötüye kullanım ve spam’e karşı korunmaktadır.
-            </div>
-
             <button
               type="submit"
               disabled={sending}
-              className="w-full rounded-2xl bg-neutral-800 px-5 py-4 text-sm font-medium text-white transition hover:bg-neutral-700 disabled:cursor-not-allowed disabled:opacity-60"
+              className="w-full rounded-2xl bg-neutral-900 px-5 py-4 text-sm font-medium text-white transition hover:bg-neutral-800 disabled:opacity-60"
             >
               {sending ? "Gönderiliyor..." : "Mesaj gönder"}
             </button>
           </form>
-        </section>
-
-        <section className="overflow-hidden rounded-[30px] border border-neutral-200 bg-white shadow-sm">
-          <div className="border-b border-neutral-200 bg-gradient-to-br from-white via-neutral-50 to-neutral-100/80 px-6 py-6 sm:px-7">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">
-                  Dokuntag
-                </p>
-                <h2 className="mt-2 text-xl font-semibold text-neutral-900">
-                  Kayıp olanı sahibine ulaştıran güvenli köprü
-                </h2>
-                <p className="mt-2 max-w-xl text-sm leading-6 text-neutral-600">
-                  Dokuntag, fiziksel ürün ile dijital profil arasında bağlantı kurar. Bulan kişi hızlıca bilgi görür, profil sahibine güvenli şekilde ulaşır.
-                </p>
-              </div>
-
-              <div className="inline-flex items-center rounded-full border border-neutral-200 bg-white px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-neutral-600">
-                NFC / QR destekli
-              </div>
-            </div>
-          </div>
-
-          <div className="px-6 py-6 sm:px-7">
-            <div className="grid gap-3 sm:grid-cols-3">
-              <StepCard
-                step="1. Adım"
-                title="Etikete dokun veya kodu tara"
-                text="Ürün üzerindeki Dokuntag etiketi okutulur ve güvenli profil sayfası açılır."
-              />
-              <StepCard
-                step="2. Adım"
-                title="Paylaşılan bilgileri gör"
-                text="Profil sahibi hangi bilgileri açtıysa yalnızca onlar görünür."
-              />
-              <StepCard
-                step="3. Adım"
-                title="Güvenli şekilde iletişim kur"
-                text="Mesaj formu, arama veya WhatsApp ile sahibine hızlıca ulaşılabilir."
-              />
-            </div>
-
-            <div className="mt-4 grid gap-3 sm:grid-cols-2">
-              <FeatureCard
-                title="Neden güvenli?"
-                text="Profil sahibi hangi alanların görünmesini istiyorsa sadece onlar paylaşılır. Diğer bilgiler gizli kalır."
-              />
-              <FeatureCard
-                title="Ne işe yarar?"
-                text="Kayıp eşya, anahtar, evcil hayvan veya benzeri ürünlerin sahibine daha hızlı ulaşmasına yardımcı olur."
-              />
-            </div>
-
-            <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div className="text-sm leading-6 text-neutral-600">
-                Dokuntag hakkında daha fazla bilgi almak veya sistemin nasıl çalıştığını görmek için aşağıdaki bağlantıları kullanabilirsiniz.
-              </div>
-
-              <div className="flex flex-wrap gap-3">
-                <a
-                  href={dokuntagHref}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="rounded-2xl bg-neutral-800 px-4 py-3 text-sm font-medium text-white transition hover:bg-neutral-700"
-                >
-                  Dokuntag’ı incele
-                </a>
-                <a
-                  href={howItWorksHref}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm font-medium transition hover:border-neutral-400 hover:bg-neutral-50"
-                >
-                  Nasıl çalışır
-                </a>
-              </div>
-            </div>
-          </div>
         </section>
       </div>
     </main>

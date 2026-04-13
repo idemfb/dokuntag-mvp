@@ -7,6 +7,7 @@ type ContactMethod = "phone" | "whatsapp" | "email";
 type MessageFilter = "all" | "unread" | "read" | "pinned" | "archived";
 type MessageSort = "newest" | "oldest" | "unread-first";
 type OpenSection = "basic" | "contact" | "alerts" | "recovery" | "messages" | null;
+type TagStatus = "active" | "inactive";
 
 const ALERT_OPTIONS_BY_TYPE: Record<ProductType, string[]> = {
   pet: [
@@ -75,6 +76,7 @@ type ManageResponse = {
     phone: string;
     email: string;
   };
+  status?: TagStatus;
   managePath: string;
   manageLink: string;
 };
@@ -86,6 +88,7 @@ type ManageSubmitResponse = {
   publicLink: string;
   managePath: string;
   manageLink: string;
+  status?: TagStatus;
   warning?: string;
 };
 
@@ -158,6 +161,7 @@ function buildSearchText(log: NotifyLogItem) {
 
 function buildFormSnapshot(input: {
   productType: ProductType;
+  status: TagStatus;
   name: string;
   ownerName: string;
   phone: string;
@@ -182,6 +186,7 @@ function buildFormSnapshot(input: {
 }) {
   return JSON.stringify({
     productType: input.productType,
+    status: input.status,
     name: input.name.trim(),
     ownerName: input.ownerName.trim(),
     phone: input.phone.trim(),
@@ -213,7 +218,8 @@ function SectionCard({
   isOpen,
   onToggle,
   children,
-  right
+  right,
+  sectionRef
 }: {
   id: Exclude<OpenSection, null>;
   title: string;
@@ -222,9 +228,13 @@ function SectionCard({
   onToggle: (id: Exclude<OpenSection, null>) => void;
   children: React.ReactNode;
   right?: React.ReactNode;
+  sectionRef?: React.RefObject<HTMLElement | null>;
 }) {
   return (
-    <section className="rounded-[1.75rem] border border-neutral-200 bg-white shadow-sm">
+    <section
+      ref={sectionRef}
+      className="scroll-mt-24 rounded-[1.75rem] border border-neutral-200 bg-white shadow-sm"
+    >
       <button
         type="button"
         onClick={() => onToggle(id)}
@@ -375,6 +385,43 @@ function maskEmail(email: string) {
   return `${safeName}@${domain}`;
 }
 
+function SectionNavButton({
+  label,
+  isActive,
+  onClick,
+  badge
+}: {
+  label: string;
+  isActive: boolean;
+  onClick: () => void;
+  badge?: string | number;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition ${
+        isActive
+          ? "border-neutral-900 bg-neutral-900 text-white shadow-sm"
+          : "border-neutral-300 bg-white text-neutral-700 hover:border-neutral-400 hover:bg-neutral-50"
+      }`}
+    >
+      <span>{label}</span>
+      {badge !== undefined ? (
+        <span
+          className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${
+            isActive
+              ? "bg-white/15 text-white"
+              : "border border-neutral-200 bg-neutral-50 text-neutral-600"
+          }`}
+        >
+          {badge}
+        </span>
+      ) : null}
+    </button>
+  );
+}
+
 export default function ManagePage({
   params
 }: {
@@ -384,6 +431,8 @@ export default function ManagePage({
   const [token, setToken] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [statusSaving, setStatusSaving] = useState(false);
+  const [confirmDeactivate, setConfirmDeactivate] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [manageLink, setManageLink] = useState("");
@@ -394,6 +443,7 @@ export default function ManagePage({
   const [openSection, setOpenSection] = useState<OpenSection>("basic");
 
   const [productType, setProductType] = useState<ProductType>("item");
+  const [status, setStatus] = useState<TagStatus>("active");
   const [name, setName] = useState("");
   const [ownerName, setOwnerName] = useState("");
   const [phone, setPhone] = useState("");
@@ -406,7 +456,7 @@ export default function ManagePage({
   const [alerts, setAlerts] = useState<string[]>([]);
   const [showName, setShowName] = useState(true);
   const [showPhone, setShowPhone] = useState(true);
-  const [showEmail, setShowEmail] = useState(true);
+  const [showEmail] = useState(false);
   const [showCity, setShowCity] = useState(false);
   const [showAddressDetail, setShowAddressDetail] = useState(false);
   const [showPetName, setShowPetName] = useState(true);
@@ -429,10 +479,34 @@ export default function ManagePage({
   const [messageSort, setMessageSort] = useState<MessageSort>("newest");
   const [messageSearch, setMessageSearch] = useState("");
 
+  const basicRef = useRef<HTMLElement | null>(null);
+  const contactRef = useRef<HTMLElement | null>(null);
+  const alertsRef = useRef<HTMLElement | null>(null);
+  const recoveryRef = useRef<HTMLElement | null>(null);
   const messagesRef = useRef<HTMLElement | null>(null);
+
+  function getSectionRef(section: Exclude<OpenSection, null>) {
+    if (section === "basic") return basicRef;
+    if (section === "contact") return contactRef;
+    if (section === "alerts") return alertsRef;
+    if (section === "recovery") return recoveryRef;
+    return messagesRef;
+  }
 
   function toggleSection(id: Exclude<OpenSection, null>) {
     setOpenSection((prev) => (prev === id ? null : id));
+  }
+
+  function openAndScrollToSection(section: Exclude<OpenSection, null>) {
+    setOpenSection(section);
+
+    window.setTimeout(() => {
+      const targetRef = getSectionRef(section);
+      targetRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start"
+      });
+    }, 50);
   }
 
   useEffect(() => {
@@ -499,6 +573,7 @@ export default function ManagePage({
         const manageData = data as ManageResponse;
 
         const nextProductType = manageData.productType || "item";
+        const nextStatus = manageData.status === "inactive" ? "inactive" : "active";
         const nextName = manageData.profile.name || "";
         const nextOwnerName = manageData.profile.ownerName || "";
         const nextPhone = manageData.profile.phone || "";
@@ -514,7 +589,6 @@ export default function ManagePage({
           : [];
         const nextShowName = Boolean(manageData.visibility?.showName);
         const nextShowPhone = Boolean(manageData.visibility?.showPhone);
-        const nextShowEmail = Boolean(manageData.visibility?.showEmail);
         const nextShowCity = Boolean(manageData.visibility?.showCity);
         const nextShowAddressDetail = Boolean(
           manageData.visibility?.showAddressDetail
@@ -531,6 +605,7 @@ export default function ManagePage({
         const nextRecoveryEmail = manageData.recovery?.email || "";
 
         setProductType(nextProductType);
+        setStatus(nextStatus);
         setName(nextName);
         setOwnerName(nextOwnerName);
         setPhone(nextPhone);
@@ -543,7 +618,6 @@ export default function ManagePage({
         setAlerts(nextAlerts);
         setShowName(nextShowName);
         setShowPhone(nextShowPhone);
-        setShowEmail(nextShowEmail);
         setShowCity(nextShowCity);
         setShowAddressDetail(nextShowAddressDetail);
         setShowPetName(nextShowPetName);
@@ -553,10 +627,12 @@ export default function ManagePage({
         setRecoveryPhone(nextRecoveryPhone);
         setRecoveryEmail(nextRecoveryEmail);
         setManageLink(manageData.manageLink || "");
+        setConfirmDeactivate(false);
 
         setInitialSnapshot(
           buildFormSnapshot({
             productType: nextProductType,
+            status: nextStatus,
             name: nextName,
             ownerName: nextOwnerName,
             phone: nextPhone,
@@ -569,7 +645,7 @@ export default function ManagePage({
             alerts: nextAlerts,
             showName: nextShowName,
             showPhone: nextShowPhone,
-            showEmail: nextShowEmail,
+            showEmail: false,
             showCity: nextShowCity,
             showAddressDetail: nextShowAddressDetail,
             showPetName: nextShowPetName,
@@ -617,12 +693,6 @@ export default function ManagePage({
   }, [addressDetail, showAddressDetail]);
 
   useEffect(() => {
-    if (!email.trim() && showEmail) {
-      setShowEmail(false);
-    }
-  }, [email, showEmail]);
-
-  useEffect(() => {
     if (!note.trim() && showNote) {
       setShowNote(false);
     }
@@ -646,7 +716,6 @@ export default function ManagePage({
     return [
       showName,
       showPhone,
-      showEmail,
       showCity,
       showAddressDetail,
       showPetName,
@@ -655,7 +724,6 @@ export default function ManagePage({
   }, [
     showName,
     showPhone,
-    showEmail,
     showCity,
     showAddressDetail,
     showPetName,
@@ -669,6 +737,7 @@ export default function ManagePage({
   const currentSnapshot = useMemo(() => {
     return buildFormSnapshot({
       productType,
+      status,
       name,
       ownerName,
       phone,
@@ -681,7 +750,7 @@ export default function ManagePage({
       alerts,
       showName,
       showPhone,
-      showEmail,
+      showEmail: false,
       showCity,
       showAddressDetail,
       showPetName,
@@ -693,6 +762,7 @@ export default function ManagePage({
     });
   }, [
     productType,
+    status,
     name,
     ownerName,
     phone,
@@ -705,7 +775,6 @@ export default function ManagePage({
     alerts,
     showName,
     showPhone,
-    showEmail,
     showCity,
     showAddressDetail,
     showPetName,
@@ -819,17 +888,6 @@ export default function ManagePage({
     );
   }
 
-  function scrollToMessages() {
-    setOpenSection("messages");
-
-    setTimeout(() => {
-      messagesRef.current?.scrollIntoView({
-        behavior: "smooth",
-        block: "start"
-      });
-    }, 50);
-  }
-
   async function copyManageLink() {
     if (!manageLink) return;
     await navigator.clipboard.writeText(manageLink);
@@ -934,6 +992,120 @@ export default function ManagePage({
     }
   }
 
+  async function handleStatusToggle() {
+    if (!code || !token || statusSaving) return;
+
+    const nextStatus: TagStatus = status === "inactive" ? "active" : "inactive";
+
+    if (status === "active" && !confirmDeactivate) {
+      setConfirmDeactivate(true);
+      setError("");
+      setSuccess("");
+      return;
+    }
+
+    try {
+      setStatusSaving(true);
+      setError("");
+      setSuccess("");
+
+      const res = await fetch(
+        `/api/manage/${code}?token=${encodeURIComponent(token)}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            productType,
+            name,
+            ownerName,
+            phone,
+            email,
+            city,
+            addressDetail,
+            distinctiveFeature,
+            petName,
+            note,
+            alerts,
+            status: nextStatus,
+            visibility: {
+              showName,
+              showPhone,
+              showEmail: false,
+              showCity,
+              showAddressDetail,
+              showPetName,
+              showNote
+            },
+            contactOptions: {
+              allowDirectCall,
+              allowDirectWhatsapp
+            },
+            recovery: {
+              phone: recoveryPhone,
+              email: recoveryEmail
+            }
+          })
+        }
+      );
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data?.error || "Durum güncellenemedi.");
+      }
+
+      const submitData = data as ManageSubmitResponse;
+      const resolvedStatus = submitData.status === "inactive" ? "inactive" : nextStatus;
+
+      setStatus(resolvedStatus);
+      setManageLink(submitData.manageLink || "");
+      setConfirmDeactivate(false);
+
+      if (submitData.warning) {
+        setWarning(submitData.warning);
+      }
+
+      const nextSnapshot = buildFormSnapshot({
+        productType,
+        status: resolvedStatus,
+        name,
+        ownerName,
+        phone,
+        email,
+        city,
+        addressDetail,
+        distinctiveFeature,
+        petName,
+        note,
+        alerts,
+        showName,
+        showPhone,
+        showEmail: false,
+        showCity,
+        showAddressDetail,
+        showPetName,
+        showNote,
+        allowDirectCall,
+        allowDirectWhatsapp,
+        recoveryPhone,
+        recoveryEmail
+      });
+
+      setInitialSnapshot(nextSnapshot);
+      setSuccess(
+        resolvedStatus === "inactive"
+          ? "Ürün pasif duruma alındı. Public sayfada iletişim ve görünür profil kapatıldı."
+          : "Ürün yeniden aktif edildi. Public sayfa ve iletişim seçenekleri tekrar açıldı."
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Bir hata oluştu.");
+    } finally {
+      setStatusSaving(false);
+    }
+  }
+
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
 
@@ -961,10 +1133,11 @@ export default function ManagePage({
             petName,
             note,
             alerts,
+            status,
             visibility: {
               showName,
               showPhone,
-              showEmail,
+              showEmail: false,
               showCity,
               showAddressDetail,
               showPetName,
@@ -989,15 +1162,48 @@ export default function ManagePage({
       }
 
       const submitData = data as ManageSubmitResponse;
+      const resolvedStatus = submitData.status === "inactive" ? "inactive" : status;
+
+      setStatus(resolvedStatus);
+      setManageLink(submitData.manageLink || "");
+      setConfirmDeactivate(false);
+
       setSuccess(
         submitData.message ||
           "Değişiklikler kaydedildi. Herkese açık profil otomatik olarak güncellendi."
       );
-      setManageLink(submitData.manageLink || "");
+
       if (submitData.warning) {
         setWarning(submitData.warning);
       }
-      setInitialSnapshot(currentSnapshot);
+
+      setInitialSnapshot(
+        buildFormSnapshot({
+          productType,
+          status: resolvedStatus,
+          name,
+          ownerName,
+          phone,
+          email,
+          city,
+          addressDetail,
+          distinctiveFeature,
+          petName,
+          note,
+          alerts,
+          showName,
+          showPhone,
+          showEmail: false,
+          showCity,
+          showAddressDetail,
+          showPetName,
+          showNote,
+          allowDirectCall,
+          allowDirectWhatsapp,
+          recoveryPhone,
+          recoveryEmail
+        })
+      );
 
       if (typeof window !== "undefined") {
         window.scrollTo({ top: 0, behavior: "smooth" });
@@ -1082,7 +1288,7 @@ export default function ManagePage({
                   rel="noreferrer"
                   className="rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm font-medium transition hover:border-neutral-400 hover:bg-neutral-50"
                 >
-                  Public sayfayı aç
+                  Herkese açık profili aç
                 </a>
               </div>
 
@@ -1090,8 +1296,14 @@ export default function ManagePage({
                 <span className="rounded-full border border-neutral-300 bg-white px-3 py-1 text-xs font-medium text-neutral-700">
                   Kod: {code}
                 </span>
-                <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700">
-                  Durum: aktif
+                <span
+                  className={`rounded-full px-3 py-1 text-xs font-medium ${
+                    status === "inactive"
+                      ? "border border-amber-200 bg-amber-50 text-amber-800"
+                      : "border border-emerald-200 bg-emerald-50 text-emerald-700"
+                  }`}
+                >
+                  Durum: {status === "inactive" ? "pasif" : "aktif"}
                 </span>
                 <span className="rounded-full border border-neutral-300 bg-white px-3 py-1 text-xs font-medium text-neutral-700">
                   Tip: {getProductTypeLabel(productType)}
@@ -1107,14 +1319,84 @@ export default function ManagePage({
             <div className="p-5 sm:p-6">
               <div className="rounded-[1.5rem] border border-neutral-200 bg-neutral-50 px-4 py-4">
                 <p className="text-xs uppercase tracking-[0.16em] text-neutral-500">
-                  Aktif ürün
+                  {status === "inactive" ? "Pasif ürün" : "Aktif ürün"}
                 </p>
                 <p className="mt-2 text-xl font-semibold text-neutral-900">
                   {displayPrimaryName}
                 </p>
                 <p className="mt-2 text-sm leading-6 text-neutral-600">
-                  Burada yaptığınız değişiklikler kaydedildiğinde herkese açık profil otomatik olarak güncellenir.
+                  {status === "inactive"
+                    ? "Bu ürün şu anda public tarafta kapalıdır. Profil ve iletişim seçenekleri yalnızca yeniden aktifleştirildiğinde görünür."
+                    : "Burada yaptığınız değişiklikler kaydedildiğinde herkese açık profil otomatik olarak güncellenir."}
                 </p>
+
+                <div className="mt-4 flex flex-wrap gap-3">
+                  <button
+                    type="button"
+                    onClick={() => void handleStatusToggle()}
+                    disabled={statusSaving}
+                    className={`rounded-2xl px-4 py-3 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-60 ${
+                      status === "inactive"
+                        ? "border border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100"
+                        : confirmDeactivate
+                          ? "border border-red-300 bg-red-50 text-red-700 hover:bg-red-100"
+                          : "border border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100"
+                    }`}
+                  >
+                    {statusSaving
+                      ? "İşleniyor..."
+                      : status === "inactive"
+                        ? "Yeniden aktifleştir"
+                        : confirmDeactivate
+                          ? "Pasife almayı onayla"
+                          : "Ürünü pasife al"}
+                  </button>
+
+                  {status === "active" && confirmDeactivate ? (
+                    <button
+                      type="button"
+                      onClick={() => setConfirmDeactivate(false)}
+                      className="rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm font-medium transition hover:border-neutral-400 hover:bg-neutral-50"
+                    >
+                      Vazgeç
+                    </button>
+                  ) : null}
+                </div>
+
+                {status === "active" && confirmDeactivate ? (
+                  <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm leading-6 text-amber-900">
+                    Pasife alındığında public profilde bilgiler ve iletişim seçenekleri kapanır. Manage erişiminiz devam eder.
+                  </div>
+                ) : null}
+              </div>
+
+              <div className="mt-5 flex flex-wrap gap-2">
+                <SectionNavButton
+                  label="Temel bilgiler"
+                  isActive={openSection === "basic"}
+                  onClick={() => openAndScrollToSection("basic")}
+                />
+                <SectionNavButton
+                  label="İletişim"
+                  isActive={openSection === "contact"}
+                  onClick={() => openAndScrollToSection("contact")}
+                />
+                <SectionNavButton
+                  label="Uyarılar"
+                  isActive={openSection === "alerts"}
+                  onClick={() => openAndScrollToSection("alerts")}
+                />
+                <SectionNavButton
+                  label="Kurtarma"
+                  isActive={openSection === "recovery"}
+                  onClick={() => openAndScrollToSection("recovery")}
+                />
+                <SectionNavButton
+                  label="Mesajlar"
+                  isActive={openSection === "messages"}
+                  onClick={() => openAndScrollToSection("messages")}
+                  badge={unreadCount > 0 ? unreadCount : undefined}
+                />
               </div>
             </div>
           </div>
@@ -1123,7 +1405,7 @@ export default function ManagePage({
         {unreadCount > 0 ? (
           <button
             type="button"
-            onClick={scrollToMessages}
+            onClick={() => openAndScrollToSection("messages")}
             className="mb-5 flex w-full items-center justify-between rounded-[1.5rem] border border-amber-300 bg-amber-50 px-5 py-4 text-left shadow-sm transition hover:border-amber-400 hover:bg-amber-100"
           >
             <div>
@@ -1183,6 +1465,7 @@ export default function ManagePage({
             description="Ürün ve profil bilgilerini düzenleyin."
             isOpen={openSection === "basic"}
             onToggle={toggleSection}
+            sectionRef={basicRef}
           >
             <div className="grid gap-4">
               <div className="grid gap-4 sm:grid-cols-2">
@@ -1280,6 +1563,7 @@ export default function ManagePage({
             description="İletişim bilgilerini girin ve hangileri görünsün seçin."
             isOpen={openSection === "contact"}
             onToggle={toggleSection}
+            sectionRef={contactRef}
           >
             <div className="grid gap-4">
               <div className="grid gap-4 sm:grid-cols-2">
@@ -1324,14 +1608,6 @@ export default function ManagePage({
                     className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
                     placeholder="ornek@mail.com"
                   />
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    <InlineToggle
-                      checked={showEmail}
-                      disabled={!email.trim()}
-                      label="E-posta görünsün"
-                      onChange={setShowEmail}
-                    />
-                  </div>
                 </Field>
               </div>
 
@@ -1379,6 +1655,7 @@ export default function ManagePage({
             description="İsterseniz dikkat çekmesi gereken notları seçin."
             isOpen={openSection === "alerts"}
             onToggle={toggleSection}
+            sectionRef={alertsRef}
           >
             <div className="grid gap-3">
               {allowedAlerts.map((item) => (
@@ -1398,6 +1675,7 @@ export default function ManagePage({
             description="Yedek iletişim ve bağlantıları burada tutun."
             isOpen={openSection === "recovery"}
             onToggle={toggleSection}
+            sectionRef={recoveryRef}
           >
             <div className="grid gap-4">
               <div className="grid gap-4 sm:grid-cols-2">
@@ -1465,8 +1743,9 @@ export default function ManagePage({
                 </span>
               ) : null
             }
+            sectionRef={messagesRef}
           >
-            <section ref={messagesRef}>
+            <section>
               <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                 <div>
                   <p className="text-sm leading-6 text-neutral-600">
@@ -1688,7 +1967,7 @@ export default function ManagePage({
           <div className="flex flex-col gap-3 sm:flex-row">
             <button
               type="submit"
-              disabled={saving}
+              disabled={saving || statusSaving}
               className="rounded-2xl bg-neutral-800 px-5 py-4 text-sm font-medium text-white transition hover:bg-neutral-700 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {saving ? "Kaydediliyor..." : isDirty ? "Değişiklikleri kaydet" : "Kaydedilecek değişiklik yok"}
@@ -1700,7 +1979,7 @@ export default function ManagePage({
               rel="noreferrer"
               className="rounded-2xl border border-neutral-300 bg-white px-5 py-4 text-center text-sm font-medium transition hover:border-neutral-400 hover:bg-neutral-50"
             >
-              Herkese açık sayfayı aç
+              Herkese açık profili aç
             </a>
           </div>
         </form>

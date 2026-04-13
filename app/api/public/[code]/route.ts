@@ -25,6 +25,59 @@ export async function GET(
       );
     }
 
+    const resolvedStatus =
+      tag.status === "inactive" ? "inactive" : tag.status || "unclaimed";
+
+    if (resolvedStatus === "inactive") {
+      return NextResponse.json({
+        success: true,
+        data: {
+          publicCode: tag.code,
+          oldCode: tag.oldCode || "",
+          productType: tag.productType || "item",
+
+          name: "",
+          ownerName: "",
+          phone: "",
+          city: "",
+          addressDetail: "",
+          distinctiveFeature: "",
+          petName: "",
+          note: "",
+
+          alerts: [],
+
+          allowDirectCall: false,
+          allowDirectWhatsapp: false,
+
+          contactOptions: {
+            allowDirectCall: false,
+            allowDirectWhatsapp: false
+          },
+
+          visibility: {
+            showName: false,
+            showPhone: false,
+            showEmail: false,
+            showCity: false,
+            showAddressDetail: false,
+            showPetName: false,
+            showNote: false
+          },
+
+          showName: false,
+          showPhone: false,
+          showEmail: false,
+          showCity: false,
+          showAddressDetail: false,
+          showPetName: false,
+          showNote: false,
+
+          status: "inactive"
+        }
+      });
+    }
+
     return NextResponse.json({
       success: true,
       data: {
@@ -35,7 +88,6 @@ export async function GET(
         name: tag.profile?.name || "",
         ownerName: tag.profile?.ownerName || "",
         phone: tag.profile?.phone || "",
-        email: tag.profile?.email || "",
         city: tag.profile?.city || "",
         addressDetail: tag.profile?.addressDetail || "",
         distinctiveFeature: tag.profile?.distinctiveFeature || "",
@@ -55,23 +107,22 @@ export async function GET(
         visibility: {
           showName: Boolean(tag.visibility?.showName),
           showPhone: Boolean(tag.visibility?.showPhone),
-          showEmail: Boolean(tag.visibility?.showEmail),
+          showEmail: false,
           showCity: Boolean(tag.visibility?.showCity),
           showAddressDetail: Boolean(tag.visibility?.showAddressDetail),
           showPetName: Boolean(tag.visibility?.showPetName),
           showNote: Boolean(tag.visibility?.showNote)
         },
 
-        // legacy fallback
         showName: Boolean(tag.visibility?.showName),
         showPhone: Boolean(tag.visibility?.showPhone),
-        showEmail: Boolean(tag.visibility?.showEmail),
+        showEmail: false,
         showCity: Boolean(tag.visibility?.showCity),
         showAddressDetail: Boolean(tag.visibility?.showAddressDetail),
         showPetName: Boolean(tag.visibility?.showPetName),
         showNote: Boolean(tag.visibility?.showNote),
 
-        status: tag.status || "unclaimed"
+        status: resolvedStatus
       }
     });
   } catch (error) {

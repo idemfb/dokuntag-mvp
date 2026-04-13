@@ -1,6 +1,30 @@
 import { readDB, writeDB } from "@/lib/db";
 
 export type ProductType = "pet" | "item" | "key" | "person";
+export type TagStatus = "unclaimed" | "active" | "inactive";
+export type TransferStatus = "pending" | "used" | "expired" | "cancelled";
+export type RecoveryEntryType = "my" | "recover";
+export type RecoverySessionStatus = "pending" | "used" | "expired";
+
+export type TagTransfer = {
+  token?: string;
+  status?: TransferStatus;
+  createdAt?: string;
+  expiresAt?: string;
+  usedAt?: string;
+  cancelledAt?: string;
+  fromManageToken?: string;
+};
+
+export type RecoverySession = {
+  token?: string;
+  email?: string;
+  entryType?: RecoveryEntryType;
+  status?: RecoverySessionStatus;
+  createdAt?: string;
+  expiresAt?: string;
+  usedAt?: string;
+};
 
 export type TagRecord = {
   publicCode: string;
@@ -20,13 +44,14 @@ export type TagRecord = {
   alerts?: string[];
   allowDirectCall?: boolean;
   allowDirectWhatsapp?: boolean;
-  status?: "unclaimed" | "active";
+  status?: TagStatus;
   createdAt?: string;
   updatedAt?: string;
   recovery?: {
     phone?: string;
     email?: string;
   };
+  recoverySession?: RecoverySession;
   visibility?: {
     showName?: boolean;
     showPhone?: boolean;
@@ -55,6 +80,8 @@ export type TagRecord = {
     allowDirectWhatsapp?: boolean;
   };
 
+  transfer?: TagTransfer;
+
   showName?: boolean;
   showPhone?: boolean;
   showEmail?: boolean;
@@ -68,7 +95,7 @@ export type TagView = {
   code: string;
   oldCode?: string;
   manageToken: string;
-  status: "unclaimed" | "active";
+  status: TagStatus;
   productType: ProductType;
   profile: {
     name: string;
@@ -107,6 +134,14 @@ export type TagView = {
   };
 };
 
+export type RecoveryListedItem = {
+  code: string;
+  productType: ProductType;
+  status: TagStatus;
+  petName: string;
+  ownerName?: string;
+};
+
 type UpsertTagInput = {
   code: string;
   productType?: ProductType;
@@ -124,7 +159,7 @@ type UpsertTagInput = {
   allowDirectWhatsapp?: boolean;
   recoveryPhone?: string;
   recoveryEmail?: string;
-  status?: "unclaimed" | "active";
+  status?: TagStatus;
   visibility?: {
     showName?: boolean;
     showPhone?: boolean;
@@ -165,7 +200,7 @@ type UpdateByManageTokenInput = {
   allowDirectWhatsapp?: boolean;
   recoveryPhone?: string;
   recoveryEmail?: string;
-  status?: "unclaimed" | "active";
+  status?: TagStatus;
   visibility?: {
     showName?: boolean;
     showPhone?: boolean;
@@ -182,6 +217,34 @@ type UpdateByManageTokenInput = {
   showAddressDetail?: boolean;
   showPetName?: boolean;
   showNote?: boolean;
+};
+
+type ClaimTransferInput = {
+  transferToken: string;
+  productType?: ProductType;
+  tagName: string;
+  ownerName?: string;
+  phone?: string;
+  email?: string;
+  city?: string;
+  addressDetail?: string;
+  distinctiveFeature?: string;
+  petName: string;
+  note?: string;
+  alerts?: string[];
+  allowDirectCall?: boolean;
+  allowDirectWhatsapp?: boolean;
+  recoveryPhone?: string;
+  recoveryEmail?: string;
+  visibility?: {
+    showName?: boolean;
+    showPhone?: boolean;
+    showEmail?: boolean;
+    showCity?: boolean;
+    showAddressDetail?: boolean;
+    showPetName?: boolean;
+    showNote?: boolean;
+  };
 };
 
 function getProducts(): TagRecord[] {
@@ -304,6 +367,12 @@ function resolveAllowDirectWhatsapp(product: TagRecord) {
   return false;
 }
 
+function resolveStatus(product: TagRecord): TagStatus {
+  if (product.status === "inactive") return "inactive";
+  if (product.status === "active") return "active";
+  return "unclaimed";
+}
+
 function resolveVisibility(product: TagRecord) {
   return {
     showName:
@@ -395,7 +464,7 @@ function mapProductToTagView(product: TagRecord): TagView {
     code: product.publicCode,
     oldCode: product.oldCode,
     manageToken: product.manageToken,
-    status: product.status === "active" ? "active" : "unclaimed",
+    status: resolveStatus(product),
     productType: product.productType || "item",
     profile: {
       name: getProfileName(product),
@@ -423,6 +492,41 @@ function mapProductToTagView(product: TagRecord): TagView {
       allowDirectWhatsapp
     },
     recovery: getRecovery(product)
+  };
+}
+
+function getTransferStatus(product: TagRecord): TransferStatus | null {
+  const transfer = product.transfer;
+  if (!transfer?.token) return null;
+
+  if (transfer.status === "used") return "used";
+  if (transfer.status === "cancelled") return "cancelled";
+
+  const expiresAt = transfer.expiresAt ? new Date(transfer.expiresAt).getTime() : 0;
+  if (expiresAt && expiresAt < Date.now()) return "expired";
+
+  return "pending";
+}
+
+function getRecoverySessionStatus(product: TagRecord): RecoverySessionStatus | null {
+  const session = product.recoverySession;
+  if (!session?.token) return null;
+
+  if (session.status === "used") return "used";
+
+  const expiresAt = session.expiresAt ? new Date(session.expiresAt).getTime() : 0;
+  if (expiresAt && expiresAt < Date.now()) return "expired";
+
+  return "pending";
+}
+
+function mapProductToRecoveryListedItem(product: TagRecord): RecoveryListedItem {
+  return {
+    code: product.publicCode,
+    productType: product.productType || "item",
+    status: resolveStatus(product),
+    petName: getPetName(product),
+    ownerName: getOwnerName(product)
   };
 }
 
@@ -844,6 +948,262 @@ export function updateTagByManageToken(input: UpdateByManageTokenInput) {
   return mapProductToTagView(products[index]);
 }
 
+export function createTransferByManageToken(input: {
+  code: string;
+  manageToken: string;
+  expiresInHours?: number;
+}) {
+  const normalizedCode = normalizeCode(input.code);
+  const normalizedToken = String(input.manageToken || "").trim();
+
+  if (!normalizedCode || !normalizedToken) {
+    throw new Error("Geçersiz devir isteği.");
+  }
+
+  const products = getProducts();
+  const index = products.findIndex((item) => {
+    const itemCode = normalizeCode(
+      item.publicCode || (item as { code?: string }).code || ""
+    );
+
+    return (
+      itemCode === normalizedCode &&
+      String(item.manageToken || "").trim() === normalizedToken
+    );
+  });
+
+  if (index === -1) {
+    return null;
+  }
+
+  const now = new Date();
+  const expiresInHours =
+    typeof input.expiresInHours === "number" &&
+    Number.isFinite(input.expiresInHours) &&
+    input.expiresInHours > 0
+      ? input.expiresInHours
+      : 48;
+
+  const expiresAt = new Date(now.getTime() + expiresInHours * 60 * 60 * 1000);
+  const transferToken = crypto.randomUUID();
+  const current = products[index];
+
+  products[index] = {
+    ...current,
+    status: "inactive",
+    updatedAt: now.toISOString(),
+    transfer: {
+      token: transferToken,
+      status: "pending",
+      createdAt: now.toISOString(),
+      expiresAt: expiresAt.toISOString(),
+      fromManageToken: current.manageToken
+    }
+  };
+
+  saveProducts(products);
+
+  return {
+    success: true,
+    code: products[index].publicCode,
+    transferToken,
+    transferPath: `/transfer/${transferToken}`,
+    transferLink: `http://localhost:3000/transfer/${transferToken}`,
+    expiresAt: expiresAt.toISOString(),
+    status: "inactive" as const
+  };
+}
+
+export function getTransferByToken(token: string) {
+  const normalizedToken = String(token || "").trim();
+  if (!normalizedToken) return null;
+
+  const products = getProducts();
+  const product = products.find((item) => {
+    return String(item.transfer?.token || "").trim() === normalizedToken;
+  });
+
+  if (!product || !product.transfer?.token) {
+    return null;
+  }
+
+  const transferStatus = getTransferStatus(product);
+
+  return {
+    code: product.publicCode,
+    productType: product.productType || "item",
+    currentProfile: {
+      name: getProfileName(product),
+      ownerName: getOwnerName(product),
+      phone: getPhone(product),
+      email: getEmail(product),
+      city: getCity(product),
+      addressDetail: getAddressDetail(product),
+      distinctiveFeature: getDistinctiveFeature(product),
+      petName: getPetName(product),
+      note: getNote(product)
+    },
+    transfer: {
+      token: product.transfer.token,
+      status: transferStatus,
+      createdAt: product.transfer.createdAt || "",
+      expiresAt: product.transfer.expiresAt || "",
+      usedAt: product.transfer.usedAt || ""
+    }
+  };
+}
+
+export function claimTransfer(input: ClaimTransferInput) {
+  const normalizedToken = String(input.transferToken || "").trim();
+  if (!normalizedToken) {
+    throw new Error("Geçersiz devir bağlantısı.");
+  }
+
+  const products = getProducts();
+  const index = products.findIndex((item) => {
+    return String(item.transfer?.token || "").trim() === normalizedToken;
+  });
+
+  if (index === -1) {
+    return null;
+  }
+
+  const current = products[index];
+  const transferStatus = getTransferStatus(current);
+
+  if (transferStatus !== "pending") {
+    return {
+      success: false,
+      reason: transferStatus
+    } as const;
+  }
+
+  const nextVisibility = {
+    showName: Boolean(input.visibility?.showName),
+    showPhone: Boolean(input.visibility?.showPhone),
+    showEmail: Boolean(input.visibility?.showEmail),
+    showCity: Boolean(input.visibility?.showCity),
+    showAddressDetail: Boolean(input.visibility?.showAddressDetail),
+    showPetName: Boolean(input.visibility?.showPetName),
+    showNote: Boolean(input.visibility?.showNote)
+  };
+
+  const nextProfile = buildProfile({
+    tagName: input.tagName,
+    ownerName: input.ownerName,
+    phone: input.phone,
+    email: input.email,
+    city: input.city,
+    addressDetail: input.addressDetail,
+    distinctiveFeature: input.distinctiveFeature,
+    petName: input.petName,
+    note: input.note
+  });
+
+  const now = new Date().toISOString();
+  const newManageToken = crypto.randomUUID();
+
+  products[index] = {
+    ...current,
+    manageToken: newManageToken,
+    productType: input.productType ?? current.productType ?? "item",
+    name: nextProfile.name,
+    ownerName: nextProfile.ownerName,
+    phone: nextProfile.phone,
+    email: nextProfile.email,
+    city: nextProfile.city,
+    addressDetail: nextProfile.addressDetail,
+    distinctiveFeature: nextProfile.distinctiveFeature,
+    petName: nextProfile.petName,
+    note: nextProfile.note,
+    alerts: Array.isArray(input.alerts) ? input.alerts : [],
+    allowDirectCall: Boolean(input.allowDirectCall),
+    allowDirectWhatsapp: Boolean(input.allowDirectWhatsapp),
+    status: "active",
+    updatedAt: now,
+    recovery: {
+      phone: input.recoveryPhone || nextProfile.phone,
+      email: input.recoveryEmail || nextProfile.email
+    },
+    visibility: nextVisibility,
+    profile: nextProfile,
+    contactOptions: {
+      allowDirectCall: Boolean(input.allowDirectCall),
+      allowDirectWhatsapp: Boolean(input.allowDirectWhatsapp)
+    },
+    transfer: {
+      ...current.transfer,
+      status: "used",
+      usedAt: now
+    },
+    ...nextVisibility
+  };
+
+  saveProducts(products);
+
+  return {
+    success: true,
+    code: products[index].publicCode,
+    manageToken: newManageToken,
+    managePath: `/manage/${products[index].publicCode}?token=${newManageToken}`,
+    manageLink: `http://localhost:3000/manage/${products[index].publicCode}?token=${newManageToken}`
+  } as const;
+}
+
+export function cancelTransferByManageToken(input: {
+  code: string;
+  manageToken: string;
+}) {
+  const normalizedCode = normalizeCode(input.code);
+  const normalizedToken = String(input.manageToken || "").trim();
+
+  if (!normalizedCode || !normalizedToken) {
+    throw new Error("Geçersiz iptal isteği.");
+  }
+
+  const products = getProducts();
+  const index = products.findIndex((item) => {
+    const itemCode = normalizeCode(
+      item.publicCode || (item as { code?: string }).code || ""
+    );
+
+    return (
+      itemCode === normalizedCode &&
+      String(item.manageToken || "").trim() === normalizedToken
+    );
+  });
+
+  if (index === -1) {
+    return null;
+  }
+
+  const current = products[index];
+  if (!current.transfer?.token) {
+    return null;
+  }
+
+  const now = new Date().toISOString();
+
+  products[index] = {
+    ...current,
+    status: "active",
+    updatedAt: now,
+    transfer: {
+      ...current.transfer,
+      status: "cancelled",
+      cancelledAt: now
+    }
+  };
+
+  saveProducts(products);
+
+  return {
+    success: true,
+    code: products[index].publicCode,
+    status: "active" as const
+  };
+}
+
 export function recoverManageAccess(input: {
   code: string;
   phone?: string;
@@ -875,15 +1235,22 @@ export function recoverManageAccess(input: {
     const profilePhone = normalizeValue(getPhone(item));
     const profileEmail = normalizeValue(getEmail(item));
 
+    const hasRecoveryPhone = Boolean(recoveryPhone);
+    const hasRecoveryEmail = Boolean(recoveryEmail);
+
     const phoneMatched =
       Boolean(normalizedPhoneInput) &&
-      (normalizedPhoneInput === recoveryPhone ||
-        normalizedPhoneInput === profilePhone);
+      (
+        (hasRecoveryPhone && normalizedPhoneInput === recoveryPhone) ||
+        (!hasRecoveryPhone && normalizedPhoneInput === profilePhone)
+      );
 
     const emailMatched =
       Boolean(normalizedEmailInput) &&
-      (normalizedEmailInput === recoveryEmail ||
-        normalizedEmailInput === profileEmail);
+      (
+        (hasRecoveryEmail && normalizedEmailInput === recoveryEmail) ||
+        (!hasRecoveryEmail && normalizedEmailInput === profileEmail)
+      );
 
     return phoneMatched || emailMatched;
   });
@@ -910,4 +1277,174 @@ export function recoverManageAccess(input: {
     managePath: `/manage/${products[index].publicCode}?token=${newManageToken}`,
     manageLink: `http://localhost:3000/manage/${products[index].publicCode}?token=${newManageToken}`
   };
+}
+
+export function createRecoverySessionByEmail(input: {
+  email: string;
+  entryType: RecoveryEntryType;
+  expiresInMinutes?: number;
+}) {
+  const normalizedEmail = normalizeValue(input.email);
+  if (!normalizedEmail) {
+    throw new Error("E-posta zorunlu.");
+  }
+
+  const products = getProducts();
+  const matches = products.filter((item) => {
+    const recoveryEmail = normalizeValue(getRecovery(item).email);
+    return Boolean(recoveryEmail) && recoveryEmail === normalizedEmail;
+  });
+
+  if (matches.length === 0) {
+    return null;
+  }
+
+  const token = crypto.randomUUID();
+  const now = new Date();
+  const expiresInMinutes =
+    typeof input.expiresInMinutes === "number" &&
+    Number.isFinite(input.expiresInMinutes) &&
+    input.expiresInMinutes > 0
+      ? input.expiresInMinutes
+      : 20;
+  const expiresAt = new Date(now.getTime() + expiresInMinutes * 60 * 1000).toISOString();
+
+  const touchedCodes: string[] = [];
+
+  for (let i = 0; i < products.length; i += 1) {
+    const recoveryEmail = normalizeValue(getRecovery(products[i]).email);
+    if (recoveryEmail !== normalizedEmail) continue;
+
+    touchedCodes.push(products[i].publicCode);
+    products[i] = {
+      ...products[i],
+      updatedAt: now.toISOString(),
+      recoverySession: {
+        token,
+        email: normalizedEmail,
+        entryType: input.entryType,
+        status: "pending",
+        createdAt: now.toISOString(),
+        expiresAt
+      }
+    };
+  }
+
+  saveProducts(products);
+
+  return {
+    success: true,
+    token,
+    email: normalizedEmail,
+    entryType: input.entryType,
+    expiresAt,
+    matchedCount: touchedCodes.length,
+    codes: touchedCodes
+  };
+}
+
+export function verifyRecoverySessionToken(token: string) {
+  const normalizedToken = String(token || "").trim();
+  if (!normalizedToken) {
+    return null;
+  }
+
+  const products = getProducts();
+  const matchedProducts = products.filter((item) => {
+    return String(item.recoverySession?.token || "").trim() === normalizedToken;
+  });
+
+  if (matchedProducts.length === 0) {
+    return null;
+  }
+
+  const session = matchedProducts[0].recoverySession;
+  if (!session?.token || !session.email || !session.entryType) {
+    return null;
+  }
+
+  const status = getRecoverySessionStatus(matchedProducts[0]);
+
+  return {
+    token: session.token,
+    email: session.email,
+    entryType: session.entryType,
+    status,
+    expiresAt: session.expiresAt || "",
+    items: matchedProducts.map(mapProductToRecoveryListedItem)
+  };
+}
+
+export function consumeRecoverySessionToken(token: string) {
+  const normalizedToken = String(token || "").trim();
+  if (!normalizedToken) {
+    return null;
+  }
+
+  const products = getProducts();
+  const matchingIndexes: number[] = [];
+
+  for (let i = 0; i < products.length; i += 1) {
+    if (String(products[i].recoverySession?.token || "").trim() === normalizedToken) {
+      matchingIndexes.push(i);
+    }
+  }
+
+  if (matchingIndexes.length === 0) {
+    return null;
+  }
+
+  const first = products[matchingIndexes[0]];
+  const session = first.recoverySession;
+  if (!session?.token || !session.email || !session.entryType) {
+    return null;
+  }
+
+  const status = getRecoverySessionStatus(first);
+
+  if (status !== "pending") {
+    return {
+      success: false,
+      reason: status
+    } as const;
+  }
+
+  const usedAt = new Date().toISOString();
+
+  for (const index of matchingIndexes) {
+    products[index] = {
+      ...products[index],
+      updatedAt: usedAt,
+      recoverySession: {
+        ...products[index].recoverySession,
+        status: "used",
+        usedAt
+      }
+    };
+  }
+
+  saveProducts(products);
+
+  return {
+    success: true,
+    token: session.token,
+    email: session.email,
+    entryType: session.entryType,
+    usedAt,
+    items: matchingIndexes.map((index) => mapProductToRecoveryListedItem(products[index]))
+  } as const;
+}
+
+export function listRecoveryItemsByEmail(email: string): RecoveryListedItem[] {
+  const normalizedEmail = normalizeValue(email);
+  if (!normalizedEmail) {
+    return [];
+  }
+
+  return getProducts()
+    .filter((item) => {
+      const recoveryEmail = normalizeValue(getRecovery(item).email);
+      return Boolean(recoveryEmail) && recoveryEmail === normalizedEmail;
+    })
+    .map(mapProductToRecoveryListedItem);
 }

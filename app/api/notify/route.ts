@@ -111,6 +111,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Etiket bulunamadı." }, { status: 404 });
     }
 
+    if (tag.status === "inactive") {
+      return NextResponse.json(
+        { error: "Bu ürün şu an aktif değil. İletişim geçici olarak kapatılmıştır." },
+        { status: 400 }
+      );
+    }
+
     if (tag.status !== "active") {
       return NextResponse.json(
         { error: "Bu etiket henüz aktif değil." },

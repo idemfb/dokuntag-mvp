@@ -1,9 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+
+type TagStatus = "unclaimed" | "active" | "inactive";
 
 type PublicProfileClientProps = {
   code: string;
+};
+
+type PublicProfileResponse = {
+  success?: boolean;
+  data?: {
+    status?: TagStatus;
+  };
+  message?: string;
 };
 
 export default function PublicProfileClient({
@@ -16,8 +26,48 @@ export default function PublicProfileClient({
   const [message, setMessage] = useState("");
   const [website, setWebsite] = useState("");
   const [loading, setLoading] = useState(false);
+  const [statusLoading, setStatusLoading] = useState(true);
+  const [tagStatus, setTagStatus] = useState<TagStatus>("active");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadStatus() {
+      try {
+        setStatusLoading(true);
+
+        const res = await fetch(`/api/public/${code}`, {
+          cache: "no-store"
+        });
+
+        const data: PublicProfileResponse = await res.json();
+
+        if (!res.ok || !data?.data) {
+          throw new Error(data?.message || "Ürün durumu alınamadı.");
+        }
+
+        if (!cancelled) {
+          setTagStatus(data.data.status === "inactive" ? "inactive" : "active");
+        }
+      } catch {
+        if (!cancelled) {
+          setTagStatus("active");
+        }
+      } finally {
+        if (!cancelled) {
+          setStatusLoading(false);
+        }
+      }
+    }
+
+    void loadStatus();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [code]);
 
   function toggleMethod(value: string) {
     setPreferredContactMethods((prev) =>
@@ -29,6 +79,12 @@ export default function PublicProfileClient({
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+
+    if (tagStatus === "inactive") {
+      setError("Bu ürün şu an aktif değil. İletişim geçici olarak kapatılmıştır.");
+      setSuccess("");
+      return;
+    }
 
     try {
       setLoading(true);
@@ -76,6 +132,22 @@ export default function PublicProfileClient({
     preferredContactMethods.includes("whatsapp");
 
   const needsEmail = preferredContactMethods.includes("email");
+
+  if (statusLoading) {
+    return (
+      <div className="rounded-2xl border border-neutral-200 bg-white p-4 text-sm text-neutral-600">
+        Yükleniyor...
+      </div>
+    );
+  }
+
+  if (tagStatus === "inactive") {
+    return (
+      <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+        Bu ürün şu an aktif değil. İletişim formu geçici olarak kapatılmıştır.
+      </div>
+    );
+  }
 
   return (
     <div>

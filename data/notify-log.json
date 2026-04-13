@@ -14,7 +14,10 @@
       "email"
     ],
     "message": "son güncelleme kontrol",
-    "readAt": "2026-04-07T11:36:50.030Z"
+    "readAt": "2026-04-07T11:36:50.030Z",
+    "deletedAt": "2026-04-13T10:41:24.986Z",
+    "pinnedAt": "",
+    "archivedAt": ""
   },
   {
     "id": "f2322e0b-b528-423a-8503-a1868adf6ece",
@@ -31,7 +34,10 @@
       "whatsapp",
       "email"
     ],
-    "message": "yeni güncelleme"
+    "message": "yeni güncelleme",
+    "deletedAt": "2026-04-13T10:41:24.986Z",
+    "pinnedAt": "",
+    "archivedAt": ""
   },
   {
     "id": "b2947f39-cb31-4d2c-aaed-6fd78a8ad6d8",
@@ -48,7 +54,10 @@
       "whatsapp",
       "email"
     ],
-    "message": "arşiv güncellemesi"
+    "message": "arşiv güncellemesi",
+    "deletedAt": "2026-04-13T10:41:24.986Z",
+    "pinnedAt": "",
+    "archivedAt": ""
   },
   {
     "id": "f5ae6de5-c9ba-4d6d-aeba-04ceb5967476",
@@ -65,7 +74,10 @@
       "whatsapp",
       "email"
     ],
-    "message": "mesaj kartı güncellemesi"
+    "message": "mesaj kartı güncellemesi",
+    "deletedAt": "2026-04-13T10:41:24.986Z",
+    "pinnedAt": "",
+    "archivedAt": ""
   },
   {
     "id": "af0a58bf-0675-4b59-935d-baa7ca2ddee5",
@@ -82,7 +94,10 @@
       "whatsapp",
       "email"
     ],
-    "message": "Test için yeni mesaj gönderip kart üzerindeki “Okundu yap” butonuna bas. O kartın etiketi Yeni yerine Okundu olmalı, üstteki yeni mesaj sayısı da 1 azalmalı."
+    "message": "Test için yeni mesaj gönderip kart üzerindeki “Okundu yap” butonuna bas. O kartın etiketi Yeni yerine Okundu olmalı, üstteki yeni mesaj sayısı da 1 azalmalı.",
+    "deletedAt": "2026-04-13T10:41:24.986Z",
+    "pinnedAt": "",
+    "archivedAt": ""
   },
   {
     "id": "ce1d56fc-34c9-4bcc-bf60-594d394ca690",
@@ -99,7 +114,10 @@
       "whatsapp",
       "email"
     ],
-    "message": "Mesajlar bölümünde Tümü / Yeni / Okundu butonları görünmeli Yeni seçince sadece yeni mesajlar kalmalı Okundu seçince sadece okunanlar görünmeli Okundu yap sonrası sayaçlar anında güncellenmeli"
+    "message": "Mesajlar bölümünde Tümü / Yeni / Okundu butonları görünmeli Yeni seçince sadece yeni mesajlar kalmalı Okundu seçince sadece okunanlar görünmeli Okundu yap sonrası sayaçlar anında güncellenmeli",
+    "deletedAt": "2026-04-13T10:41:24.986Z",
+    "pinnedAt": "",
+    "archivedAt": ""
   },
   {
     "id": "ced43422-63db-40e6-903e-7cebb617e515",
@@ -115,7 +133,10 @@
       "phone",
       "whatsapp"
     ],
-    "message": "tek bir yeni mesajda Okundu yap sonra Yeni filtresinde kaybolmalı Okundu filtresinde görünmeli Tümünü okundu yap da aynı şekilde çalışmalı"
+    "message": "tek bir yeni mesajda Okundu yap sonra Yeni filtresinde kaybolmalı Okundu filtresinde görünmeli Tümünü okundu yap da aynı şekilde çalışmalı",
+    "deletedAt": "2026-04-13T10:41:24.986Z",
+    "pinnedAt": "",
+    "archivedAt": ""
   },
   {
     "id": "121dac4e-02fc-41a7-b66c-e8eb9ab12e55",
@@ -131,7 +152,10 @@
       "phone",
       "whatsapp"
     ],
-    "message": "Test Mesajlar bölümünde arama kutusu görünmeli isim yazarak filtrelemeli mesaj içinden kelime ile filtrelemeli telefon / email ile filtrelemeli Temizle butonu aramayı sıfırlamalı Tümü / Yeni / Okundu filtreleriyle beraber çalışmalı Sıradaki mantıklı adım: mesaj kartlarına sıralama eklemek."
+    "message": "Test Mesajlar bölümünde arama kutusu görünmeli isim yazarak filtrelemeli mesaj içinden kelime ile filtrelemeli telefon / email ile filtrelemeli Temizle butonu aramayı sıfırlamalı Tümü / Yeni / Okundu filtreleriyle beraber çalışmalı Sıradaki mantıklı adım: mesaj kartlarına sıralama eklemek.",
+    "deletedAt": "2026-04-13T10:41:24.986Z",
+    "pinnedAt": "",
+    "archivedAt": ""
   },
   {
     "id": "b1405d9c-3631-4590-85dd-85eeefdd8f79",
@@ -148,7 +172,10 @@
       "whatsapp",
       "email"
     ],
-    "message": "Test arama kutusu çalışmalı sıralama dropdown çalışmalı filtreler temizle hepsini sıfırlamalı görünen kayıt sayısı değişmeli mevcut Okundu yap ve Tümünü okundu yap bozulmamalı Bundan sonra en mantıklı adım, artık bu sayfayı büyütmek yerine premium UI polish turu yapmak."
+    "message": "Test arama kutusu çalışmalı sıralama dropdown çalışmalı filtreler temizle hepsini sıfırlamalı görünen kayıt sayısı değişmeli mevcut Okundu yap ve Tümünü okundu yap bozulmamalı Bundan sonra en mantıklı adım, artık bu sayfayı büyütmek yerine premium UI polish turu yapmak.",
+    "deletedAt": "2026-04-13T10:41:24.986Z",
+    "pinnedAt": "",
+    "archivedAt": ""
   },
   {
     "id": "52fde290-7deb-4c37-a5a1-a6a518dde876",
@@ -163,7 +190,10 @@
     "preferredContactMethods": [
       "email"
     ],
-    "message": "hgfdx"
+    "message": "hgfdx",
+    "deletedAt": "2026-04-13T10:41:24.986Z",
+    "pinnedAt": "",
+    "archivedAt": ""
   },
   {
     "id": "eb338172-3578-4337-9f5e-3fcae4afee99",
@@ -180,7 +210,10 @@
       "whatsapp",
       "email"
     ],
-    "message": "citroen"
+    "message": "citroen",
+    "deletedAt": "2026-04-13T10:41:24.986Z",
+    "pinnedAt": "",
+    "archivedAt": ""
   },
   {
     "id": "87d92d8e-b34c-4d89-80fd-bea40c75e4ee",
@@ -197,7 +230,10 @@
       "whatsapp",
       "email"
     ],
-    "message": "mesaj gönder kontrol"
+    "message": "mesaj gönder kontrol",
+    "deletedAt": "2026-04-13T10:41:24.986Z",
+    "pinnedAt": "",
+    "archivedAt": ""
   },
   {
     "id": "3cd908f9-66cd-4d5b-aca7-31650bd3fdd9",
@@ -213,7 +249,10 @@
       "phone",
       "whatsapp"
     ],
-    "message": "hgfdsasdfghg"
+    "message": "hgfdsasdfghg",
+    "deletedAt": "2026-04-13T10:41:24.986Z",
+    "pinnedAt": "",
+    "archivedAt": ""
   },
   {
     "id": "0c121149-0849-4d10-826a-8ad891c2b568",
@@ -230,7 +269,10 @@
       "whatsapp",
       "email"
     ],
-    "message": "şlkjhgfds"
+    "message": "şlkjhgfds",
+    "deletedAt": "2026-04-13T10:41:24.986Z",
+    "pinnedAt": "",
+    "archivedAt": ""
   },
   {
     "id": "0bab9621-39d6-412f-b683-52a09a1ff601",
@@ -247,7 +289,10 @@
       "whatsapp",
       "email"
     ],
-    "message": "ç.ömnbvcx"
+    "message": "ç.ömnbvcx",
+    "deletedAt": "2026-04-13T10:41:24.986Z",
+    "pinnedAt": "",
+    "archivedAt": ""
   },
   {
     "id": "ac7a9ede-bc60-4917-87f7-fb84da8c05b0",
@@ -264,7 +309,10 @@
       "whatsapp",
       "email"
     ],
-    "message": "sdghnbvcx"
+    "message": "sdghnbvcx",
+    "deletedAt": "2026-04-13T10:57:09.703Z",
+    "pinnedAt": "",
+    "archivedAt": ""
   },
   {
     "id": "f132542e-46c1-4035-81d4-7103308ab91c",
@@ -281,7 +329,10 @@
       "whatsapp",
       "email"
     ],
-    "message": "dfgdfgh"
+    "message": "dfgdfgh",
+    "deletedAt": "2026-04-13T10:41:24.986Z",
+    "pinnedAt": "",
+    "archivedAt": ""
   },
   {
     "id": "fb500828-6310-409f-8339-08914fffc55c",
@@ -298,7 +349,10 @@
       "whatsapp",
       "email"
     ],
-    "message": "mesaj gönder kontrol"
+    "message": "mesaj gönder kontrol",
+    "deletedAt": "2026-04-13T10:41:24.986Z",
+    "pinnedAt": "",
+    "archivedAt": ""
   },
   {
     "id": "4d7688ac-4777-4636-ace8-268854b1f30a",
@@ -315,7 +369,10 @@
       "whatsapp",
       "email"
     ],
-    "message": "mail test"
+    "message": "mail test",
+    "deletedAt": "2026-04-13T10:41:24.986Z",
+    "pinnedAt": "",
+    "archivedAt": ""
   },
   {
     "id": "ac5bb1af-7663-46e6-8e08-672e82b92aaa",
@@ -332,7 +389,10 @@
       "whatsapp",
       "email"
     ],
-    "message": "sdfsdf"
+    "message": "sdfsdf",
+    "deletedAt": "2026-04-13T10:41:24.986Z",
+    "pinnedAt": "",
+    "archivedAt": ""
   },
   {
     "id": "6b64714c-da82-4ce6-a7b1-c9cf4a413a04",
@@ -347,7 +407,10 @@
     "preferredContactMethods": [
       "email"
     ],
-    "message": "beni ara"
+    "message": "beni ara",
+    "deletedAt": "2026-04-13T10:41:24.986Z",
+    "pinnedAt": "",
+    "archivedAt": ""
   },
   {
     "id": "c2b0bfc0-481b-4215-8bfa-1c2841f2a0a3",
@@ -362,7 +425,10 @@
     "preferredContactMethods": [
       "whatsapp"
     ],
-    "message": "nbvcx"
+    "message": "nbvcx",
+    "deletedAt": "2026-04-13T10:41:24.986Z",
+    "pinnedAt": "",
+    "archivedAt": ""
   },
   {
     "id": "b35dccfc-27e0-404f-b74a-c5a08127d1da",
@@ -377,7 +443,10 @@
     "preferredContactMethods": [
       "email"
     ],
-    "message": "TEST Şunu test et: sadece email seç → 👉 BUTON YOK 👉 TELEFON YOK 👉 sadece email var sadece phone seç → 👉 Ara butonu var 👉 telefon var sadece whatsapp → 👉 WhatsApp butonu var 👉 telefon var hepsi seç → 👉 hepsi var"
+    "message": "TEST Şunu test et: sadece email seç → 👉 BUTON YOK 👉 TELEFON YOK 👉 sadece email var sadece phone seç → 👉 Ara butonu var 👉 telefon var sadece whatsapp → 👉 WhatsApp butonu var 👉 telefon var hepsi seç → 👉 hepsi var",
+    "deletedAt": "2026-04-13T10:41:24.986Z",
+    "pinnedAt": "",
+    "archivedAt": ""
   },
   {
     "id": "6cddb28d-cf08-4d5c-92b9-d616ce6ffae1",
@@ -392,7 +461,10 @@
     "preferredContactMethods": [
       "phone"
     ],
-    "message": "http://localhost:3000/p/TEST01"
+    "message": "http://localhost:3000/p/TEST01",
+    "deletedAt": "2026-04-13T10:41:24.986Z",
+    "pinnedAt": "",
+    "archivedAt": ""
   },
   {
     "id": "5821d649-3a52-4fe6-a16f-5190f7bf291d",
@@ -407,7 +479,10 @@
     "preferredContactMethods": [
       "whatsapp"
     ],
-    "message": "hgfdtgfd"
+    "message": "hgfdtgfd",
+    "deletedAt": "2026-04-13T10:57:09.703Z",
+    "pinnedAt": "",
+    "archivedAt": ""
   },
   {
     "id": "6a8575d3-67ce-4e63-bdd9-dfd775b65310",
@@ -424,7 +499,10 @@
       "whatsapp",
       "email"
     ],
-    "message": "mbnbxfbcvbcgh"
+    "message": "mbnbxfbcvbcgh",
+    "deletedAt": "2026-04-13T10:41:24.986Z",
+    "pinnedAt": "",
+    "archivedAt": ""
   },
   {
     "id": "6d7f4901-6845-4f11-a295-e2b299326e8a",
@@ -441,7 +519,10 @@
       "whatsapp",
       "email"
     ],
-    "message": "jnhbvcxz"
+    "message": "jnhbvcxz",
+    "deletedAt": "2026-04-13T10:41:24.986Z",
+    "pinnedAt": "",
+    "archivedAt": ""
   },
   {
     "id": "5b34bf90-985d-4ea0-8795-636022f5366d",
@@ -458,7 +539,10 @@
       "whatsapp",
       "email"
     ],
-    "message": "srfgsfgsfgrsr"
+    "message": "srfgsfgsfgrsr",
+    "deletedAt": "2026-04-13T10:41:24.986Z",
+    "pinnedAt": "",
+    "archivedAt": ""
   },
   {
     "id": "5042e988-eec7-4841-ad4c-55def3a97f87",
@@ -475,7 +559,10 @@
       "whatsapp",
       "email"
     ],
-    "message": "bcvcxzx<szavcxz<"
+    "message": "bcvcxzx<szavcxz<",
+    "deletedAt": "2026-04-13T10:41:24.986Z",
+    "pinnedAt": "",
+    "archivedAt": ""
   },
   {
     "id": "e527d014-72ec-4652-809e-26cefc24fa21",
@@ -492,7 +579,10 @@
       "whatsapp",
       "email"
     ],
-    "message": "ömnbvcxz"
+    "message": "ömnbvcxz",
+    "deletedAt": "2026-04-13T10:41:24.986Z",
+    "pinnedAt": "",
+    "archivedAt": ""
   },
   {
     "id": "046958ee-a2da-4af1-8766-73ce3c5e8529",
@@ -509,7 +599,10 @@
       "whatsapp",
       "email"
     ],
-    "message": "ömnbvcxz<xcvbnmö"
+    "message": "ömnbvcxz<xcvbnmö",
+    "deletedAt": "2026-04-13T10:41:24.986Z",
+    "pinnedAt": "",
+    "archivedAt": ""
   },
   {
     "id": "723838bf-bc21-40b2-93b4-3cd973242368",
@@ -524,7 +617,10 @@
     "preferredContactMethods": [
       "phone"
     ],
-    "message": "sdfghjmö"
+    "message": "sdfghjmö",
+    "deletedAt": "2026-04-13T10:41:24.986Z",
+    "pinnedAt": "",
+    "archivedAt": ""
   },
   {
     "id": "933cc7d7-dd9f-40c3-84ca-507e0239f240",
@@ -542,8 +638,9 @@
       "email"
     ],
     "message": "sdfgmnbvc",
-    "archivedAt": "2026-04-10T09:42:10.490Z",
-    "pinnedAt": ""
+    "archivedAt": "",
+    "pinnedAt": "",
+    "deletedAt": "2026-04-13T10:41:24.986Z"
   },
   {
     "id": "2a701d53-b793-4127-a12b-b8ee0b393a55",
@@ -581,8 +678,9 @@
       "email"
     ],
     "message": "gfdxszfcdx",
-    "pinnedAt": "2026-04-10T09:42:07.261Z",
-    "archivedAt": ""
+    "pinnedAt": "",
+    "archivedAt": "",
+    "deletedAt": "2026-04-13T10:41:24.986Z"
   },
   {
     "id": "3f5309a9-b332-433f-8309-ac7ea9eaa11e",
@@ -593,7 +691,7 @@
     "readAt": "",
     "pinnedAt": "",
     "archivedAt": "",
-    "deletedAt": "",
+    "deletedAt": "2026-04-13T10:41:24.986Z",
     "senderName": "idem",
     "senderPhone": "05063059722",
     "senderEmail": "adresesaglik@gmail.com",
@@ -613,7 +711,7 @@
     "readAt": "",
     "pinnedAt": "",
     "archivedAt": "",
-    "deletedAt": "",
+    "deletedAt": "2026-04-13T10:41:24.986Z",
     "senderName": "defne",
     "senderPhone": "05063509722",
     "senderEmail": "adresesaglik@gmail.com",
@@ -633,7 +731,7 @@
     "readAt": "",
     "pinnedAt": "",
     "archivedAt": "",
-    "deletedAt": "",
+    "deletedAt": "2026-04-13T10:41:24.986Z",
     "senderName": "idem",
     "senderPhone": "05063509722",
     "senderEmail": "adresesaglik@gmail.com",
@@ -653,7 +751,7 @@
     "readAt": "",
     "pinnedAt": "",
     "archivedAt": "",
-    "deletedAt": "",
+    "deletedAt": "2026-04-13T10:41:24.986Z",
     "senderName": "idem",
     "senderPhone": "05063509722",
     "senderEmail": "adresesaglik@gmail.com",
@@ -673,7 +771,7 @@
     "readAt": "",
     "pinnedAt": "",
     "archivedAt": "",
-    "deletedAt": "",
+    "deletedAt": "2026-04-13T10:41:24.986Z",
     "senderName": "idem",
     "senderPhone": "05063509722",
     "senderEmail": "i.dem@hotmail.com",
@@ -692,7 +790,7 @@
     "readAt": "",
     "pinnedAt": "",
     "archivedAt": "",
-    "deletedAt": "",
+    "deletedAt": "2026-04-13T10:41:24.986Z",
     "senderName": "idem",
     "senderPhone": "05063509722",
     "senderEmail": "i.dem@hotmail.com",
@@ -732,7 +830,7 @@
     "readAt": "",
     "pinnedAt": "",
     "archivedAt": "",
-    "deletedAt": "",
+    "deletedAt": "2026-04-13T10:41:24.986Z",
     "senderName": "İDEM",
     "senderPhone": "05063509722",
     "senderEmail": "adresesaglik@gmail.com",
@@ -752,7 +850,7 @@
     "readAt": "",
     "pinnedAt": "",
     "archivedAt": "",
-    "deletedAt": "",
+    "deletedAt": "2026-04-13T10:41:24.986Z",
     "senderName": "ibo",
     "senderPhone": "05063509722",
     "senderEmail": "adresesaglik@gmail.com",
@@ -770,9 +868,9 @@
     "ip": "::1",
     "createdAt": "2026-04-12T11:05:02.671Z",
     "readAt": "",
-    "pinnedAt": "2026-04-12T13:20:25.640Z",
+    "pinnedAt": "",
     "archivedAt": "",
-    "deletedAt": "",
+    "deletedAt": "2026-04-13T10:41:24.986Z",
     "senderName": "ibea",
     "senderPhone": "05063509722",
     "senderEmail": "i.dem@hotmail.com",
@@ -791,8 +889,8 @@
     "createdAt": "2026-04-12T11:14:30.794Z",
     "readAt": "",
     "pinnedAt": "",
-    "archivedAt": "2026-04-12T13:20:23.345Z",
-    "deletedAt": "",
+    "archivedAt": "",
+    "deletedAt": "2026-04-13T10:41:24.986Z",
     "senderName": "idem",
     "senderPhone": "05063509722",
     "senderEmail": "adresesaglik@gmail.com",
@@ -811,8 +909,8 @@
     "createdAt": "2026-04-12T11:46:56.351Z",
     "readAt": "",
     "pinnedAt": "",
-    "archivedAt": "2026-04-12T11:49:18.228Z",
-    "deletedAt": "",
+    "archivedAt": "",
+    "deletedAt": "2026-04-13T10:41:24.986Z",
     "senderName": "idem",
     "senderPhone": "05063509722",
     "senderEmail": "adresesaglik@gmail.com",
@@ -832,7 +930,7 @@
     "readAt": "2026-04-12T13:20:20.539Z",
     "pinnedAt": "",
     "archivedAt": "",
-    "deletedAt": "",
+    "deletedAt": "2026-04-13T10:41:24.986Z",
     "senderName": "idem",
     "senderPhone": "05063509722",
     "senderEmail": "adresesaglik@gmail.com",
@@ -861,5 +959,65 @@
       "email"
     ],
     "message": "gjhjgbgvc"
+  },
+  {
+    "id": "1b539ab6-5802-4957-b42c-e6c751df21b6",
+    "tagCode": "GSLWY6",
+    "senderFingerprint": "d4b638ce67f90fb737bd72d386303a920b10448eed20b94767e80cf17a9f3b09",
+    "ip": "::1",
+    "createdAt": "2026-04-13T10:58:17.067Z",
+    "readAt": "",
+    "pinnedAt": "",
+    "archivedAt": "",
+    "deletedAt": "",
+    "senderName": "vcxz",
+    "senderPhone": "05063509722",
+    "senderEmail": "adresesaglik@gmail.com",
+    "preferredContactMethods": [
+      "phone",
+      "whatsapp",
+      "email"
+    ],
+    "message": "xfcvxdcx"
+  },
+  {
+    "id": "01612e46-7d68-4e4b-b8b5-691a8317805e",
+    "tagCode": "TEST01",
+    "senderFingerprint": "7be6d2ea6aa090b424bca7ccf6d0b855da46248af7d992214114c9c674aa04a0",
+    "ip": "::1",
+    "createdAt": "2026-04-13T12:45:06.002Z",
+    "readAt": "",
+    "pinnedAt": "",
+    "archivedAt": "",
+    "deletedAt": "",
+    "senderName": "idem",
+    "senderPhone": "05063509722",
+    "senderEmail": "i.dem@hotmail.com",
+    "preferredContactMethods": [
+      "phone",
+      "whatsapp",
+      "email"
+    ],
+    "message": "hbvcxz"
+  },
+  {
+    "id": "a40382f0-b727-44e5-8c82-8695ca30a6b2",
+    "tagCode": "TEST01",
+    "senderFingerprint": "8d33579a3165b37647edf7acd87ad8f5fceeb38522e62d2948bf228c4c2d03b2",
+    "ip": "::1",
+    "createdAt": "2026-04-13T13:52:45.893Z",
+    "readAt": "",
+    "pinnedAt": "",
+    "archivedAt": "",
+    "deletedAt": "",
+    "senderName": "ibo",
+    "senderPhone": "05063509722",
+    "senderEmail": "adresesaglik@gmail.com",
+    "preferredContactMethods": [
+      "phone",
+      "whatsapp",
+      "email"
+    ],
+    "message": "mail kontrol"
   }
 ]
