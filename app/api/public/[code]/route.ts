@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { readDB } from "@/lib/db";
+import { findTagByCode } from "@/lib/tags";
 
 export async function GET(
   req: NextRequest,
@@ -16,18 +16,9 @@ export async function GET(
     }
 
     const normalizedCode = String(code).trim().toUpperCase();
+    const tag = findTagByCode(normalizedCode);
 
-    const db = readDB();
-    const products = Array.isArray(db.products) ? db.products : [];
-
-    const product = products.find((p: any) => {
-      return (
-        String(p.publicCode || "").trim().toUpperCase() === normalizedCode ||
-        String(p.oldCode || "").trim().toUpperCase() === normalizedCode
-      );
-    });
-
-    if (!product) {
+    if (!tag) {
       return NextResponse.json(
         { success: false, message: "Profil bulunamadı" },
         { status: 404 }
@@ -37,18 +28,50 @@ export async function GET(
     return NextResponse.json({
       success: true,
       data: {
-        publicCode: product.publicCode,
-        oldCode: product.oldCode || "",
-        productType: product.productType || "item",
-        name: product.name || "",
-        ownerName: product.ownerName || "",
-        phone: product.phone || "",
-        email: product.email || "",
-        note: product.note || "",
-        alerts: Array.isArray(product.alerts) ? product.alerts : [],
-        allowDirectCall: Boolean(product.allowDirectCall),
-        allowDirectWhatsapp: Boolean(product.allowDirectWhatsapp),
-        status: product.status || "unclaimed"
+        publicCode: tag.code,
+        oldCode: tag.oldCode || "",
+        productType: tag.productType || "item",
+
+        name: tag.profile?.name || "",
+        ownerName: tag.profile?.ownerName || "",
+        phone: tag.profile?.phone || "",
+        email: tag.profile?.email || "",
+        city: tag.profile?.city || "",
+        addressDetail: tag.profile?.addressDetail || "",
+        distinctiveFeature: tag.profile?.distinctiveFeature || "",
+        petName: tag.profile?.petName || "",
+        note: tag.profile?.note || "",
+
+        alerts: Array.isArray(tag.alerts) ? tag.alerts : [],
+
+        allowDirectCall: Boolean(tag.contactOptions?.allowDirectCall),
+        allowDirectWhatsapp: Boolean(tag.contactOptions?.allowDirectWhatsapp),
+
+        contactOptions: {
+          allowDirectCall: Boolean(tag.contactOptions?.allowDirectCall),
+          allowDirectWhatsapp: Boolean(tag.contactOptions?.allowDirectWhatsapp)
+        },
+
+        visibility: {
+          showName: Boolean(tag.visibility?.showName),
+          showPhone: Boolean(tag.visibility?.showPhone),
+          showEmail: Boolean(tag.visibility?.showEmail),
+          showCity: Boolean(tag.visibility?.showCity),
+          showAddressDetail: Boolean(tag.visibility?.showAddressDetail),
+          showPetName: Boolean(tag.visibility?.showPetName),
+          showNote: Boolean(tag.visibility?.showNote)
+        },
+
+        // legacy fallback
+        showName: Boolean(tag.visibility?.showName),
+        showPhone: Boolean(tag.visibility?.showPhone),
+        showEmail: Boolean(tag.visibility?.showEmail),
+        showCity: Boolean(tag.visibility?.showCity),
+        showAddressDetail: Boolean(tag.visibility?.showAddressDetail),
+        showPetName: Boolean(tag.visibility?.showPetName),
+        showNote: Boolean(tag.visibility?.showNote),
+
+        status: tag.status || "unclaimed"
       }
     });
   } catch (error) {

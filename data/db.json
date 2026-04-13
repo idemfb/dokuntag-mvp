@@ -2,28 +2,59 @@
   "products": [
     {
       "publicCode": "TEST01",
-      "manageToken": "06a44279-1378-41f6-97f2-e86c08630397",
-      "productType": "pet",
-      "name": "pamukk",
+      "manageToken": "c181a78d-55cf-460f-88ad-78f3365e60d8",
+      "productType": "item",
+      "name": "pamuk",
       "phone": "05063509722",
       "email": "i.dem@hotmail.com",
-      "note": "kedi kayboldu",
+      "note": "arabamın anahtarını bana ulaştırşişlkj",
       "alerts": [
-        "Alerjisi var",
-        "Ödül verilecektir",
-        "Ürkek / yaklaşmayın",
-        "Hayvanım hasta",
-        "Acil bana ulaşın"
+        "Ödül verilecektir"
       ],
       "allowDirectCall": true,
       "allowDirectWhatsapp": true,
       "status": "active",
-      "petName": "pamuk",
-      "updatedAt": "2026-04-07T10:07:46.666Z",
-      "ownerName": "",
+      "petName": "pam",
+      "updatedAt": "2026-04-12T14:56:09.584Z",
+      "ownerName": "DEMİR",
       "recovery": {
         "phone": "05063509722",
         "email": "i.dem@hotmail.com"
+      },
+      "visibility": {
+        "showName": true,
+        "showPhone": true,
+        "showEmail": true,
+        "showCity": true,
+        "showAddressDetail": true,
+        "showPetName": true,
+        "showNote": true
+      },
+      "showName": true,
+      "showPhone": true,
+      "showEmail": true,
+      "showPetName": true,
+      "showNote": true,
+      "city": "İSTANBUL",
+      "addressDetail": "osmaniye mahallesi fabrikalar geçidi sokak no:9/a (Özel Zirve Sağlık Kabini)",
+      "showCity": true,
+      "showAddressDetail": true,
+      "distinctiveFeature": "mont",
+      "profile": {
+        "name": "pamuk",
+        "ownerName": "DEMİR",
+        "phone": "05063509722",
+        "email": "i.dem@hotmail.com",
+        "city": "İSTANBUL",
+        "addressDetail": "osmaniye mahallesi fabrikalar geçidi sokak no:9/a (Özel Zirve Sağlık Kabini)",
+        "distinctiveFeature": "mont",
+        "petName": "pam",
+        "note": "arabamın anahtarını bana ulaştırşişlkj",
+        "tagName": "pamuk"
+      },
+      "contactOptions": {
+        "allowDirectCall": true,
+        "allowDirectWhatsapp": true
       }
     },
     {
@@ -43,45 +74,155 @@
     },
     {
       "publicCode": "GSLWY6",
-      "manageToken": "1df4cf6f-123c-4150-b374-538d737fd44a",
+      "manageToken": "06cfa46e-221d-424b-973e-1e081d39f365",
       "productType": "item",
-      "name": "",
-      "phone": "",
-      "email": "",
-      "note": "",
+      "name": "yeni",
+      "phone": "905063509722",
+      "email": "i.dem@hotmail.com",
+      "note": "deneme",
       "alerts": [],
-      "allowDirectCall": false,
-      "allowDirectWhatsapp": false,
-      "status": "unclaimed",
-      "createdAt": "2026-04-05T15:23:13.729Z"
+      "allowDirectCall": true,
+      "allowDirectWhatsapp": true,
+      "status": "active",
+      "createdAt": "2026-04-05T15:23:13.729Z",
+      "ownerName": "",
+      "petName": "yeni",
+      "updatedAt": "2026-04-12T15:18:18.583Z",
+      "recovery": {
+        "phone": "905063509722",
+        "email": "i.dem@hotmail.com"
+      },
+      "visibility": {
+        "showName": false,
+        "showPhone": false,
+        "showEmail": false,
+        "showPetName": false,
+        "showNote": false
+      },
+      "showName": false,
+      "showPhone": false,
+      "showEmail": false,
+      "showPetName": false,
+      "showNote": false
     },
     {
       "publicCode": "TKERNB",
-      "manageToken": "42385946-e9f2-4541-99fb-eb5f5a6e3f2c",
-      "productType": "item",
-      "name": "",
-      "phone": "",
-      "email": "",
-      "note": "",
-      "alerts": [],
+      "manageToken": "3c5b233c-971b-462c-a9f2-511a1aa87736",
+      "productType": "person",
+      "name": "kabin",
+      "phone": "05063509722",
+      "email": "i.dem@hotmail.com",
+      "note": "bulursan ara lütfen",
+      "alerts": [
+        "Ödül verilecektir"
+      ],
       "allowDirectCall": false,
       "allowDirectWhatsapp": false,
-      "status": "unclaimed",
-      "createdAt": "2026-04-05T15:23:13.730Z"
+      "status": "active",
+      "createdAt": "2026-04-05T15:23:13.730Z",
+      "ownerName": "ibrahim demircioğlu",
+      "city": "İSTANBUL",
+      "addressDetail": "osmaniye mahallesi fabrikalar geçidi sokak no:9/a (Özel Zirve Sağlık Kabini)",
+      "distinctiveFeature": "mavi halkalı",
+      "petName": "kabin anahtarı",
+      "updatedAt": "2026-04-11T20:54:48.001Z",
+      "recovery": {
+        "phone": "05063509722",
+        "email": "i.dem@hotmail.com"
+      },
+      "visibility": {
+        "showName": true,
+        "showPhone": false,
+        "showEmail": true,
+        "showCity": false,
+        "showAddressDetail": false,
+        "showPetName": false,
+        "showNote": true
+      },
+      "profile": {
+        "name": "kabin",
+        "ownerName": "ibrahim demircioğlu",
+        "phone": "05063509722",
+        "email": "i.dem@hotmail.com",
+        "city": "İSTANBUL",
+        "addressDetail": "osmaniye mahallesi fabrikalar geçidi sokak no:9/a (Özel Zirve Sağlık Kabini)",
+        "distinctiveFeature": "mavi halkalı",
+        "petName": "kabin anahtarı",
+        "note": "bulursan ara lütfen",
+        "tagName": "kabin"
+      },
+      "contactOptions": {
+        "allowDirectCall": false,
+        "allowDirectWhatsapp": false
+      },
+      "showName": true,
+      "showPhone": false,
+      "showEmail": true,
+      "showCity": false,
+      "showAddressDetail": false,
+      "showPetName": false,
+      "showNote": true
     },
     {
-      "publicCode": "D8UR7S",
-      "manageToken": "80ae65f6-8fcc-4d64-aff7-3a7cf32bb0bb",
-      "productType": "item",
-      "name": "",
-      "phone": "",
-      "email": "",
-      "note": "",
-      "alerts": [],
-      "allowDirectCall": false,
-      "allowDirectWhatsapp": false,
-      "status": "unclaimed",
-      "createdAt": "2026-04-05T15:23:13.730Z"
+      "publicCode": "TEST02",
+      "manageToken": "7d8d8b87-0545-4f57-888b-ca27e34d5cc3",
+      "productType": "person",
+      "name": "asel",
+      "phone": "05063509722",
+      "email": "i.dem@hotmail.com",
+      "note": "deneme",
+      "alerts": [
+        "Acil yakınıma ulaşın",
+        "Sağlık durumu için bilgi verin",
+        "Kaybolursa lütfen haber verin",
+        "Ödül verilecektir"
+      ],
+      "allowDirectCall": true,
+      "allowDirectWhatsapp": true,
+      "status": "active",
+      "createdAt": "2026-04-05T15:23:13.730Z",
+      "ownerName": "ibrahim",
+      "city": "istanbul",
+      "addressDetail": "avcılar",
+      "distinctiveFeature": "gözlük",
+      "petName": "asel",
+      "updatedAt": "2026-04-12T13:17:38.414Z",
+      "recovery": {
+        "phone": "05063509722",
+        "email": "i.dem@hotmail.com"
+      },
+      "visibility": {
+        "showName": true,
+        "showPhone": true,
+        "showEmail": true,
+        "showCity": true,
+        "showAddressDetail": true,
+        "showPetName": true,
+        "showNote": true
+      },
+      "profile": {
+        "name": "asel",
+        "ownerName": "ibrahim",
+        "phone": "05063509722",
+        "email": "i.dem@hotmail.com",
+        "city": "istanbul",
+        "addressDetail": "avcılar",
+        "distinctiveFeature": "gözlük",
+        "petName": "asel",
+        "note": "deneme",
+        "tagName": "asel"
+      },
+      "contactOptions": {
+        "allowDirectCall": true,
+        "allowDirectWhatsapp": true
+      },
+      "showName": true,
+      "showPhone": true,
+      "showEmail": true,
+      "showCity": true,
+      "showAddressDetail": true,
+      "showPetName": true,
+      "showNote": true
     },
     {
       "publicCode": "7FUFPC",

@@ -9,13 +9,33 @@ type Params = {
 
 type ProductType = "pet" | "item" | "key" | "person";
 
-const ALERT_OPTIONS = [
-  "Acil bana ulaşın",
-  "Hayvanım hasta",
-  "Alerjisi var",
-  "Ürkek / yaklaşmayın",
-  "Ödül verilecektir"
-];
+const ALERT_OPTIONS_BY_TYPE: Record<ProductType, string[]> = {
+  pet: [
+    "Acil bana ulaşın",
+    "Hayvanım hasta",
+    "Alerjisi var",
+    "Ürkek / yaklaşmayın",
+    "Ödül verilecektir"
+  ],
+  item: [
+    "Acil bana ulaşın",
+    "Lütfen benimle iletişime geçin",
+    "İçinde önemli eşya var",
+    "Ödül verilecektir"
+  ],
+  key: [
+    "Acil bana ulaşın",
+    "Lütfen benimle iletişime geçin",
+    "Önemli anahtar",
+    "Ödül verilecektir"
+  ],
+  person: [
+    "Acil yakınıma ulaşın",
+    "Sağlık durumu için bilgi verin",
+    "Kaybolursa lütfen haber verin",
+    "Ödül verilecektir"
+  ]
+};
 
 function getString(value: unknown) {
   return typeof value === "string" ? value.trim() : "";
@@ -38,7 +58,7 @@ export async function GET(request: Request, { params }: Params) {
 
     if (!token) {
       return NextResponse.json(
-        { error: "Manage token eksik." },
+        { error: "Yönetim bağlantısı eksik." },
         { status: 400 }
       );
     }
@@ -47,7 +67,7 @@ export async function GET(request: Request, { params }: Params) {
 
     if (!tag) {
       return NextResponse.json(
-        { error: "Geçersiz veya süresi dolmuş manage link." },
+        { error: "Yönetim bağlantısı geçersiz veya süresi dolmuş." },
         { status: 401 }
       );
     }
@@ -59,6 +79,7 @@ export async function GET(request: Request, { params }: Params) {
       productType: tag.productType || "item",
       profile: tag.profile,
       alerts: tag.alerts,
+      alertOptions: ALERT_OPTIONS_BY_TYPE[tag.productType || "item"],
       visibility: tag.visibility,
       contactOptions: {
         allowDirectCall: Boolean(tag.contactOptions?.allowDirectCall),
@@ -76,7 +97,7 @@ export async function GET(request: Request, { params }: Params) {
         error:
           error instanceof Error
             ? error.message
-            : "Manage verisi alınamadı."
+            : "Bilgiler alınamadı."
       },
       { status: 500 }
     );
@@ -92,7 +113,7 @@ export async function POST(request: Request, { params }: Params) {
 
     if (!token) {
       return NextResponse.json(
-        { error: "Manage token eksik." },
+        { error: "Yönetim bağlantısı eksik." },
         { status: 400 }
       );
     }
@@ -101,7 +122,7 @@ export async function POST(request: Request, { params }: Params) {
 
     if (!existing) {
       return NextResponse.json(
-        { error: "Geçersiz veya süresi dolmuş manage link." },
+        { error: "Yönetim bağlantısı geçersiz veya süresi dolmuş." },
         { status: 401 }
       );
     }
@@ -109,29 +130,36 @@ export async function POST(request: Request, { params }: Params) {
     const body = await request.json();
 
     const productType = normalizeProductType(body.productType);
-    const name = getString(body.name);
+    const allowedAlerts = ALERT_OPTIONS_BY_TYPE[productType];
+
+    const name = getString(body.name || body.tagName);
     const ownerName = getString(body.ownerName);
     const phone = getString(body.phone);
     const email = getString(body.email);
-    const petName = getString(body.petName);
+    const city = getString(body.city);
+    const addressDetail = getString(body.addressDetail);
+    const distinctiveFeature = getString(body.distinctiveFeature);
+    const petName = getString(body.petName || body.name || body.tagName);
     const note = getString(body.note);
 
     const alerts = Array.isArray(body.alerts)
       ? body.alerts.filter(
           (item: unknown): item is string =>
-            typeof item === "string" && ALERT_OPTIONS.includes(item)
+            typeof item === "string" && allowedAlerts.includes(item)
         )
       : [];
 
-    const visibility = {
+    const rawVisibility = {
       showName: Boolean(body.visibility?.showName),
       showPhone: Boolean(body.visibility?.showPhone),
       showEmail: Boolean(body.visibility?.showEmail),
+      showCity: Boolean(body.visibility?.showCity),
+      showAddressDetail: Boolean(body.visibility?.showAddressDetail),
       showPetName: Boolean(body.visibility?.showPetName),
       showNote: Boolean(body.visibility?.showNote)
     };
 
-    const contactOptions = {
+    const rawContactOptions = {
       allowDirectCall: Boolean(body.contactOptions?.allowDirectCall),
       allowDirectWhatsapp: Boolean(body.contactOptions?.allowDirectWhatsapp)
     };
@@ -148,26 +176,48 @@ export async function POST(request: Request, { params }: Params) {
       );
     }
 
-    if (!phone) {
+    if (!phone && !email) {
       return NextResponse.json(
-        { error: "Telefon zorunludur." },
+        { error: "Telefon veya e-posta alanlarından en az biri zorunludur." },
         { status: 400 }
       );
     }
 
     if (!petName) {
       return NextResponse.json(
-        { error: "Evcil hayvan adı / ürün adı zorunludur." },
+        { error: "Ürün adı / kişi adı zorunludur." },
         { status: 400 }
       );
     }
 
     if (!recovery.phone && !recovery.email) {
       return NextResponse.json(
-        { error: "En az bir recovery alanı girilmelidir." },
+        { error: "Kurtarma bilgileri için en az bir alan girilmelidir." },
         { status: 400 }
       );
     }
+
+    const contactOptions = {
+      allowDirectCall: rawContactOptions.allowDirectCall && Boolean(phone),
+      allowDirectWhatsapp:
+        rawContactOptions.allowDirectCall &&
+        rawContactOptions.allowDirectWhatsapp &&
+        Boolean(phone)
+    };
+
+    const visibility = {
+      showName: rawVisibility.showName,
+      showPhone:
+        rawVisibility.showPhone &&
+        contactOptions.allowDirectCall &&
+        Boolean(phone),
+      showEmail: rawVisibility.showEmail && Boolean(email),
+      showCity: rawVisibility.showCity && Boolean(city),
+      showAddressDetail:
+        rawVisibility.showAddressDetail && Boolean(addressDetail),
+      showPetName: rawVisibility.showPetName,
+      showNote: rawVisibility.showNote && Boolean(note)
+    };
 
     const updated = updateTagByManageToken({
       manageToken: token,
@@ -176,17 +226,25 @@ export async function POST(request: Request, { params }: Params) {
       ownerName,
       phone,
       email,
+      city,
+      addressDetail,
+      distinctiveFeature,
       petName,
       note,
       alerts,
-      allowPhone: visibility.showPhone,
-      allowEmail: visibility.showEmail,
-      allowWhatsapp: contactOptions.allowDirectWhatsapp,
       allowDirectCall: contactOptions.allowDirectCall,
       allowDirectWhatsapp: contactOptions.allowDirectWhatsapp,
       recoveryPhone: recovery.phone,
       recoveryEmail: recovery.email,
-      status: "active"
+      status: "active",
+      visibility,
+      showName: visibility.showName,
+      showPhone: visibility.showPhone,
+      showEmail: visibility.showEmail,
+      showCity: visibility.showCity,
+      showAddressDetail: visibility.showAddressDetail,
+      showPetName: visibility.showPetName,
+      showNote: visibility.showNote
     });
 
     if (!updated) {
@@ -201,12 +259,12 @@ export async function POST(request: Request, { params }: Params) {
     return NextResponse.json({
       success: true,
       code: updated.code,
-      message: "Profil başarıyla güncellendi.",
+      message: "Bilgiler başarıyla güncellendi.",
       publicLink: `${origin}/p/${updated.code}`,
       managePath,
       manageLink: `${origin}${managePath}`,
       warning:
-        "Bu size özel yönetim linkidir. Lütfen güvenli şekilde saklayın ve başkalarıyla paylaşmayın."
+        "Bu size özel yönetim bağlantısıdır. Lütfen güvenli şekilde saklayın ve başkalarıyla paylaşmayın."
     });
   } catch (error) {
     console.error("MANAGE_POST_ERROR", error);

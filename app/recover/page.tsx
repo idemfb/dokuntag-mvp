@@ -1,12 +1,73 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 type RecoverResponse = {
   success: boolean;
   code: string;
   manageLink: string;
+  message?: string;
+  warning?: string;
 };
+
+type FoundItem = {
+  code: string;
+  petName?: string;
+  status?: string;
+  productType?: "pet" | "item" | "key" | "person";
+};
+
+function getIcon(productType?: FoundItem["productType"]) {
+  if (productType === "pet") return "🐶";
+  if (productType === "key") return "🔑";
+  if (productType === "person") return "🧍";
+  if (productType === "item") return "🎒";
+  return "🏷️";
+}
+
+function getTypeLabel(productType?: FoundItem["productType"]) {
+  if (productType === "pet") return "Evcil hayvan";
+  if (productType === "key") return "Anahtar";
+  if (productType === "person") return "Birey";
+  if (productType === "item") return "Ürün";
+  return "Etiket";
+}
+
+function getStatusLabel(status?: string) {
+  if (status === "active") return "Aktif";
+  if (status === "unclaimed") return "Kurulum bekliyor";
+  return "Bilinmiyor";
+}
+
+function getStatusClass(status?: string) {
+  if (status === "active") return "text-green-700 bg-green-50 border-green-200";
+  if (status === "unclaimed") return "text-amber-700 bg-amber-50 border-amber-200";
+  return "text-neutral-600 bg-neutral-50 border-neutral-200";
+}
+
+function normalizePhoneInput(value: string) {
+  return value.replace(/[^0-9]/g, "");
+}
+
+function GuideStep({
+  step,
+  title,
+  text
+}: {
+  step: string;
+  title: string;
+  text: string;
+}) {
+  return (
+    <div className="rounded-[1.5rem] border border-neutral-200 bg-white p-4 shadow-sm">
+      <div className="inline-flex rounded-full border border-neutral-300 bg-neutral-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-neutral-600">
+        {step}
+      </div>
+      <h3 className="mt-3 text-sm font-semibold text-neutral-900">{title}</h3>
+      <p className="mt-2 text-sm leading-6 text-neutral-600">{text}</p>
+    </div>
+  );
+}
 
 export default function RecoverPage() {
   const [code, setCode] = useState("");
@@ -14,9 +75,25 @@ export default function RecoverPage() {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [finding, setFinding] = useState(false);
+  const [copied, setCopied] = useState(false);
   const [error, setError] = useState("");
   const [successData, setSuccessData] = useState<RecoverResponse | null>(null);
-  const [foundItems, setFoundItems] = useState<{ code: string }[]>([]);
+  const [foundItems, setFoundItems] = useState<FoundItem[]>([]);
+
+  const hasContactInfo = useMemo(() => {
+    return Boolean(phone.trim() || email.trim());
+  }, [phone, email]);
+
+  const canRecoverSingle = useMemo(() => {
+    return Boolean(code.trim() && hasContactInfo);
+  }, [code, hasContactInfo]);
+
+  async function copyManageLink() {
+    if (!successData?.manageLink) return;
+    await navigator.clipboard.writeText(successData.manageLink);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -31,15 +108,20 @@ export default function RecoverPage() {
         headers: {
           "Content-Type": "application/json"
         },
-        body: JSON.stringify({ code, phone, email })
+        body: JSON.stringify({
+          code: code.trim().toUpperCase(),
+          phone: phone.trim(),
+          email: email.trim().toLowerCase()
+        })
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
+      if (!res.ok) throw new Error(data.error || "İşlem tamamlanamadı.");
 
       setSuccessData(data);
-    } catch (err: any) {
-      setError(err.message);
+      setCopied(false);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Bir hata oluştu.");
     } finally {
       setLoading(false);
     }
@@ -50,6 +132,7 @@ export default function RecoverPage() {
       setFinding(true);
       setError("");
       setFoundItems([]);
+      setSuccessData(null);
 
       const res = await fetch("/api/recover", {
         method: "POST",
@@ -57,137 +140,326 @@ export default function RecoverPage() {
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          email,
-          phone,
+          email: email.trim().toLowerCase(),
+          phone: phone.trim(),
           mode: "list"
         })
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
+      if (!res.ok) throw new Error(data.error || "Ürünler bulunamadı.");
 
       setFoundItems(data.items || []);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Bir hata oluştu.");
     } finally {
       setFinding(false);
     }
   }
 
-  async function generateManage(code: string) {
+  async function generateManage(selectedCode: string) {
     try {
+      setError("");
+      setSuccessData(null);
+
       const res = await fetch("/api/recover", {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          code,
-          email,
-          phone
+          code: selectedCode.trim().toUpperCase(),
+          email: email.trim().toLowerCase(),
+          phone: phone.trim()
         })
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
+      if (!res.ok) throw new Error(data.error || "Yönetim bağlantısı oluşturulamadı.");
 
       setSuccessData(data);
-    } catch (err: any) {
-      setError(err.message);
+      setCopied(false);
+
+      if (typeof window !== "undefined") {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Bir hata oluştu.");
     }
   }
 
+  function clearForm() {
+    setCode("");
+    setPhone("");
+    setEmail("");
+    setError("");
+    setSuccessData(null);
+    setFoundItems([]);
+    setCopied(false);
+  }
+
   return (
-    <main className="min-h-screen bg-neutral-50 px-4 py-10">
-      <div className="mx-auto max-w-xl space-y-6">
+    <main className="min-h-screen bg-neutral-50 px-4 py-10 text-neutral-900">
+      <div className="mx-auto max-w-5xl space-y-6">
+        <section className="overflow-hidden rounded-[2rem] border border-neutral-200 bg-white shadow-sm">
+          <div className="border-b border-neutral-200 bg-gradient-to-br from-white via-neutral-50 to-neutral-100/80 px-6 py-7">
+            <a href="/my" className="text-sm text-neutral-500 hover:underline">
+              ← Ürünlerime git
+            </a>
 
-        {/* HEADER */}
-        <div className="space-y-2">
-          <a href="/my" className="text-sm text-neutral-500 hover:underline">
-            ← Ürünlerime git
-          </a>
+            <p className="mt-4 text-xs uppercase tracking-[0.2em] text-neutral-400">
+              Dokuntag
+            </p>
 
-          <p className="text-xs uppercase tracking-[0.2em] text-neutral-400">
-            Dokuntag
-          </p>
+            <h1 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">
+              Yönetim bağlantısı kurtarma
+            </h1>
 
-          <h1 className="text-2xl font-semibold">
-            Manage link kurtarma
-          </h1>
-        </div>
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-neutral-600">
+              Telefon veya email doğrulaması ile ürünlerinizi bulabilir, ilgili ürün için yeni bir yönetim bağlantısı oluşturabilirsiniz.
+            </p>
+          </div>
 
-        {error && (
-          <div className="bg-red-50 p-3 text-sm text-red-700 rounded">
+          <div className="px-6 py-6">
+            <div className="grid gap-3 sm:grid-cols-3">
+              <GuideStep
+                step="1. Adım"
+                title="Telefon veya e-postanızı girin"
+                text="Kayıt sırasında kullandığınız iletişim bilgisini yazın."
+              />
+              <GuideStep
+                step="2. Adım"
+                title="Ürünü bulun veya kodu yazın"
+                text="Kod biliyorsanız tek ürün seçin, bilmiyorsanız ürünlerinizi listeleyin."
+              />
+              <GuideStep
+                step="3. Adım"
+                title="Yeni yönetim bağlantısını alın"
+                text="Eski bağlantı kapanır, yeni bağlantıyı güvenli şekilde saklayın."
+              />
+            </div>
+
+            <div className="mt-4 rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-4 text-sm leading-6 text-neutral-700">
+              Burada iki yol var: Kod biliyorsanız tek ürün için hızlıca yeni bağlantı oluşturabilirsiniz. Kod bilmiyorsanız telefon veya e-posta ile tüm ürünlerinizi listeleyebilirsiniz.
+            </div>
+
+            <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-xs leading-5 text-amber-800">
+              Güvenlik için eski yönetim bağlantısı geçersiz olur ve yeni bir bağlantı oluşturulur. Yeni bağlantıyı güvenli şekilde saklayın.
+            </div>
+
+            <div className="mt-5 grid gap-4 lg:grid-cols-2">
+              <section className="rounded-[1.5rem] border border-neutral-200 bg-white p-5">
+                <div>
+                  <p className="text-sm font-semibold text-neutral-900">
+                    Tek ürün için yeni bağlantı oluştur
+                  </p>
+                  <p className="mt-1 text-sm leading-6 text-neutral-600">
+                    Ürün kodunu biliyorsanız bu alan daha hızlıdır.
+                  </p>
+                </div>
+
+                <form onSubmit={handleSubmit} className="mt-5 space-y-4">
+                  <div>
+                    <label className="mb-2 block text-sm font-medium text-neutral-800">
+                      Kod
+                    </label>
+                    <input
+                      value={code}
+                      onChange={(e) => setCode(e.target.value.toUpperCase())}
+                      placeholder="Örn: DT001"
+                      className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
+                    />
+                    <p className="mt-2 text-xs text-neutral-500">
+                      Bu alanda ürün kodu zorunludur.
+                    </p>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={loading || !canRecoverSingle}
+                    className="w-full rounded-2xl bg-black px-4 py-3 text-sm font-medium text-white transition hover:bg-neutral-800 disabled:opacity-60"
+                  >
+                    {loading ? "Kontrol ediliyor..." : "Bu ürün için bağlantı oluştur"}
+                  </button>
+                </form>
+              </section>
+
+              <section className="rounded-[1.5rem] border border-neutral-200 bg-white p-5">
+                <div>
+                  <p className="text-sm font-semibold text-neutral-900">
+                    Tüm ürünlerimi bul
+                  </p>
+                  <p className="mt-1 text-sm leading-6 text-neutral-600">
+                    Kod bilmiyorsanız telefon veya email ile tüm ürünlerinizi listeleyin.
+                  </p>
+                </div>
+
+                <div className="mt-5 space-y-4">
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div>
+                      <label className="mb-2 block text-sm font-medium text-neutral-800">
+                        Telefon
+                      </label>
+                      <input
+                        value={phone}
+                        onChange={(e) => setPhone(normalizePhoneInput(e.target.value))}
+                        placeholder="05XXXXXXXXX"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="mb-2 block text-sm font-medium text-neutral-800">
+                        Email
+                      </label>
+                      <input
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="ornek@email.com"
+                        className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
+                      />
+                    </div>
+                  </div>
+
+                  <p className="text-xs text-neutral-500">
+                    Telefon veya email alanlarından en az biri gereklidir.
+                  </p>
+
+                  <div className="flex flex-col gap-3 sm:flex-row">
+                    <button
+                      onClick={findMyProducts}
+                      disabled={finding || !hasContactInfo}
+                      className="flex-1 rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm font-medium transition hover:border-neutral-400 hover:bg-neutral-50 disabled:opacity-60"
+                    >
+                      {finding ? "Aranıyor..." : "Ürünlerimi listele"}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={clearForm}
+                      className="rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm font-medium transition hover:border-neutral-400 hover:bg-neutral-50"
+                    >
+                      Temizle
+                    </button>
+                  </div>
+                </div>
+              </section>
+            </div>
+          </div>
+        </section>
+
+        {error ? (
+          <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 shadow-sm">
             {error}
           </div>
-        )}
+        ) : null}
 
-        {/* TEK ÜRÜN SONUÇ */}
-        {successData && (
-          <div className="border p-4 rounded space-y-2 bg-white">
-            <p className="text-sm font-medium">Manage link</p>
-            <p className="break-all text-sm">{successData.manageLink}</p>
-          </div>
-        )}
+        {successData ? (
+          <section className="rounded-[2rem] border border-green-200 bg-white p-5 shadow-sm">
+            <div className="mb-4">
+              <p className="text-xs uppercase tracking-[0.16em] text-green-600">
+                Doğrulama başarılı
+              </p>
+              <h2 className="mt-2 text-lg font-semibold text-neutral-900">
+                Yeni yönetim bağlantısı oluşturuldu
+              </h2>
+              <p className="mt-2 text-sm leading-6 text-neutral-600">
+                {successData.message ||
+                  "Eski yönetim bağlantısı geçersiz hale getirildi ve yeni bir bağlantı oluşturuldu."}
+              </p>
+            </div>
 
-        {/* FORM */}
-        <form onSubmit={handleSubmit} className="space-y-3">
-          <input
-            value={code}
-            onChange={(e) => setCode(e.target.value.toUpperCase())}
-            placeholder="Kod (DT001)"
-            className="w-full border p-3 rounded"
-          />
+            <div className="rounded-2xl border border-neutral-200 bg-neutral-50 p-4">
+              <p className="text-sm font-medium text-neutral-900">Yönetim bağlantısı</p>
+              <p className="mt-2 break-all text-sm text-neutral-700">
+                {successData.manageLink}
+              </p>
+            </div>
 
-          <input
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            placeholder="Telefon"
-            className="w-full border p-3 rounded"
-          />
+            <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs leading-5 text-amber-800">
+              {successData.warning ||
+                "Bu size özel yönetim bağlantısıdır. Lütfen güvenli şekilde saklayın ve başkalarıyla paylaşmayın."}
+            </div>
 
-          <input
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="Email"
-            className="w-full border p-3 rounded"
-          />
+            <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+              <button
+                type="button"
+                onClick={() => void copyManageLink()}
+                className="rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm font-medium transition hover:border-neutral-400 hover:bg-neutral-50"
+              >
+                {copied ? "Kopyalandı" : "Bağlantıyı kopyala"}
+              </button>
 
-          <button className="w-full bg-black text-white p-3 rounded">
-            {loading ? "Kontrol ediliyor..." : "Tek ürün kurtar"}
-          </button>
-        </form>
+              <a
+                href={successData.manageLink}
+                className="rounded-2xl bg-black px-4 py-3 text-center text-sm font-medium text-white transition hover:bg-neutral-800"
+              >
+                Yönetim sayfasına git
+              </a>
+            </div>
+          </section>
+        ) : null}
 
-        {/* MULTI */}
-        <div className="space-y-3">
-          <button
-            onClick={findMyProducts}
-            className="w-full border p-3 rounded"
-          >
-            {finding ? "Aranıyor..." : "Tüm ürünlerimi bul"}
-          </button>
+        {foundItems.length > 0 ? (
+          <section className="rounded-[2rem] border border-neutral-200 bg-white p-5 shadow-sm">
+            <div className="mb-5">
+              <h2 className="text-lg font-semibold tracking-tight text-neutral-900">
+                Bulunan ürünler
+              </h2>
+              <p className="mt-1 text-sm text-neutral-600">
+                İstediğiniz ürün için yeni bir yönetim bağlantısı oluşturabilirsiniz.
+              </p>
+            </div>
 
-          {foundItems.length > 0 && (
             <div className="space-y-3">
               {foundItems.map((item) => (
                 <div
                   key={item.code}
-                  className="flex justify-between items-center border p-3 rounded bg-white"
+                  className="flex flex-col gap-4 rounded-[1.5rem] border border-neutral-200 bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between"
                 >
-                  <span>{item.code}</span>
+                  <div className="flex items-center gap-4">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-neutral-200 bg-neutral-50 text-xl">
+                      {getIcon(item.productType)}
+                    </div>
+
+                    <div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="text-xs font-medium tracking-wide text-neutral-400">
+                          {item.code}
+                        </p>
+                        <span className="rounded-full border border-neutral-200 bg-neutral-50 px-2.5 py-1 text-[11px] font-medium text-neutral-600">
+                          {getTypeLabel(item.productType)}
+                        </span>
+                      </div>
+
+                      <p className="mt-1 text-base font-semibold text-neutral-900">
+                        {item.petName || "İsimsiz ürün"}
+                      </p>
+
+                      <div className="mt-2">
+                        <span
+                          className={`inline-flex rounded-full border px-3 py-1 text-xs font-medium ${getStatusClass(item.status)}`}
+                        >
+                          {getStatusLabel(item.status)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
 
                   <button
-                    onClick={() => generateManage(item.code)}
-                    className="bg-black text-white px-3 py-1 rounded text-sm"
+                    onClick={() => void generateManage(item.code)}
+                    className="rounded-2xl bg-black px-4 py-3 text-sm font-medium text-white transition hover:bg-neutral-800"
                   >
-                    Yönet
+                    Bu ürün için bağlantı oluştur
                   </button>
                 </div>
               ))}
             </div>
-          )}
-        </div>
-
+          </section>
+        ) : null}
       </div>
     </main>
   );

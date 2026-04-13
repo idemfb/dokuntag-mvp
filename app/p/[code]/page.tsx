@@ -4,6 +4,16 @@ import { use, useEffect, useMemo, useState } from "react";
 
 type ProductType = "pet" | "item" | "key" | "person";
 
+type Visibility = {
+  showName?: boolean;
+  showPhone?: boolean;
+  showEmail?: boolean;
+  showCity?: boolean;
+  showAddressDetail?: boolean;
+  showPetName?: boolean;
+  showNote?: boolean;
+};
+
 type PublicProfile = {
   publicCode: string;
   oldCode?: string;
@@ -12,11 +22,27 @@ type PublicProfile = {
   ownerName: string;
   phone: string;
   email: string;
+  city?: string;
+  addressDetail?: string;
+  distinctiveFeature?: string;
+  petName?: string;
   note: string;
   alerts: string[];
-  allowDirectCall: boolean;
-  allowDirectWhatsapp: boolean;
+  allowDirectCall?: boolean;
+  allowDirectWhatsapp?: boolean;
+  contactOptions?: {
+    allowDirectCall?: boolean;
+    allowDirectWhatsapp?: boolean;
+  };
   status?: "unclaimed" | "active";
+  visibility?: Visibility;
+  showName?: boolean;
+  showPhone?: boolean;
+  showEmail?: boolean;
+  showCity?: boolean;
+  showAddressDetail?: boolean;
+  showPetName?: boolean;
+  showNote?: boolean;
 };
 
 type PublicApiResponse = {
@@ -26,30 +52,181 @@ type PublicApiResponse = {
 };
 
 function getTitle(productType?: ProductType) {
-  if (productType === "pet") return "🐶 Bu hayvanı buldunuz";
-  if (productType === "key") return "🔑 Bu anahtarı buldunuz";
-  if (productType === "person") return "🧍 Bu kişiye yardımcı olun";
-  return "🎒 Bu eşyayı buldunuz";
+  if (productType === "pet") return "Bu evcil hayvan size ulaşmış olabilir";
+  if (productType === "key") return "Bu anahtar size ulaşmış olabilir";
+  if (productType === "person") return "Bu kişiyle ilgili bilgi paylaşabilirsiniz";
+  return "Bu eşya size ulaşmış olabilir";
 }
 
 function getSubtitle(productType?: ProductType) {
   if (productType === "pet") {
-    return "Lütfen sahibine güvenli şekilde ulaşmasına yardımcı olun.";
+    return "Sahibine güvenli şekilde ulaşmasına yardımcı olabilirsiniz.";
   }
 
   if (productType === "person") {
-    return "Bu kişi yardıma ihtiyaç duyuyor olabilir. Lütfen yakınlarıyla iletişim kurulmasına yardımcı olun.";
+    return "Yakınlarına veya ilgili kişilere güvenli şekilde ulaşılmasına yardımcı olabilirsiniz.";
   }
 
   if (productType === "key") {
-    return "Lütfen anahtarın sahibine ulaşmasına yardımcı olun.";
+    return "Anahtarın sahibine güvenli şekilde ulaşmasına yardımcı olabilirsiniz.";
   }
 
-  return "Lütfen eşyanın sahibine ulaşmasına yardımcı olun.";
+  return "Eşyanın sahibine güvenli şekilde ulaşmasına yardımcı olabilirsiniz.";
+}
+
+function getBadgeLabel(productType?: ProductType) {
+  if (productType === "pet") return "Evcil Hayvan";
+  if (productType === "key") return "Anahtar";
+  if (productType === "person") return "Birey";
+  return "Eşya";
+}
+
+function getProductIcon(productType?: ProductType) {
+  if (productType === "pet") return "🐾";
+  if (productType === "key") return "🔑";
+  if (productType === "person") return "🧍";
+  return "🎒";
+}
+
+function getHelpText(productType?: ProductType) {
+  if (productType === "pet") {
+    return "Bu sayfa, bu evcil hayvanın sahibine güvenli şekilde ulaşılmasına yardımcı olmak için oluşturulmuştur.";
+  }
+
+  if (productType === "person") {
+    return "Bu sayfa, bu bireyin yakınlarına veya ilgilenen kişilere güvenli şekilde ulaşılmasına yardımcı olmak için oluşturulmuştur.";
+  }
+
+  if (productType === "key") {
+    return "Bu sayfa, bu anahtarın sahibine güvenli şekilde ulaşılmasına yardımcı olmak için oluşturulmuştur.";
+  }
+
+  return "Bu sayfa, bu eşyanın sahibine güvenli şekilde ulaşmasına yardımcı olmak için oluşturulmuştur.";
+}
+
+function getPrimaryNameLabel(productType?: ProductType) {
+  if (productType === "pet") return "Evcil hayvan adı";
+  if (productType === "person") return "Kişi adı";
+  if (productType === "key") return "Anahtar adı";
+  return "Ürün adı";
+}
+
+function getOwnerLabel(productType?: ProductType) {
+  if (productType === "person") return "Yakını / sorumlusu";
+  return "Sahibi";
 }
 
 function normalizePhoneForLink(phone: string) {
   return phone.replace(/\D/g, "");
+}
+
+function getVisibleFlag(data: PublicProfile, key: keyof Visibility) {
+  if (typeof data.visibility?.[key] === "boolean") {
+    return Boolean(data.visibility[key]);
+  }
+
+  if (typeof data[key] === "boolean") {
+    return Boolean(data[key]);
+  }
+
+  return true;
+}
+
+function getMainSiteUrl() {
+  const value =
+    process.env.NEXT_PUBLIC_MAIN_SITE_URL?.trim() ||
+    process.env.NEXT_PUBLIC_SITE_URL?.trim() ||
+    "https://dokuntag.com";
+
+  return value.replace(/\/+$/, "");
+}
+
+function getHowItWorksUrl() {
+  const value =
+    process.env.NEXT_PUBLIC_HOW_IT_WORKS_URL?.trim() ||
+    `${getMainSiteUrl()}/how-it-works`;
+
+  return value.replace(/\/+$/, "");
+}
+
+function InfoRow({
+  label,
+  value
+}: {
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="rounded-[22px] border border-neutral-200 bg-white px-4 py-3">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-neutral-500">
+        {label}
+      </p>
+      <p className="mt-1 text-sm leading-6 text-neutral-900">{value}</p>
+    </div>
+  );
+}
+
+function ContactOptionCard({
+  label,
+  checked,
+  onChange
+}: {
+  label: string;
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+}) {
+  return (
+    <label
+      className={`flex cursor-pointer items-center gap-3 rounded-2xl border px-4 py-3 text-sm transition ${
+        checked
+          ? "border-neutral-800 bg-neutral-800 text-white shadow-sm"
+          : "border-neutral-300 bg-white text-neutral-800 hover:border-neutral-400 hover:bg-neutral-50"
+      }`}
+    >
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={(e) => onChange(e.target.checked)}
+        className="h-4 w-4"
+      />
+      <span>{label}</span>
+    </label>
+  );
+}
+
+function FeatureCard({
+  title,
+  text
+}: {
+  title: string;
+  text: string;
+}) {
+  return (
+    <div className="rounded-[22px] border border-neutral-200 bg-white px-4 py-4">
+      <p className="text-sm font-semibold text-neutral-900">{title}</p>
+      <p className="mt-2 text-sm leading-6 text-neutral-600">{text}</p>
+    </div>
+  );
+}
+
+function StepCard({
+  step,
+  title,
+  text
+}: {
+  step: string;
+  title: string;
+  text: string;
+}) {
+  return (
+    <div className="rounded-[24px] border border-neutral-200 bg-white p-4 shadow-sm">
+      <div className="inline-flex rounded-full border border-neutral-300 bg-neutral-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-neutral-600">
+        {step}
+      </div>
+      <h3 className="mt-3 text-base font-semibold text-neutral-900">{title}</h3>
+      <p className="mt-2 text-sm leading-6 text-neutral-600">{text}</p>
+    </div>
+  );
 }
 
 export default function PublicPage({
@@ -75,6 +252,9 @@ export default function PublicPage({
   const [sendError, setSendError] = useState("");
   const [sendSuccess, setSendSuccess] = useState("");
 
+  const dokuntagHref = getMainSiteUrl();
+  const howItWorksHref = getHowItWorksUrl();
+
   useEffect(() => {
     let cancelled = false;
 
@@ -90,7 +270,7 @@ export default function PublicPage({
         const json: PublicApiResponse = await res.json();
 
         if (!res.ok || !json.success || !json.data) {
-          throw new Error(json?.message || "Profil yüklenemedi.");
+          throw new Error(json?.message || "Sayfa yüklenemedi.");
         }
 
         if (!cancelled) {
@@ -127,19 +307,12 @@ export default function PublicPage({
     return `https://wa.me/${normalizedForWa}?text=${encodeURIComponent(text)}`;
   }, [data]);
 
-  const smsHref = useMemo(() => {
-    if (!data?.phone) return "";
-    const phone = normalizePhoneForLink(data.phone);
-    const text = "Dokuntag üzerinden size ulaşıyorum.";
-    return `sms:${phone}?body=${encodeURIComponent(text)}`;
-  }, [data]);
-
-  const emailHref = useMemo(() => {
-    if (!data?.email) return "";
-    const subject = "Dokuntag mesajı";
-    const body = "Dokuntag üzerinden size ulaşıyorum.";
-    return `mailto:${data.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-  }, [data]);
+  const allowDirectCall = Boolean(
+    data?.allowDirectCall ?? data?.contactOptions?.allowDirectCall
+  );
+  const allowDirectWhatsapp = Boolean(
+    data?.allowDirectWhatsapp ?? data?.contactOptions?.allowDirectWhatsapp
+  );
 
   async function handleSendMessage(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -178,7 +351,8 @@ export default function PublicPage({
       }
 
       setSendSuccess(
-        json?.message || "Mesaj iletildi. Etiket sahibi sizinle iletişime geçebilir."
+        json?.message ||
+          "Mesaj iletildi. Profil sahibi uygun görürse sizinle iletişime geçecektir. Lütfen iletişim bilgilerinizi doğru girdiğinizden emin olun."
       );
       setSenderName("");
       setSenderPhone("");
@@ -196,9 +370,16 @@ export default function PublicPage({
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-neutral-50 px-4 py-10 text-neutral-900">
-        <div className="mx-auto max-w-xl rounded-2xl bg-white p-6 shadow-sm">
-          <p>Yükleniyor...</p>
+      <main className="min-h-screen bg-neutral-100 px-4 py-8 text-neutral-900 sm:px-5 sm:py-10">
+        <div className="mx-auto max-w-2xl">
+          <div className="rounded-[30px] border border-neutral-200 bg-white px-6 py-7 shadow-sm sm:px-8">
+            <div className="space-y-3">
+              <div className="h-3 w-20 animate-pulse rounded-full bg-neutral-200" />
+              <div className="h-8 w-2/3 animate-pulse rounded-full bg-neutral-200" />
+              <div className="h-4 w-full animate-pulse rounded-full bg-neutral-200" />
+              <div className="h-4 w-5/6 animate-pulse rounded-full bg-neutral-200" />
+            </div>
+          </div>
         </div>
       </main>
     );
@@ -206,238 +387,423 @@ export default function PublicPage({
 
   if (error || !data) {
     return (
-      <main className="min-h-screen bg-neutral-50 px-4 py-10 text-neutral-900">
-        <div className="mx-auto max-w-xl rounded-2xl border border-red-200 bg-red-50 p-6">
-          <h1 className="text-lg font-semibold text-red-800">Profil açılamadı</h1>
-          <p className="mt-2 text-sm text-red-700">
-            {error || "Bu etiket için profil bulunamadı."}
-          </p>
+      <main className="min-h-screen bg-neutral-100 px-4 py-8 text-neutral-900 sm:px-5 sm:py-10">
+        <div className="mx-auto max-w-2xl">
+          <div className="rounded-[30px] border border-red-200 bg-white px-6 py-7 shadow-sm sm:px-8">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-red-500">
+              Dokuntag
+            </p>
+            <h1 className="mt-3 text-xl font-semibold text-red-800">
+              Sayfa açılamadı
+            </h1>
+            <p className="mt-3 text-sm leading-6 text-red-700">
+              {error || "Bu ürün için profil bulunamadı."}
+            </p>
+          </div>
         </div>
       </main>
     );
   }
 
+  const showName = getVisibleFlag(data, "showName");
+  const showPhone = getVisibleFlag(data, "showPhone");
+  const showEmail = getVisibleFlag(data, "showEmail");
+  const showCity = getVisibleFlag(data, "showCity");
+  const showAddressDetail = getVisibleFlag(data, "showAddressDetail");
+  const showPetName = getVisibleFlag(data, "showPetName");
+  const showNote = getVisibleFlag(data, "showNote");
+
+  const showSecondaryNameSeparately =
+    Boolean(data.name?.trim()) &&
+    Boolean(data.petName?.trim()) &&
+    data.name.trim().toLocaleLowerCase("tr-TR") !==
+      data.petName.trim().toLocaleLowerCase("tr-TR");
+
+  const hasVisibleProfileInfo =
+    (showPetName && Boolean(data.petName)) ||
+    (showName && Boolean(data.ownerName)) ||
+    showSecondaryNameSeparately ||
+    (showPhone && Boolean(data.phone)) ||
+    (showEmail && Boolean(data.email)) ||
+    (showCity && Boolean(data.city)) ||
+    (showAddressDetail && Boolean(data.addressDetail)) ||
+    Boolean(data.distinctiveFeature) ||
+    (showNote && Boolean(data.note));
+
+  const hasQuickActions =
+    (allowDirectCall && Boolean(data.phone)) ||
+    (allowDirectWhatsapp && Boolean(data.phone));
+
   return (
-    <main className="min-h-screen bg-neutral-50 px-4 py-10 text-neutral-900">
-      <div className="mx-auto max-w-xl space-y-6">
-        <div className="rounded-2xl bg-white p-6 shadow-sm">
-          <div className="space-y-2 text-center">
-            <p className="text-xs uppercase tracking-[0.2em] text-neutral-400">
-              Dokuntag
-            </p>
+    <main className="min-h-screen bg-neutral-100 px-4 py-8 text-neutral-900 sm:px-5 sm:py-10">
+      <div className="mx-auto max-w-2xl space-y-5 sm:space-y-6">
+        <section className="overflow-hidden rounded-[32px] border border-neutral-200 bg-white shadow-sm">
+          <div className="border-b border-neutral-200 bg-gradient-to-br from-white via-neutral-50 to-neutral-100/80 px-6 py-7 sm:px-8 sm:py-9">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <a
+                href={dokuntagHref}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center rounded-full border border-neutral-200 bg-white px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-neutral-600 transition hover:border-neutral-300 hover:bg-neutral-50"
+              >
+                Dokuntag
+              </a>
 
-            <h1 className="text-2xl font-semibold">
-              {getTitle(data.productType)}
-            </h1>
+              <div className="inline-flex items-center gap-2 rounded-full bg-neutral-800 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-white shadow-sm">
+                <span aria-hidden="true">{getProductIcon(data.productType)}</span>
+                <span>{getBadgeLabel(data.productType)}</span>
+              </div>
+            </div>
 
-            <p className="text-sm text-neutral-600">
-              {getSubtitle(data.productType)}
-            </p>
+            <div className="mt-6 flex items-start gap-4">
+              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-[20px] border border-neutral-200 bg-neutral-50 text-2xl shadow-sm">
+                {getProductIcon(data.productType)}
+              </div>
+
+              <div className="min-w-0">
+                <h1 className="text-2xl font-semibold leading-tight sm:text-[32px]">
+                  {getTitle(data.productType)}
+                </h1>
+                <p className="mt-2 max-w-xl text-sm leading-6 text-neutral-600 sm:text-[15px]">
+                  {getSubtitle(data.productType)}
+                </p>
+              </div>
+            </div>
           </div>
-        </div>
+
+          <div className="px-6 py-5 sm:px-8">
+            <div className="rounded-[22px] border border-neutral-200 bg-neutral-50 px-4 py-4 text-sm leading-6 text-neutral-700">
+              {getHelpText(data.productType)}
+            </div>
+
+            <div className="mt-4 rounded-[22px] border border-emerald-200 bg-emerald-50 px-4 py-4 text-sm leading-6 text-emerald-900">
+              Bu bilgiler profil sahibi tarafından paylaşılmıştır. Yalnızca gerçekten yardımcı olabiliyorsanız iletişime geçin.
+            </div>
+          </div>
+        </section>
 
         {data.alerts.length > 0 ? (
-          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5">
-            <h2 className="text-sm font-semibold text-amber-900">Önemli uyarılar</h2>
+          <section className="rounded-[30px] border border-amber-200 bg-white p-6 shadow-sm sm:p-7">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-amber-600">
+                Dikkat
+              </p>
+              <h2 className="mt-2 text-lg font-semibold text-neutral-900">
+                Önemli uyarılar
+              </h2>
+            </div>
 
-            <div className="mt-3 flex flex-wrap gap-2">
+            <div className="mt-4 flex flex-wrap gap-2.5">
               {data.alerts.map((alert) => (
                 <span
                   key={alert}
-                  className="rounded-full border border-amber-300 bg-white px-3 py-1 text-xs text-amber-900"
+                  className="rounded-full border border-amber-300 bg-amber-50 px-3.5 py-2 text-xs font-medium text-amber-900"
                 >
                   {alert}
                 </span>
               ))}
             </div>
-          </div>
+          </section>
         ) : null}
 
-        <div className="rounded-2xl bg-white p-6 shadow-sm">
-          <h2 className="text-lg font-semibold">Profil bilgileri</h2>
+        {hasVisibleProfileInfo ? (
+          <section className="rounded-[30px] border border-neutral-200 bg-white p-6 shadow-sm sm:p-7">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">
+                Profil bilgileri
+              </p>
+              <h2 className="mt-2 text-lg font-semibold text-neutral-900">
+                Paylaşılan bilgiler
+              </h2>
+            </div>
 
-          <div className="mt-4 space-y-3 text-sm">
-            {data.name ? (
-              <div>
-                <span className="font-medium">Adı / Etiket adı:</span>{" "}
-                <span>{data.name}</span>
-              </div>
-            ) : null}
+            <div className="mt-5 space-y-3">
+              {showPetName && data.petName ? (
+                <InfoRow
+                  label={getPrimaryNameLabel(data.productType)}
+                  value={data.petName}
+                />
+              ) : null}
 
-            {data.ownerName ? (
-              <div>
-                <span className="font-medium">Sahibi:</span>{" "}
-                <span>{data.ownerName}</span>
-              </div>
-            ) : null}
+              {showSecondaryNameSeparately ? (
+                <InfoRow label="Etiket başlığı" value={data.name} />
+              ) : null}
 
-            {data.phone ? (
-              <div>
-                <span className="font-medium">Telefon:</span>{" "}
-                <span>{data.phone}</span>
-              </div>
-            ) : null}
+              {showName && data.ownerName ? (
+                <InfoRow
+                  label={getOwnerLabel(data.productType)}
+                  value={data.ownerName}
+                />
+              ) : null}
 
-            {data.email ? (
-              <div>
-                <span className="font-medium">Email:</span>{" "}
-                <span>{data.email}</span>
-              </div>
-            ) : null}
+              {showPhone && data.phone ? (
+                <InfoRow label="Telefon" value={data.phone} />
+              ) : null}
 
-            {data.note ? (
-              <div>
-                <span className="font-medium">Not:</span>{" "}
-                <span>{data.note}</span>
-              </div>
-            ) : null}
-          </div>
-        </div>
+              {showEmail && data.email ? (
+                <InfoRow label="E-posta" value={data.email} />
+              ) : null}
 
-        {(data.phone || data.email) && (
-          <div className="rounded-2xl bg-white p-6 shadow-sm">
-            <h2 className="text-lg font-semibold">Hızlı iletişim</h2>
-            <p className="mt-2 text-sm text-neutral-600">
-              Sahibine hızlıca ulaşabilirsiniz.
-            </p>
+              {showCity && data.city ? (
+                <InfoRow label="Şehir" value={data.city} />
+              ) : null}
 
-            <div className="mt-4 flex flex-wrap gap-3">
-              {data.allowDirectCall && data.phone ? (
+              {showAddressDetail && data.addressDetail ? (
+                <InfoRow label="Konum detayı" value={data.addressDetail} />
+              ) : null}
+
+              {data.distinctiveFeature ? (
+                <div className="rounded-[22px] border border-neutral-800 bg-neutral-800 px-4 py-4 text-white shadow-sm">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-neutral-300">
+                    Ayırt edici özellik
+                  </p>
+                  <p className="mt-2 text-sm leading-6">{data.distinctiveFeature}</p>
+                </div>
+              ) : null}
+
+              {showNote && data.note ? (
+                <InfoRow label="Not" value={data.note} />
+              ) : null}
+            </div>
+          </section>
+        ) : null}
+
+        {hasQuickActions ? (
+          <section className="rounded-[30px] border border-neutral-200 bg-white p-6 shadow-sm sm:p-7">
+            <div className="max-w-lg">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">
+                Hızlı iletişim
+              </p>
+              <h2 className="mt-2 text-lg font-semibold text-neutral-900">
+                Doğrudan ulaşın
+              </h2>
+              <p className="mt-2 text-sm leading-6 text-neutral-600">
+                Uygun iletişim seçenekleri açıksa aşağıdan hızlıca bağlantı kurabilirsiniz.
+              </p>
+            </div>
+
+            <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
+              {allowDirectCall && data.phone ? (
                 <a
                   href={callHref}
-                  className="rounded-xl bg-neutral-900 px-4 py-3 text-center text-sm font-medium text-white"
+                  className="inline-flex min-h-[58px] items-center justify-center rounded-2xl bg-neutral-800 px-5 py-4 text-center text-sm font-semibold text-white shadow-sm transition hover:bg-neutral-700"
                 >
                   Ara
                 </a>
               ) : null}
 
-              {data.allowDirectWhatsapp && data.phone ? (
+              {allowDirectWhatsapp && data.phone ? (
                 <a
                   href={whatsappHref}
                   target="_blank"
                   rel="noreferrer"
-                  className="rounded-xl border border-neutral-300 px-4 py-3 text-center text-sm font-medium text-neutral-900"
+                  className="inline-flex min-h-[58px] items-center justify-center rounded-2xl border border-neutral-300 bg-white px-5 py-4 text-center text-sm font-semibold text-neutral-900 transition hover:border-neutral-400 hover:bg-neutral-50"
                 >
-                  WhatsApp
-                </a>
-              ) : null}
-
-              {data.phone ? (
-                <a
-                  href={smsHref}
-                  className="rounded-xl border border-neutral-300 px-4 py-3 text-center text-sm font-medium text-neutral-900"
-                >
-                  SMS
-                </a>
-              ) : null}
-
-              {data.email ? (
-                <a
-                  href={emailHref}
-                  className="rounded-xl border border-neutral-300 px-4 py-3 text-center text-sm font-medium text-neutral-900"
-                >
-                  Email
+                  WhatsApp ile yaz
                 </a>
               ) : null}
             </div>
-          </div>
-        )}
+          </section>
+        ) : null}
 
-        <div className="rounded-2xl bg-white p-6 shadow-sm">
-          <h2 className="text-lg font-semibold">İletişim</h2>
-          <p className="mt-2 text-sm text-neutral-600">
-            Sahibine ulaşmak için aşağıdaki formu kullanabilirsiniz.
-          </p>
+        <section className="rounded-[30px] border border-neutral-200 bg-white p-6 shadow-sm sm:p-7">
+          <div className="max-w-lg">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">
+              İletişim formu
+            </p>
+            <h2 className="mt-2 text-lg font-semibold text-neutral-900">
+              Profil sahibine mesaj gönderin
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-neutral-600">
+              Uygun görülürse profil sahibi sizinle iletişime geçer.
+            </p>
+          </div>
 
           {sendError ? (
-            <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+            <div className="mt-5 rounded-2xl border border-red-200 bg-red-50 px-4 py-4 text-sm text-red-700">
               {sendError}
             </div>
           ) : null}
 
           {sendSuccess ? (
-            <div className="mt-4 rounded-xl border border-green-200 bg-green-50 p-3 text-sm text-green-700">
-              {sendSuccess}
+            <div className="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-4 shadow-sm">
+              <p className="text-sm font-semibold text-emerald-900">
+                Mesaj iletildi
+              </p>
+              <p className="mt-1 text-sm leading-6 text-emerald-700">
+                {sendSuccess}
+              </p>
             </div>
           ) : null}
 
           <form onSubmit={handleSendMessage} className="mt-5 space-y-4">
-            <input
-              value={senderName}
-              onChange={(e) => setSenderName(e.target.value)}
-              placeholder="Adınız"
-              className="w-full rounded-xl border border-neutral-300 px-4 py-3 outline-none"
-            />
-
-            <input
-              value={senderPhone}
-              onChange={(e) => {
-                const onlyNumbers = e.target.value.replace(/[^0-9]/g, "");
-                setSenderPhone(onlyNumbers);
-              }}
-              inputMode="numeric"
-              pattern="[0-9]*"
-              placeholder="Telefonunuz"
-              className="w-full rounded-xl border border-neutral-300 px-4 py-3 outline-none"
-            />
-
-            <input
-              type="email"
-              value={senderEmail}
-              onChange={(e) => setSenderEmail(e.target.value)}
-              placeholder="Email adresiniz"
-              className="w-full rounded-xl border border-neutral-300 px-4 py-3 outline-none"
-            />
-
-            <div className="rounded-xl border border-neutral-200 p-4">
-              <p className="mb-3 text-sm font-medium">Size nasıl dönüş yapılsın?</p>
-
-              <div className="space-y-2 text-sm">
-                <label className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={contactPhone}
-                    onChange={(e) => setContactPhone(e.target.checked)}
-                  />
-                  <span>Telefon / SMS</span>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label className="mb-2 block text-sm font-medium text-neutral-900">
+                  Adınız
                 </label>
+                <input
+                  value={senderName}
+                  onChange={(e) => setSenderName(e.target.value)}
+                  className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
+                  placeholder="Adınızı yazın"
+                />
+              </div>
 
-                <label className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={contactWhatsapp}
-                    onChange={(e) => setContactWhatsapp(e.target.checked)}
-                  />
-                  <span>WhatsApp</span>
+              <div>
+                <label className="mb-2 block text-sm font-medium text-neutral-900">
+                  Telefon numaranız
                 </label>
-
-                <label className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={contactEmail}
-                    onChange={(e) => setContactEmail(e.target.checked)}
-                  />
-                  <span>Email</span>
-                </label>
+                <input
+                  value={senderPhone}
+                  onChange={(e) => setSenderPhone(e.target.value)}
+                  className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
+                  placeholder="+90 5xx xxx xx xx"
+                />
               </div>
             </div>
 
-            <textarea
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              placeholder="Bulduğunuz ürün / kişi / hayvan ile ilgili mesajınızı yazın"
-              className="min-h-[120px] w-full rounded-xl border border-neutral-300 px-4 py-3 outline-none"
-            />
+            <div>
+              <label className="mb-2 block text-sm font-medium text-neutral-900">
+                E-posta adresiniz
+              </label>
+              <input
+                type="email"
+                value={senderEmail}
+                onChange={(e) => setSenderEmail(e.target.value)}
+                className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
+                placeholder="ornek@mail.com"
+              />
+            </div>
+
+            <div>
+              <label className="mb-2 block text-sm font-medium text-neutral-900">
+                Size nasıl ulaşılmasını istersiniz?
+              </label>
+
+              <div className="grid gap-3 sm:grid-cols-3">
+                <ContactOptionCard
+                  label="Telefon"
+                  checked={contactPhone}
+                  onChange={setContactPhone}
+                />
+                <ContactOptionCard
+                  label="WhatsApp"
+                  checked={contactWhatsapp}
+                  onChange={setContactWhatsapp}
+                />
+                <ContactOptionCard
+                  label="E-posta"
+                  checked={contactEmail}
+                  onChange={setContactEmail}
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="mb-2 block text-sm font-medium text-neutral-900">
+                Mesaj
+              </label>
+              <textarea
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                required
+                className="min-h-[140px] w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
+                placeholder="Örn: Etiketi güvenli şekilde buldum. Uygunsanız bana ulaşabilirsiniz."
+              />
+            </div>
+
+            <div className="rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-4 text-xs leading-5 text-neutral-600">
+              Bu form kötüye kullanım ve spam’e karşı korunmaktadır.
+            </div>
 
             <button
               type="submit"
               disabled={sending}
-              className="w-full rounded-xl bg-neutral-900 px-4 py-3 text-sm font-medium text-white disabled:opacity-60"
+              className="w-full rounded-2xl bg-neutral-800 px-5 py-4 text-sm font-medium text-white transition hover:bg-neutral-700 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {sending ? "Gönderiliyor..." : "Mesaj gönder"}
             </button>
           </form>
-        </div>
+        </section>
+
+        <section className="overflow-hidden rounded-[30px] border border-neutral-200 bg-white shadow-sm">
+          <div className="border-b border-neutral-200 bg-gradient-to-br from-white via-neutral-50 to-neutral-100/80 px-6 py-6 sm:px-7">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">
+                  Dokuntag
+                </p>
+                <h2 className="mt-2 text-xl font-semibold text-neutral-900">
+                  Kayıp olanı sahibine ulaştıran güvenli köprü
+                </h2>
+                <p className="mt-2 max-w-xl text-sm leading-6 text-neutral-600">
+                  Dokuntag, fiziksel ürün ile dijital profil arasında bağlantı kurar. Bulan kişi hızlıca bilgi görür, profil sahibine güvenli şekilde ulaşır.
+                </p>
+              </div>
+
+              <div className="inline-flex items-center rounded-full border border-neutral-200 bg-white px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-neutral-600">
+                NFC / QR destekli
+              </div>
+            </div>
+          </div>
+
+          <div className="px-6 py-6 sm:px-7">
+            <div className="grid gap-3 sm:grid-cols-3">
+              <StepCard
+                step="1. Adım"
+                title="Etikete dokun veya kodu tara"
+                text="Ürün üzerindeki Dokuntag etiketi okutulur ve güvenli profil sayfası açılır."
+              />
+              <StepCard
+                step="2. Adım"
+                title="Paylaşılan bilgileri gör"
+                text="Profil sahibi hangi bilgileri açtıysa yalnızca onlar görünür."
+              />
+              <StepCard
+                step="3. Adım"
+                title="Güvenli şekilde iletişim kur"
+                text="Mesaj formu, arama veya WhatsApp ile sahibine hızlıca ulaşılabilir."
+              />
+            </div>
+
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              <FeatureCard
+                title="Neden güvenli?"
+                text="Profil sahibi hangi alanların görünmesini istiyorsa sadece onlar paylaşılır. Diğer bilgiler gizli kalır."
+              />
+              <FeatureCard
+                title="Ne işe yarar?"
+                text="Kayıp eşya, anahtar, evcil hayvan veya benzeri ürünlerin sahibine daha hızlı ulaşmasına yardımcı olur."
+              />
+            </div>
+
+            <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="text-sm leading-6 text-neutral-600">
+                Dokuntag hakkında daha fazla bilgi almak veya sistemin nasıl çalıştığını görmek için aşağıdaki bağlantıları kullanabilirsiniz.
+              </div>
+
+              <div className="flex flex-wrap gap-3">
+                <a
+                  href={dokuntagHref}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="rounded-2xl bg-neutral-800 px-4 py-3 text-sm font-medium text-white transition hover:bg-neutral-700"
+                >
+                  Dokuntag’ı incele
+                </a>
+                <a
+                  href={howItWorksHref}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm font-medium transition hover:border-neutral-400 hover:bg-neutral-50"
+                >
+                  Nasıl çalışır
+                </a>
+              </div>
+            </div>
+          </div>
+        </section>
       </div>
     </main>
   );

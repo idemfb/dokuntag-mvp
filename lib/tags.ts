@@ -7,10 +7,14 @@ export type TagRecord = {
   oldCode?: string;
   manageToken: string;
   productType?: ProductType;
+
   name?: string;
   ownerName?: string;
   phone?: string;
   email?: string;
+  city?: string;
+  addressDetail?: string;
+  distinctiveFeature?: string;
   petName?: string;
   note?: string;
   alerts?: string[];
@@ -23,6 +27,41 @@ export type TagRecord = {
     phone?: string;
     email?: string;
   };
+  visibility?: {
+    showName?: boolean;
+    showPhone?: boolean;
+    showEmail?: boolean;
+    showCity?: boolean;
+    showAddressDetail?: boolean;
+    showPetName?: boolean;
+    showNote?: boolean;
+  };
+
+  profile?: {
+    name?: string;
+    ownerName?: string;
+    phone?: string;
+    email?: string;
+    city?: string;
+    addressDetail?: string;
+    distinctiveFeature?: string;
+    petName?: string;
+    note?: string;
+    tagName?: string;
+  };
+
+  contactOptions?: {
+    allowDirectCall?: boolean;
+    allowDirectWhatsapp?: boolean;
+  };
+
+  showName?: boolean;
+  showPhone?: boolean;
+  showEmail?: boolean;
+  showCity?: boolean;
+  showAddressDetail?: boolean;
+  showPetName?: boolean;
+  showNote?: boolean;
 };
 
 export type TagView = {
@@ -36,6 +75,9 @@ export type TagView = {
     ownerName?: string;
     phone: string;
     email: string;
+    city: string;
+    addressDetail: string;
+    distinctiveFeature: string;
     petName: string;
     note: string;
     tagName?: string;
@@ -45,6 +87,8 @@ export type TagView = {
     showName: boolean;
     showPhone: boolean;
     showEmail: boolean;
+    showCity: boolean;
+    showAddressDetail: boolean;
     showPetName: boolean;
     showNote: boolean;
     allowPhone?: boolean;
@@ -70,6 +114,9 @@ type UpsertTagInput = {
   ownerName?: string;
   phone?: string;
   email?: string;
+  city?: string;
+  addressDetail?: string;
+  distinctiveFeature?: string;
   petName?: string;
   note?: string;
   alerts?: string[];
@@ -78,6 +125,22 @@ type UpsertTagInput = {
   recoveryPhone?: string;
   recoveryEmail?: string;
   status?: "unclaimed" | "active";
+  visibility?: {
+    showName?: boolean;
+    showPhone?: boolean;
+    showEmail?: boolean;
+    showCity?: boolean;
+    showAddressDetail?: boolean;
+    showPetName?: boolean;
+    showNote?: boolean;
+  };
+  showName?: boolean;
+  showPhone?: boolean;
+  showEmail?: boolean;
+  showCity?: boolean;
+  showAddressDetail?: boolean;
+  showPetName?: boolean;
+  showNote?: boolean;
 };
 
 type UpdateByManageTokenInput = {
@@ -87,6 +150,9 @@ type UpdateByManageTokenInput = {
   ownerName?: string;
   phone?: string;
   email?: string;
+  city?: string;
+  addressDetail?: string;
+  distinctiveFeature?: string;
   petName?: string;
   note?: string;
   alerts?: string[];
@@ -100,17 +166,52 @@ type UpdateByManageTokenInput = {
   recoveryPhone?: string;
   recoveryEmail?: string;
   status?: "unclaimed" | "active";
+  visibility?: {
+    showName?: boolean;
+    showPhone?: boolean;
+    showEmail?: boolean;
+    showCity?: boolean;
+    showAddressDetail?: boolean;
+    showPetName?: boolean;
+    showNote?: boolean;
+  };
+  showName?: boolean;
+  showPhone?: boolean;
+  showEmail?: boolean;
+  showCity?: boolean;
+  showAddressDetail?: boolean;
+  showPetName?: boolean;
+  showNote?: boolean;
 };
 
 function getProducts(): TagRecord[] {
   const db = readDB();
-  return Array.isArray(db.products) ? db.products : [];
+
+  if (Array.isArray((db as { products?: TagRecord[] }).products)) {
+    return (db as { products: TagRecord[] }).products;
+  }
+
+  if (Array.isArray(db)) {
+    return db as unknown as TagRecord[];
+  }
+
+  return [];
 }
 
 function saveProducts(products: TagRecord[]) {
   const db = readDB();
-  db.products = products;
-  writeDB(db);
+
+  if (Array.isArray(db)) {
+    writeDB(products as unknown as Record<string, unknown>);
+    return;
+  }
+
+  const nextDb =
+    db && typeof db === "object"
+      ? { ...(db as Record<string, unknown>), products }
+      : { products };
+
+  writeDB(nextDb);
 }
 
 function normalizeCode(value: string) {
@@ -121,7 +222,175 @@ function normalizeValue(value: string) {
   return String(value || "").trim().toLowerCase();
 }
 
+function pickString(...values: Array<unknown>) {
+  for (const value of values) {
+    if (typeof value === "string" && value.trim()) {
+      return value.trim();
+    }
+  }
+  return "";
+}
+
+function getProfileName(product: TagRecord) {
+  return pickString(product.name, product.profile?.name, product.profile?.tagName);
+}
+
+function getOwnerName(product: TagRecord) {
+  return pickString(product.ownerName, product.profile?.ownerName);
+}
+
+function getPhone(product: TagRecord) {
+  return pickString(product.phone, product.profile?.phone);
+}
+
+function getEmail(product: TagRecord) {
+  return pickString(product.email, product.profile?.email);
+}
+
+function getCity(product: TagRecord) {
+  return pickString(product.city, product.profile?.city);
+}
+
+function getAddressDetail(product: TagRecord) {
+  return pickString(product.addressDetail, product.profile?.addressDetail);
+}
+
+function getDistinctiveFeature(product: TagRecord) {
+  return pickString(
+    product.distinctiveFeature,
+    product.profile?.distinctiveFeature
+  );
+}
+
+function getPetName(product: TagRecord) {
+  return pickString(
+    product.petName,
+    product.profile?.petName,
+    product.name,
+    product.profile?.name
+  );
+}
+
+function getNote(product: TagRecord) {
+  return pickString(product.note, product.profile?.note);
+}
+
+function getAlerts(product: TagRecord) {
+  return Array.isArray(product.alerts) ? product.alerts : [];
+}
+
+function getRecovery(product: TagRecord) {
+  return {
+    phone: pickString(product.recovery?.phone, getPhone(product)),
+    email: pickString(product.recovery?.email, getEmail(product))
+  };
+}
+
+function resolveAllowDirectCall(product: TagRecord) {
+  if (typeof product.allowDirectCall === "boolean") return product.allowDirectCall;
+  if (typeof product.contactOptions?.allowDirectCall === "boolean") {
+    return product.contactOptions.allowDirectCall;
+  }
+  return false;
+}
+
+function resolveAllowDirectWhatsapp(product: TagRecord) {
+  if (typeof product.allowDirectWhatsapp === "boolean") {
+    return product.allowDirectWhatsapp;
+  }
+  if (typeof product.contactOptions?.allowDirectWhatsapp === "boolean") {
+    return product.contactOptions.allowDirectWhatsapp;
+  }
+  return false;
+}
+
+function resolveVisibility(product: TagRecord) {
+  return {
+    showName:
+      typeof product.visibility?.showName === "boolean"
+        ? product.visibility.showName
+        : typeof product.showName === "boolean"
+          ? product.showName
+          : true,
+    showPhone:
+      typeof product.visibility?.showPhone === "boolean"
+        ? product.visibility.showPhone
+        : typeof product.showPhone === "boolean"
+          ? product.showPhone
+          : false,
+    showEmail:
+      typeof product.visibility?.showEmail === "boolean"
+        ? product.visibility.showEmail
+        : typeof product.showEmail === "boolean"
+          ? product.showEmail
+          : false,
+    showCity:
+      typeof product.visibility?.showCity === "boolean"
+        ? product.visibility.showCity
+        : typeof product.showCity === "boolean"
+          ? product.showCity
+          : false,
+    showAddressDetail:
+      typeof product.visibility?.showAddressDetail === "boolean"
+        ? product.visibility.showAddressDetail
+        : typeof product.showAddressDetail === "boolean"
+          ? product.showAddressDetail
+          : false,
+    showPetName:
+      typeof product.visibility?.showPetName === "boolean"
+        ? product.visibility.showPetName
+        : typeof product.showPetName === "boolean"
+          ? product.showPetName
+          : true,
+    showNote:
+      typeof product.visibility?.showNote === "boolean"
+        ? product.visibility.showNote
+        : typeof product.showNote === "boolean"
+          ? product.showNote
+          : false
+  };
+}
+
+function buildProfile(input: {
+  tagName?: string;
+  ownerName?: string;
+  phone?: string;
+  email?: string;
+  city?: string;
+  addressDetail?: string;
+  distinctiveFeature?: string;
+  petName?: string;
+  note?: string;
+}) {
+  const name = pickString(input.tagName);
+  const ownerName = pickString(input.ownerName);
+  const phone = pickString(input.phone);
+  const email = pickString(input.email);
+  const city = pickString(input.city);
+  const addressDetail = pickString(input.addressDetail);
+  const distinctiveFeature = pickString(input.distinctiveFeature);
+  const petName = pickString(input.petName, input.tagName);
+  const note = pickString(input.note);
+
+  return {
+    name,
+    ownerName,
+    phone,
+    email,
+    city,
+    addressDetail,
+    distinctiveFeature,
+    petName,
+    note,
+    tagName: name
+  };
+}
+
 function mapProductToTagView(product: TagRecord): TagView {
+  const visibility = resolveVisibility(product);
+  const allowDirectCall = resolveAllowDirectCall(product);
+  const allowDirectWhatsapp = resolveAllowDirectWhatsapp(product);
+
   return {
     code: product.publicCode,
     oldCode: product.oldCode,
@@ -129,35 +398,31 @@ function mapProductToTagView(product: TagRecord): TagView {
     status: product.status === "active" ? "active" : "unclaimed",
     productType: product.productType || "item",
     profile: {
-      name: product.name || "",
-      ownerName: product.ownerName || "",
-      phone: product.phone || "",
-      email: product.email || "",
-      petName: product.petName || product.name || "",
-      note: product.note || "",
-      tagName: product.name || ""
+      name: getProfileName(product),
+      ownerName: getOwnerName(product),
+      phone: getPhone(product),
+      email: getEmail(product),
+      city: getCity(product),
+      addressDetail: getAddressDetail(product),
+      distinctiveFeature: getDistinctiveFeature(product),
+      petName: getPetName(product),
+      note: getNote(product),
+      tagName: getProfileName(product)
     },
-    alerts: Array.isArray(product.alerts) ? product.alerts : [],
+    alerts: getAlerts(product),
     visibility: {
-      showName: true,
-      showPhone: true,
-      showEmail: true,
-      showPetName: true,
-      showNote: true,
-      allowPhone: Boolean(product.allowDirectCall),
-      allowEmail: Boolean(product.email),
-      allowWhatsapp: Boolean(product.allowDirectWhatsapp),
+      ...visibility,
+      allowPhone: allowDirectCall,
+      allowEmail: Boolean(getEmail(product)),
+      allowWhatsapp: allowDirectWhatsapp,
       allowDirectSms: false,
       allowDirectEmail: false
     },
     contactOptions: {
-      allowDirectCall: Boolean(product.allowDirectCall),
-      allowDirectWhatsapp: Boolean(product.allowDirectWhatsapp)
+      allowDirectCall,
+      allowDirectWhatsapp
     },
-    recovery: {
-      phone: product.recovery?.phone || "",
-      email: product.recovery?.email || ""
-    }
+    recovery: getRecovery(product)
   };
 }
 
@@ -176,11 +441,20 @@ export function findTagByCode(code: string): TagView | null {
   const product = getProducts().find((item) => {
     return (
       normalizeCode(item.publicCode) === normalized ||
-      normalizeCode(item.oldCode || "") === normalized
+      normalizeCode(item.oldCode || "") === normalized ||
+      normalizeCode((item as { code?: string }).code || "") === normalized
     );
   });
 
-  return product ? mapProductToTagView(product) : null;
+  if (!product) {
+    return null;
+  }
+
+  if (!product.publicCode && (product as { code?: string }).code) {
+    product.publicCode = normalizeCode((product as { code?: string }).code || "");
+  }
+
+  return mapProductToTagView(product);
 }
 
 export function findTagByManageToken(token: string): TagView | null {
@@ -197,10 +471,8 @@ export function findTagByManageToken(token: string): TagView | null {
 export function validateManageToken(codeOrToken: string, maybeToken?: string) {
   const products = getProducts();
 
-  // 1) Sadece token geldiyse
   if (maybeToken === undefined) {
     const token = String(codeOrToken || "").trim();
-
     if (!token) return null;
 
     const product = products.find((item) => {
@@ -210,16 +482,18 @@ export function validateManageToken(codeOrToken: string, maybeToken?: string) {
     return product ? mapProductToTagView(product) : null;
   }
 
-  // 2) code + token geldiyse
   const code = normalizeCode(codeOrToken);
   const token = String(maybeToken || "").trim();
 
   if (!code || !token) return null;
 
   const product = products.find((item) => {
+    const recordCode = normalizeCode(
+      item.publicCode || (item as { code?: string }).code || ""
+    );
+
     const sameCode =
-      normalizeCode(item.publicCode) === code ||
-      normalizeCode(item.oldCode || "") === code;
+      recordCode === code || normalizeCode(item.oldCode || "") === code;
 
     const sameToken = String(item.manageToken || "").trim() === token;
 
@@ -236,24 +510,85 @@ export function upsertTag(input: UpsertTagInput) {
   }
 
   const products = getProducts();
-
   const index = products.findIndex((item) => {
-    return normalizeCode(item.publicCode) === normalizedCode;
+    return normalizeCode(
+      item.publicCode || (item as { code?: string }).code || ""
+    ) === normalizedCode;
   });
 
   const now = new Date().toISOString();
+
+  const incomingVisibility = {
+    showName:
+      typeof input.visibility?.showName === "boolean"
+        ? input.visibility.showName
+        : typeof input.showName === "boolean"
+          ? input.showName
+          : true,
+    showPhone:
+      typeof input.visibility?.showPhone === "boolean"
+        ? input.visibility.showPhone
+        : typeof input.showPhone === "boolean"
+          ? input.showPhone
+          : false,
+    showEmail:
+      typeof input.visibility?.showEmail === "boolean"
+        ? input.visibility.showEmail
+        : typeof input.showEmail === "boolean"
+          ? input.showEmail
+          : false,
+    showCity:
+      typeof input.visibility?.showCity === "boolean"
+        ? input.visibility.showCity
+        : typeof input.showCity === "boolean"
+          ? input.showCity
+          : false,
+    showAddressDetail:
+      typeof input.visibility?.showAddressDetail === "boolean"
+        ? input.visibility.showAddressDetail
+        : typeof input.showAddressDetail === "boolean"
+          ? input.showAddressDetail
+          : false,
+    showPetName:
+      typeof input.visibility?.showPetName === "boolean"
+        ? input.visibility.showPetName
+        : typeof input.showPetName === "boolean"
+          ? input.showPetName
+          : true,
+    showNote:
+      typeof input.visibility?.showNote === "boolean"
+        ? input.visibility.showNote
+        : typeof input.showNote === "boolean"
+          ? input.showNote
+          : false
+  };
+
+  const nextProfile = buildProfile({
+    tagName: input.tagName,
+    ownerName: input.ownerName,
+    phone: input.phone,
+    email: input.email,
+    city: input.city,
+    addressDetail: input.addressDetail,
+    distinctiveFeature: input.distinctiveFeature,
+    petName: input.petName,
+    note: input.note
+  });
 
   if (index === -1) {
     const newProduct: TagRecord = {
       publicCode: normalizedCode,
       manageToken: crypto.randomUUID(),
       productType: input.productType || "item",
-      name: input.tagName || "",
-      ownerName: input.ownerName || "",
-      phone: input.phone || "",
-      email: input.email || "",
-      petName: input.petName || "",
-      note: input.note || "",
+      name: nextProfile.name,
+      ownerName: nextProfile.ownerName,
+      phone: nextProfile.phone,
+      email: nextProfile.email,
+      city: nextProfile.city,
+      addressDetail: nextProfile.addressDetail,
+      distinctiveFeature: nextProfile.distinctiveFeature,
+      petName: nextProfile.petName,
+      note: nextProfile.note,
       alerts: Array.isArray(input.alerts) ? input.alerts : [],
       allowDirectCall: Boolean(input.allowDirectCall),
       allowDirectWhatsapp: Boolean(input.allowDirectWhatsapp),
@@ -261,9 +596,16 @@ export function upsertTag(input: UpsertTagInput) {
       createdAt: now,
       updatedAt: now,
       recovery: {
-        phone: input.recoveryPhone || "",
-        email: input.recoveryEmail || ""
-      }
+        phone: input.recoveryPhone || nextProfile.phone,
+        email: input.recoveryEmail || nextProfile.email
+      },
+      visibility: incomingVisibility,
+      profile: nextProfile,
+      contactOptions: {
+        allowDirectCall: Boolean(input.allowDirectCall),
+        allowDirectWhatsapp: Boolean(input.allowDirectWhatsapp)
+      },
+      ...incomingVisibility
     };
 
     products.push(newProduct);
@@ -272,31 +614,106 @@ export function upsertTag(input: UpsertTagInput) {
   }
 
   const current = products[index];
+  const currentVisibility = resolveVisibility(current);
+
+  const nextVisibility = {
+    showName:
+      typeof input.visibility?.showName === "boolean"
+        ? input.visibility.showName
+        : typeof input.showName === "boolean"
+          ? input.showName
+          : currentVisibility.showName,
+    showPhone:
+      typeof input.visibility?.showPhone === "boolean"
+        ? input.visibility.showPhone
+        : typeof input.showPhone === "boolean"
+          ? input.showPhone
+          : currentVisibility.showPhone,
+    showEmail:
+      typeof input.visibility?.showEmail === "boolean"
+        ? input.visibility.showEmail
+        : typeof input.showEmail === "boolean"
+          ? input.showEmail
+          : currentVisibility.showEmail,
+    showCity:
+      typeof input.visibility?.showCity === "boolean"
+        ? input.visibility.showCity
+        : typeof input.showCity === "boolean"
+          ? input.showCity
+          : currentVisibility.showCity,
+    showAddressDetail:
+      typeof input.visibility?.showAddressDetail === "boolean"
+        ? input.visibility.showAddressDetail
+        : typeof input.showAddressDetail === "boolean"
+          ? input.showAddressDetail
+          : currentVisibility.showAddressDetail,
+    showPetName:
+      typeof input.visibility?.showPetName === "boolean"
+        ? input.visibility.showPetName
+        : typeof input.showPetName === "boolean"
+          ? input.showPetName
+          : currentVisibility.showPetName,
+    showNote:
+      typeof input.visibility?.showNote === "boolean"
+        ? input.visibility.showNote
+        : typeof input.showNote === "boolean"
+          ? input.showNote
+          : currentVisibility.showNote
+  };
+
+  const mergedProfile = buildProfile({
+    tagName: input.tagName ?? getProfileName(current),
+    ownerName: input.ownerName ?? getOwnerName(current),
+    phone: input.phone ?? getPhone(current),
+    email: input.email ?? getEmail(current),
+    city: input.city ?? getCity(current),
+    addressDetail: input.addressDetail ?? getAddressDetail(current),
+    distinctiveFeature: input.distinctiveFeature ?? getDistinctiveFeature(current),
+    petName: input.petName ?? getPetName(current),
+    note: input.note ?? getNote(current)
+  });
 
   products[index] = {
     ...current,
+    publicCode: current.publicCode || normalizedCode,
     productType: input.productType ?? current.productType ?? "item",
-    name: input.tagName ?? current.name ?? "",
-    ownerName: input.ownerName ?? current.ownerName ?? "",
-    phone: input.phone ?? current.phone ?? "",
-    email: input.email ?? current.email ?? "",
-    petName: input.petName ?? current.petName ?? "",
-    note: input.note ?? current.note ?? "",
-    alerts: Array.isArray(input.alerts) ? input.alerts : (current.alerts ?? []),
+    name: mergedProfile.name,
+    ownerName: mergedProfile.ownerName,
+    phone: mergedProfile.phone,
+    email: mergedProfile.email,
+    city: mergedProfile.city,
+    addressDetail: mergedProfile.addressDetail,
+    distinctiveFeature: mergedProfile.distinctiveFeature,
+    petName: mergedProfile.petName,
+    note: mergedProfile.note,
+    alerts: Array.isArray(input.alerts) ? input.alerts : getAlerts(current),
     allowDirectCall:
       input.allowDirectCall !== undefined
         ? Boolean(input.allowDirectCall)
-        : Boolean(current.allowDirectCall),
+        : resolveAllowDirectCall(current),
     allowDirectWhatsapp:
       input.allowDirectWhatsapp !== undefined
         ? Boolean(input.allowDirectWhatsapp)
-        : Boolean(current.allowDirectWhatsapp),
+        : resolveAllowDirectWhatsapp(current),
     status: input.status ?? current.status ?? "active",
     updatedAt: now,
     recovery: {
-      phone: input.recoveryPhone ?? current.recovery?.phone ?? "",
-      email: input.recoveryEmail ?? current.recovery?.email ?? ""
-    }
+      phone: input.recoveryPhone ?? current.recovery?.phone ?? mergedProfile.phone,
+      email: input.recoveryEmail ?? current.recovery?.email ?? mergedProfile.email
+    },
+    visibility: nextVisibility,
+    profile: mergedProfile,
+    contactOptions: {
+      allowDirectCall:
+        input.allowDirectCall !== undefined
+          ? Boolean(input.allowDirectCall)
+          : resolveAllowDirectCall(current),
+      allowDirectWhatsapp:
+        input.allowDirectWhatsapp !== undefined
+          ? Boolean(input.allowDirectWhatsapp)
+          : resolveAllowDirectWhatsapp(current)
+    },
+    ...nextVisibility
   };
 
   saveProducts(products);
@@ -320,39 +737,107 @@ export function updateTagByManageToken(input: UpdateByManageTokenInput) {
 
   const current = products[index];
   const now = new Date().toISOString();
+  const currentVisibility = resolveVisibility(current);
 
   const resolvedAllowDirectCall =
     input.allowDirectCall !== undefined
       ? Boolean(input.allowDirectCall)
       : input.allowPhone !== undefined
         ? Boolean(input.allowPhone)
-        : Boolean(current.allowDirectCall);
+        : resolveAllowDirectCall(current);
 
   const resolvedAllowDirectWhatsapp =
     input.allowDirectWhatsapp !== undefined
       ? Boolean(input.allowDirectWhatsapp)
       : input.allowWhatsapp !== undefined
         ? Boolean(input.allowWhatsapp)
-        : Boolean(current.allowDirectWhatsapp);
+        : resolveAllowDirectWhatsapp(current);
+
+  const nextVisibility = {
+    showName:
+      typeof input.visibility?.showName === "boolean"
+        ? input.visibility.showName
+        : typeof input.showName === "boolean"
+          ? input.showName
+          : currentVisibility.showName,
+    showPhone:
+      typeof input.visibility?.showPhone === "boolean"
+        ? input.visibility.showPhone
+        : typeof input.showPhone === "boolean"
+          ? input.showPhone
+          : currentVisibility.showPhone,
+    showEmail:
+      typeof input.visibility?.showEmail === "boolean"
+        ? input.visibility.showEmail
+        : typeof input.showEmail === "boolean"
+          ? input.showEmail
+          : currentVisibility.showEmail,
+    showCity:
+      typeof input.visibility?.showCity === "boolean"
+        ? input.visibility.showCity
+        : typeof input.showCity === "boolean"
+          ? input.showCity
+          : currentVisibility.showCity,
+    showAddressDetail:
+      typeof input.visibility?.showAddressDetail === "boolean"
+        ? input.visibility.showAddressDetail
+        : typeof input.showAddressDetail === "boolean"
+          ? input.showAddressDetail
+          : currentVisibility.showAddressDetail,
+    showPetName:
+      typeof input.visibility?.showPetName === "boolean"
+        ? input.visibility.showPetName
+        : typeof input.showPetName === "boolean"
+          ? input.showPetName
+          : currentVisibility.showPetName,
+    showNote:
+      typeof input.visibility?.showNote === "boolean"
+        ? input.visibility.showNote
+        : typeof input.showNote === "boolean"
+          ? input.showNote
+          : currentVisibility.showNote
+  };
+
+  const mergedProfile = buildProfile({
+    tagName: input.tagName ?? getProfileName(current),
+    ownerName: input.ownerName ?? getOwnerName(current),
+    phone: input.phone ?? getPhone(current),
+    email: input.email ?? getEmail(current),
+    city: input.city ?? getCity(current),
+    addressDetail: input.addressDetail ?? getAddressDetail(current),
+    distinctiveFeature: input.distinctiveFeature ?? getDistinctiveFeature(current),
+    petName: input.petName ?? getPetName(current),
+    note: input.note ?? getNote(current)
+  });
 
   products[index] = {
     ...current,
     productType: input.productType ?? current.productType ?? "item",
-    name: input.tagName ?? current.name ?? "",
-    ownerName: input.ownerName ?? current.ownerName ?? "",
-    phone: input.phone ?? current.phone ?? "",
-    email: input.email ?? current.email ?? "",
-    petName: input.petName ?? current.petName ?? "",
-    note: input.note ?? current.note ?? "",
-    alerts: Array.isArray(input.alerts) ? input.alerts : (current.alerts ?? []),
+    name: mergedProfile.name,
+    ownerName: mergedProfile.ownerName,
+    phone: mergedProfile.phone,
+    email: mergedProfile.email,
+    city: mergedProfile.city,
+    addressDetail: mergedProfile.addressDetail,
+    distinctiveFeature: mergedProfile.distinctiveFeature,
+    petName: mergedProfile.petName,
+    note: mergedProfile.note,
+    alerts: Array.isArray(input.alerts) ? input.alerts : getAlerts(current),
     allowDirectCall: resolvedAllowDirectCall,
     allowDirectWhatsapp: resolvedAllowDirectWhatsapp,
     status: input.status ?? current.status ?? "active",
     updatedAt: now,
     recovery: {
-      phone: input.recoveryPhone ?? current.recovery?.phone ?? current.phone ?? "",
-      email: input.recoveryEmail ?? current.recovery?.email ?? current.email ?? ""
-    }
+      phone: input.recoveryPhone ?? current.recovery?.phone ?? mergedProfile.phone,
+      email: input.recoveryEmail ?? current.recovery?.email ?? mergedProfile.email
+    },
+    visibility: nextVisibility,
+    profile: mergedProfile,
+    contactOptions: {
+      allowDirectCall: resolvedAllowDirectCall,
+      allowDirectWhatsapp: resolvedAllowDirectWhatsapp
+    },
+    ...nextVisibility
   };
 
   saveProducts(products);
@@ -375,16 +860,20 @@ export function recoverManageAccess(input: {
   const products = getProducts();
 
   const index = products.findIndex((item) => {
+    const recordCode = normalizeCode(
+      item.publicCode || (item as { code?: string }).code || ""
+    );
+
     const sameCode =
-      normalizeCode(item.publicCode) === normalizedCodeInput ||
+      recordCode === normalizedCodeInput ||
       normalizeCode(item.oldCode || "") === normalizedCodeInput;
 
     if (!sameCode) return false;
 
     const recoveryPhone = normalizeValue(item.recovery?.phone || "");
     const recoveryEmail = normalizeValue(item.recovery?.email || "");
-    const profilePhone = normalizeValue(item.phone || "");
-    const profileEmail = normalizeValue(item.email || "");
+    const profilePhone = normalizeValue(getPhone(item));
+    const profileEmail = normalizeValue(getEmail(item));
 
     const phoneMatched =
       Boolean(normalizedPhoneInput) &&

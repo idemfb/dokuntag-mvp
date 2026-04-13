@@ -1,24 +1,59 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-
-const ALERT_OPTIONS = [
-  "Acil bana ulaşın",
-  "Hayvanım hasta",
-  "Alerjisi var",
-  "Ürkek / yaklaşmayın",
-  "Ödül verilecektir"
-];
+import { useEffect, useMemo, useRef, useState } from "react";
 
 type ProductType = "pet" | "item" | "key" | "person";
+type ContactMethod = "phone" | "whatsapp" | "email";
+type MessageFilter = "all" | "unread" | "read" | "pinned" | "archived";
+type MessageSort = "newest" | "oldest" | "unread-first";
+type OpenSection = "basic" | "contact" | "alerts" | "recovery" | "messages" | null;
+
+const ALERT_OPTIONS_BY_TYPE: Record<ProductType, string[]> = {
+  pet: [
+    "Acil bana ulaşın",
+    "Hayvanım hasta",
+    "Alerjisi var",
+    "Ürkek / yaklaşmayın",
+    "Ödül verilecektir"
+  ],
+  item: [
+    "Acil bana ulaşın",
+    "Lütfen benimle iletişime geçin",
+    "İçinde önemli eşya var",
+    "Ödül verilecektir"
+  ],
+  key: [
+    "Acil bana ulaşın",
+    "Lütfen benimle iletişime geçin",
+    "Önemli anahtar",
+    "Ödül verilecektir"
+  ],
+  person: [
+    "Acil yakınıma ulaşın",
+    "Sağlık durumu için bilgi verin",
+    "Kaybolursa lütfen haber verin",
+    "Ödül verilecektir"
+  ]
+};
+
+const DISTINCTIVE_FEATURE_PLACEHOLDERS: Record<ProductType, string> = {
+  pet: "Örn: sağ kulağında beyaz leke, mavi tasma",
+  item: "Örn: siyah sırt çantası, köşesi hafif çizik",
+  key: "Örn: kırmızı anahtarlık, metal halka",
+  person: "Örn: mavi mont, siyah sırt çantası"
+};
 
 type ManageResponse = {
   code: string;
   productType?: ProductType;
   profile: {
     name: string;
+    ownerName?: string;
     phone: string;
     email: string;
+    city: string;
+    addressDetail: string;
+    distinctiveFeature: string;
     petName: string;
     note: string;
   };
@@ -27,6 +62,8 @@ type ManageResponse = {
     showName: boolean;
     showPhone: boolean;
     showEmail: boolean;
+    showCity: boolean;
+    showAddressDetail: boolean;
     showPetName: boolean;
     showNote: boolean;
   };
@@ -52,6 +89,292 @@ type ManageSubmitResponse = {
   warning?: string;
 };
 
+type NotifyLogItem = {
+  id: string;
+  tagCode: string;
+  senderFingerprint: string;
+  ip: string;
+  createdAt: string;
+  readAt?: string;
+  pinnedAt?: string;
+  archivedAt?: string;
+  deletedAt?: string;
+  senderName?: string;
+  senderPhone?: string;
+  senderEmail?: string;
+  preferredContactMethods?: ContactMethod[];
+  message?: string;
+};
+
+type NotifyLogsResponse = {
+  items: NotifyLogItem[];
+  unreadCount?: number;
+};
+
+function getProductTypeLabel(productType: ProductType) {
+  if (productType === "pet") return "Evcil hayvan";
+  if (productType === "item") return "Ürün";
+  if (productType === "key") return "Anahtar";
+  return "Birey";
+}
+
+function getPrimaryNameLabel(productType: ProductType) {
+  if (productType === "pet") return "Evcil hayvan adı";
+  if (productType === "person") return "Kişi adı";
+  if (productType === "key") return "Anahtar adı";
+  return "Ürün adı";
+}
+
+function getOwnerNameLabel(productType: ProductType) {
+  if (productType === "person") return "Yakını / sorumlusu";
+  return "Sahibi";
+}
+
+function getSecondaryNameLabel(productType: ProductType) {
+  if (productType === "pet") return "Etiket başlığı";
+  if (productType === "person") return "Profil başlığı";
+  if (productType === "key") return "Etiket / kısa başlık";
+  return "Etiket / kısa başlık";
+}
+
+function getMethodLabel(method: ContactMethod) {
+  if (method === "whatsapp") return "WhatsApp";
+  if (method === "phone") return "Telefon / SMS";
+  return "E-posta";
+}
+
+function buildSearchText(log: NotifyLogItem) {
+  return [
+    log.senderName || "",
+    log.senderPhone || "",
+    log.senderEmail || "",
+    log.message || "",
+    ...(log.preferredContactMethods || []).map((method) => getMethodLabel(method)),
+    new Date(log.createdAt).toLocaleString("tr-TR")
+  ]
+    .join(" ")
+    .toLocaleLowerCase("tr-TR");
+}
+
+function buildFormSnapshot(input: {
+  productType: ProductType;
+  name: string;
+  ownerName: string;
+  phone: string;
+  email: string;
+  city: string;
+  addressDetail: string;
+  distinctiveFeature: string;
+  petName: string;
+  note: string;
+  alerts: string[];
+  showName: boolean;
+  showPhone: boolean;
+  showEmail: boolean;
+  showCity: boolean;
+  showAddressDetail: boolean;
+  showPetName: boolean;
+  showNote: boolean;
+  allowDirectCall: boolean;
+  allowDirectWhatsapp: boolean;
+  recoveryPhone: string;
+  recoveryEmail: string;
+}) {
+  return JSON.stringify({
+    productType: input.productType,
+    name: input.name.trim(),
+    ownerName: input.ownerName.trim(),
+    phone: input.phone.trim(),
+    email: input.email.trim(),
+    city: input.city.trim(),
+    addressDetail: input.addressDetail.trim(),
+    distinctiveFeature: input.distinctiveFeature.trim(),
+    petName: input.petName.trim(),
+    note: input.note.trim(),
+    alerts: [...input.alerts].sort(),
+    showName: input.showName,
+    showPhone: input.showPhone,
+    showEmail: input.showEmail,
+    showCity: input.showCity,
+    showAddressDetail: input.showAddressDetail,
+    showPetName: input.showPetName,
+    showNote: input.showNote,
+    allowDirectCall: input.allowDirectCall,
+    allowDirectWhatsapp: input.allowDirectWhatsapp,
+    recoveryPhone: input.recoveryPhone.trim(),
+    recoveryEmail: input.recoveryEmail.trim()
+  });
+}
+
+function SectionCard({
+  id,
+  title,
+  description,
+  isOpen,
+  onToggle,
+  children,
+  right
+}: {
+  id: Exclude<OpenSection, null>;
+  title: string;
+  description?: string;
+  isOpen: boolean;
+  onToggle: (id: Exclude<OpenSection, null>) => void;
+  children: React.ReactNode;
+  right?: React.ReactNode;
+}) {
+  return (
+    <section className="rounded-[1.75rem] border border-neutral-200 bg-white shadow-sm">
+      <button
+        type="button"
+        onClick={() => onToggle(id)}
+        className="flex w-full items-center justify-between px-5 py-5 text-left sm:px-6"
+      >
+        <div>
+          <h2 className="text-lg font-semibold tracking-tight text-neutral-900">
+            {title}
+          </h2>
+          {description ? (
+            <p className="mt-1 text-sm leading-6 text-neutral-600">
+              {description}
+            </p>
+          ) : null}
+        </div>
+
+        <div className="ml-4 flex items-center gap-3">
+          {right}
+          <span className="text-xl text-neutral-500">
+            {isOpen ? "−" : "+"}
+          </span>
+        </div>
+      </button>
+
+      {isOpen ? (
+        <div className="border-t border-neutral-200 px-5 py-5 sm:px-6">
+          {children}
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
+function Field({
+  label,
+  children,
+  optional
+}: {
+  label: string;
+  children: React.ReactNode;
+  optional?: boolean;
+}) {
+  return (
+    <div>
+      <div className="mb-2 flex items-center gap-2">
+        <label className="block text-sm font-medium text-neutral-900">
+          {label}
+        </label>
+        {optional ? (
+          <span className="text-xs text-neutral-400">Opsiyonel</span>
+        ) : null}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function InlineToggle({
+  checked,
+  disabled,
+  label,
+  onChange
+}: {
+  checked: boolean;
+  disabled?: boolean;
+  label: string;
+  onChange: (value: boolean) => void;
+}) {
+  return (
+    <label
+      className={`inline-flex items-center gap-2 rounded-full border px-3 py-2 text-xs font-medium transition ${
+        disabled
+          ? "cursor-not-allowed border-neutral-200 bg-neutral-100 text-neutral-400"
+          : checked
+            ? "cursor-pointer border-neutral-800 bg-neutral-800 text-white"
+            : "cursor-pointer border-neutral-300 bg-white text-neutral-700 hover:border-neutral-400 hover:bg-neutral-50"
+      }`}
+    >
+      <input
+        type="checkbox"
+        checked={checked}
+        disabled={disabled}
+        onChange={(e) => onChange(e.target.checked)}
+        className="h-4 w-4"
+      />
+      <span>{label}</span>
+    </label>
+  );
+}
+
+function AlertOption({
+  label,
+  checked,
+  onChange
+}: {
+  label: string;
+  checked: boolean;
+  onChange: () => void;
+}) {
+  return (
+    <label className="flex items-start gap-3 rounded-2xl border border-neutral-200 px-4 py-3 transition hover:border-neutral-300 hover:bg-neutral-50">
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={onChange}
+        className="mt-0.5"
+      />
+      <span className="text-sm text-neutral-900">{label}</span>
+    </label>
+  );
+}
+
+function InfoCard({
+  title,
+  value,
+  subtext
+}: {
+  title: string;
+  value: string | number;
+  subtext: string;
+}) {
+  return (
+    <div className="rounded-[1.5rem] border border-neutral-200 bg-white p-4 shadow-sm">
+      <p className="text-xs text-neutral-500">{title}</p>
+      <p className="mt-2 text-2xl font-semibold text-neutral-900">{value}</p>
+      <p className="mt-1 text-xs text-neutral-500">{subtext}</p>
+    </div>
+  );
+}
+
+function maskPhone(phone: string) {
+  const cleaned = String(phone || "").trim();
+  if (!cleaned) return "-";
+  if (cleaned.length <= 4) return `${cleaned.slice(0, 2)}**`;
+  return `${cleaned.slice(0, 3)}***${cleaned.slice(-2)}`;
+}
+
+function maskEmail(email: string) {
+  const value = String(email || "").trim();
+  if (!value || !value.includes("@")) return "-";
+
+  const [name, domain] = value.split("@");
+  if (!name || !domain) return "-";
+
+  const safeName =
+    name.length <= 2 ? `${name[0] || ""}*` : `${name.slice(0, 2)}***`;
+
+  return `${safeName}@${domain}`;
+}
+
 export default function ManagePage({
   params
 }: {
@@ -65,27 +388,52 @@ export default function ManagePage({
   const [success, setSuccess] = useState("");
   const [manageLink, setManageLink] = useState("");
   const [warning, setWarning] = useState(
-    "Bu size özel yönetim linkidir. Profil bilgilerinizi güncellemek için kullanılır. Lütfen güvenli şekilde saklayın ve başkalarıyla paylaşmayın."
+    "Bu size özel yönetim bağlantısıdır. Şifre gibi düşünün, güvenli şekilde saklayın. Kaybederseniz recover alanından yenisini oluşturabilirsiniz."
   );
+  const [initialSnapshot, setInitialSnapshot] = useState("");
+  const [openSection, setOpenSection] = useState<OpenSection>("basic");
 
   const [productType, setProductType] = useState<ProductType>("item");
   const [name, setName] = useState("");
+  const [ownerName, setOwnerName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
+  const [city, setCity] = useState("");
+  const [addressDetail, setAddressDetail] = useState("");
+  const [distinctiveFeature, setDistinctiveFeature] = useState("");
   const [petName, setPetName] = useState("");
   const [note, setNote] = useState("");
   const [alerts, setAlerts] = useState<string[]>([]);
   const [showName, setShowName] = useState(true);
   const [showPhone, setShowPhone] = useState(true);
   const [showEmail, setShowEmail] = useState(true);
+  const [showCity, setShowCity] = useState(false);
+  const [showAddressDetail, setShowAddressDetail] = useState(false);
   const [showPetName, setShowPetName] = useState(true);
   const [showNote, setShowNote] = useState(true);
   const [allowDirectCall, setAllowDirectCall] = useState(false);
   const [allowDirectWhatsapp, setAllowDirectWhatsapp] = useState(false);
   const [recoveryPhone, setRecoveryPhone] = useState("");
   const [recoveryEmail, setRecoveryEmail] = useState("");
-  const [copied, setCopied] = useState(false);
+  const [copiedManage, setCopiedManage] = useState(false);
   const [copiedPublic, setCopiedPublic] = useState(false);
+
+  const [logs, setLogs] = useState<NotifyLogItem[]>([]);
+  const [logsLoading, setLogsLoading] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [markingRead, setMarkingRead] = useState(false);
+  const [readingLogId, setReadingLogId] = useState("");
+  const [actingLogId, setActingLogId] = useState("");
+  const [pendingDeleteId, setPendingDeleteId] = useState("");
+  const [messageFilter, setMessageFilter] = useState<MessageFilter>("all");
+  const [messageSort, setMessageSort] = useState<MessageSort>("newest");
+  const [messageSearch, setMessageSearch] = useState("");
+
+  const messagesRef = useRef<HTMLElement | null>(null);
+
+  function toggleSection(id: Exclude<OpenSection, null>) {
+    setOpenSection((prev) => (prev === id ? null : id));
+  }
 
   useEffect(() => {
     params.then((resolved) => setCode(resolved.code));
@@ -97,12 +445,37 @@ export default function ManagePage({
     setToken(url.searchParams.get("token") || "");
   }, []);
 
+  async function loadLogs(currentCode: string, currentToken: string) {
+    try {
+      setLogsLoading(true);
+
+      const logsRes = await fetch(
+        `/api/notify/logs/${currentCode}?token=${encodeURIComponent(currentToken)}`,
+        { cache: "no-store" }
+      );
+      const logsData = (await logsRes.json()) as NotifyLogsResponse;
+
+      if (logsRes.ok) {
+        setLogs(Array.isArray(logsData.items) ? logsData.items : []);
+        setUnreadCount(Number(logsData.unreadCount || 0));
+      } else {
+        setLogs([]);
+        setUnreadCount(0);
+      }
+    } catch {
+      setLogs([]);
+      setUnreadCount(0);
+    } finally {
+      setLogsLoading(false);
+    }
+  }
+
   useEffect(() => {
     if (!code) return;
 
     if (!token) {
       setLoading(false);
-      setError("Manage token eksik.");
+      setError("Yönetim bağlantısı eksik.");
       return;
     }
 
@@ -114,36 +487,101 @@ export default function ManagePage({
 
         const res = await fetch(
           `/api/manage/${code}?token=${encodeURIComponent(token)}`,
-          {
-            cache: "no-store"
-          }
+          { cache: "no-store" }
         );
 
         const data = await res.json();
 
         if (!res.ok) {
-          throw new Error(data?.error || "Manage verisi alınamadı.");
+          throw new Error(data?.error || "Bilgiler alınamadı.");
         }
 
         const manageData = data as ManageResponse;
 
-        setProductType(manageData.productType || "item");
-        setName(manageData.profile.name || "");
-        setPhone(manageData.profile.phone || "");
-        setEmail(manageData.profile.email || "");
-        setPetName(manageData.profile.petName || "");
-        setNote(manageData.profile.note || "");
-        setAlerts(Array.isArray(manageData.alerts) ? manageData.alerts : []);
-        setShowName(Boolean(manageData.visibility?.showName));
-        setShowPhone(Boolean(manageData.visibility?.showPhone));
-        setShowEmail(Boolean(manageData.visibility?.showEmail));
-        setShowPetName(Boolean(manageData.visibility?.showPetName));
-        setShowNote(Boolean(manageData.visibility?.showNote));
-        setAllowDirectCall(Boolean(manageData.contactOptions?.allowDirectCall));
-        setAllowDirectWhatsapp(Boolean(manageData.contactOptions?.allowDirectWhatsapp));
-        setRecoveryPhone(manageData.recovery?.phone || "");
-        setRecoveryEmail(manageData.recovery?.email || "");
+        const nextProductType = manageData.productType || "item";
+        const nextName = manageData.profile.name || "";
+        const nextOwnerName = manageData.profile.ownerName || "";
+        const nextPhone = manageData.profile.phone || "";
+        const nextEmail = manageData.profile.email || "";
+        const nextCity = manageData.profile.city || "";
+        const nextAddressDetail = manageData.profile.addressDetail || "";
+        const nextDistinctiveFeature =
+          manageData.profile.distinctiveFeature || "";
+        const nextPetName = manageData.profile.petName || "";
+        const nextNote = manageData.profile.note || "";
+        const nextAlerts = Array.isArray(manageData.alerts)
+          ? manageData.alerts
+          : [];
+        const nextShowName = Boolean(manageData.visibility?.showName);
+        const nextShowPhone = Boolean(manageData.visibility?.showPhone);
+        const nextShowEmail = Boolean(manageData.visibility?.showEmail);
+        const nextShowCity = Boolean(manageData.visibility?.showCity);
+        const nextShowAddressDetail = Boolean(
+          manageData.visibility?.showAddressDetail
+        );
+        const nextShowPetName = Boolean(manageData.visibility?.showPetName);
+        const nextShowNote = Boolean(manageData.visibility?.showNote);
+        const nextAllowDirectCall = Boolean(
+          manageData.contactOptions?.allowDirectCall
+        );
+        const nextAllowDirectWhatsapp = Boolean(
+          manageData.contactOptions?.allowDirectWhatsapp
+        );
+        const nextRecoveryPhone = manageData.recovery?.phone || "";
+        const nextRecoveryEmail = manageData.recovery?.email || "";
+
+        setProductType(nextProductType);
+        setName(nextName);
+        setOwnerName(nextOwnerName);
+        setPhone(nextPhone);
+        setEmail(nextEmail);
+        setCity(nextCity);
+        setAddressDetail(nextAddressDetail);
+        setDistinctiveFeature(nextDistinctiveFeature);
+        setPetName(nextPetName);
+        setNote(nextNote);
+        setAlerts(nextAlerts);
+        setShowName(nextShowName);
+        setShowPhone(nextShowPhone);
+        setShowEmail(nextShowEmail);
+        setShowCity(nextShowCity);
+        setShowAddressDetail(nextShowAddressDetail);
+        setShowPetName(nextShowPetName);
+        setShowNote(nextShowNote);
+        setAllowDirectCall(nextAllowDirectCall);
+        setAllowDirectWhatsapp(nextAllowDirectWhatsapp);
+        setRecoveryPhone(nextRecoveryPhone);
+        setRecoveryEmail(nextRecoveryEmail);
         setManageLink(manageData.manageLink || "");
+
+        setInitialSnapshot(
+          buildFormSnapshot({
+            productType: nextProductType,
+            name: nextName,
+            ownerName: nextOwnerName,
+            phone: nextPhone,
+            email: nextEmail,
+            city: nextCity,
+            addressDetail: nextAddressDetail,
+            distinctiveFeature: nextDistinctiveFeature,
+            petName: nextPetName,
+            note: nextNote,
+            alerts: nextAlerts,
+            showName: nextShowName,
+            showPhone: nextShowPhone,
+            showEmail: nextShowEmail,
+            showCity: nextShowCity,
+            showAddressDetail: nextShowAddressDetail,
+            showPetName: nextShowPetName,
+            showNote: nextShowNote,
+            allowDirectCall: nextAllowDirectCall,
+            allowDirectWhatsapp: nextAllowDirectWhatsapp,
+            recoveryPhone: nextRecoveryPhone,
+            recoveryEmail: nextRecoveryEmail
+          })
+        );
+
+        await loadLogs(code, token);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Bir hata oluştu.");
       } finally {
@@ -154,25 +592,226 @@ export default function ManagePage({
     void fetchData();
   }, [code, token]);
 
-  const publicProfileLink = useMemo(() => {
+  useEffect(() => {
+    if (!allowDirectCall && showPhone) {
+      setShowPhone(false);
+    }
+  }, [allowDirectCall, showPhone]);
+
+  useEffect(() => {
+    if (!allowDirectCall && allowDirectWhatsapp) {
+      setAllowDirectWhatsapp(false);
+    }
+  }, [allowDirectCall, allowDirectWhatsapp]);
+
+  useEffect(() => {
+    if (!city.trim() && showCity) {
+      setShowCity(false);
+    }
+  }, [city, showCity]);
+
+  useEffect(() => {
+    if (!addressDetail.trim() && showAddressDetail) {
+      setShowAddressDetail(false);
+    }
+  }, [addressDetail, showAddressDetail]);
+
+  useEffect(() => {
+    if (!email.trim() && showEmail) {
+      setShowEmail(false);
+    }
+  }, [email, showEmail]);
+
+  useEffect(() => {
+    if (!note.trim() && showNote) {
+      setShowNote(false);
+    }
+  }, [note, showNote]);
+
+  const allowedAlerts = useMemo(() => {
+    return ALERT_OPTIONS_BY_TYPE[productType];
+  }, [productType]);
+
+  useEffect(() => {
+    setAlerts((prev) => prev.filter((item) => allowedAlerts.includes(item)));
+  }, [allowedAlerts]);
+
+  const shareLink = useMemo(() => {
     if (!code) return "";
     if (typeof window === "undefined") return `/p/${code}`;
     return `${window.location.origin}/p/${code}`;
   }, [code]);
 
-  const saveToLinksHref = useMemo(() => {
-    if (!code || !manageLink || !publicProfileLink) return "";
+  const visibleFieldCount = useMemo(() => {
+    return [
+      showName,
+      showPhone,
+      showEmail,
+      showCity,
+      showAddressDetail,
+      showPetName,
+      showNote
+    ].filter(Boolean).length;
+  }, [
+    showName,
+    showPhone,
+    showEmail,
+    showCity,
+    showAddressDetail,
+    showPetName,
+    showNote
+  ]);
 
-    const searchParams = new URLSearchParams({
-      code,
-      manage: manageLink,
-      public: publicProfileLink
+  const enabledQuickActionsCount = useMemo(() => {
+    return [allowDirectCall, allowDirectWhatsapp].filter(Boolean).length;
+  }, [allowDirectCall, allowDirectWhatsapp]);
+
+  const currentSnapshot = useMemo(() => {
+    return buildFormSnapshot({
+      productType,
+      name,
+      ownerName,
+      phone,
+      email,
+      city,
+      addressDetail,
+      distinctiveFeature,
+      petName,
+      note,
+      alerts,
+      showName,
+      showPhone,
+      showEmail,
+      showCity,
+      showAddressDetail,
+      showPetName,
+      showNote,
+      allowDirectCall,
+      allowDirectWhatsapp,
+      recoveryPhone,
+      recoveryEmail
     });
+  }, [
+    productType,
+    name,
+    ownerName,
+    phone,
+    email,
+    city,
+    addressDetail,
+    distinctiveFeature,
+    petName,
+    note,
+    alerts,
+    showName,
+    showPhone,
+    showEmail,
+    showCity,
+    showAddressDetail,
+    showPetName,
+    showNote,
+    allowDirectCall,
+    allowDirectWhatsapp,
+    recoveryPhone,
+    recoveryEmail
+  ]);
 
-    return `/links?${searchParams.toString()}`;
-  }, [code, manageLink, publicProfileLink]);
+  const isDirty = Boolean(initialSnapshot) && currentSnapshot !== initialSnapshot;
+
+  const displayPrimaryName = useMemo(() => {
+    return petName.trim() || "İsimsiz ürün";
+  }, [petName]);
+
+  const displaySecondaryName = useMemo(() => {
+    const primary = petName.trim().toLocaleLowerCase("tr-TR");
+    const secondary = name.trim();
+    if (!secondary) return "";
+    if (secondary.toLocaleLowerCase("tr-TR") === primary) return "";
+    return secondary;
+  }, [name, petName]);
+
+  useEffect(() => {
+    if (!isDirty) return;
+
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, [isDirty]);
+
+  const filteredLogs = useMemo(() => {
+    let base = logs;
+
+    if (messageFilter === "archived") {
+      base = base.filter((item) => Boolean(item.archivedAt));
+    } else {
+      base = base.filter((item) => !item.archivedAt);
+
+      if (messageFilter === "unread") {
+        base = base.filter((item) => !item.readAt);
+      } else if (messageFilter === "read") {
+        base = base.filter((item) => Boolean(item.readAt));
+      } else if (messageFilter === "pinned") {
+        base = base.filter((item) => Boolean(item.pinnedAt));
+      }
+    }
+
+    const query = messageSearch.trim().toLocaleLowerCase("tr-TR");
+
+    if (query) {
+      base = base.filter((item) => buildSearchText(item).includes(query));
+    }
+
+    const sorted = [...base];
+
+    if (messageSort === "oldest") {
+      sorted.sort(
+        (a, b) =>
+          new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+      );
+    } else if (messageSort === "unread-first") {
+      sorted.sort((a, b) => {
+        const aUnread = a.readAt ? 1 : 0;
+        const bUnread = b.readAt ? 1 : 0;
+
+        if (aUnread !== bUnread) {
+          return aUnread - bUnread;
+        }
+
+        const aPinned = a.pinnedAt ? 1 : 0;
+        const bPinned = b.pinnedAt ? 1 : 0;
+
+        if (aPinned !== bPinned) {
+          return bPinned - aPinned;
+        }
+
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      });
+    } else {
+      sorted.sort((a, b) => {
+        const aPinned = a.pinnedAt ? 1 : 0;
+        const bPinned = b.pinnedAt ? 1 : 0;
+
+        if (aPinned !== bPinned) {
+          return bPinned - aPinned;
+        }
+
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      });
+    }
+
+    return sorted;
+  }, [logs, messageFilter, messageSearch, messageSort]);
 
   function toggleAlert(value: string) {
+    if (!allowedAlerts.includes(value)) return;
+
     setAlerts((prev) =>
       prev.includes(value)
         ? prev.filter((item) => item !== value)
@@ -180,18 +819,119 @@ export default function ManagePage({
     );
   }
 
+  function scrollToMessages() {
+    setOpenSection("messages");
+
+    setTimeout(() => {
+      messagesRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start"
+      });
+    }, 50);
+  }
+
   async function copyManageLink() {
     if (!manageLink) return;
     await navigator.clipboard.writeText(manageLink);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
+    setCopiedManage(true);
+    setTimeout(() => setCopiedManage(false), 1500);
   }
 
-  async function copyPublicLink() {
-    if (!publicProfileLink) return;
-    await navigator.clipboard.writeText(publicProfileLink);
+  async function copyShareLink() {
+    if (!shareLink) return;
+    await navigator.clipboard.writeText(shareLink);
     setCopiedPublic(true);
     setTimeout(() => setCopiedPublic(false), 1500);
+  }
+
+  async function markAllAsRead() {
+    if (!code || !token || markingRead || unreadCount === 0) return;
+
+    try {
+      setMarkingRead(true);
+      setError("");
+
+      const res = await fetch(
+        `/api/notify/logs/${code}/read?token=${encodeURIComponent(token)}`,
+        { method: "POST" }
+      );
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data?.error || "Mesajlar okundu olarak işaretlenemedi.");
+      }
+
+      await loadLogs(code, token);
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Mesajlar okundu olarak işaretlenemedi."
+      );
+    } finally {
+      setMarkingRead(false);
+    }
+  }
+
+  async function markSingleAsRead(logId: string) {
+    if (!code || !token || !logId || readingLogId) return;
+
+    try {
+      setReadingLogId(logId);
+      setError("");
+
+      const res = await fetch(
+        `/api/notify/logs/${code}/${logId}/read?token=${encodeURIComponent(token)}`,
+        { method: "POST" }
+      );
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data?.error || "Mesaj okundu olarak işaretlenemedi.");
+      }
+
+      await loadLogs(code, token);
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Mesaj okundu olarak işaretlenemedi."
+      );
+    } finally {
+      setReadingLogId("");
+    }
+  }
+
+  async function runLogAction(
+    logId: string,
+    action: "pin" | "archive" | "delete"
+  ) {
+    if (!code || !token || !logId || actingLogId) return;
+
+    try {
+      setActingLogId(logId);
+      setError("");
+
+      const res = await fetch(
+        `/api/notify/logs/${code}/${logId}/${action}?token=${encodeURIComponent(token)}`,
+        { method: "POST" }
+      );
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data?.error || "İşlem tamamlanamadı.");
+      }
+
+      await loadLogs(code, token);
+      setPendingDeleteId("");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Bir hata oluştu.");
+    } finally {
+      setActingLogId("");
+    }
   }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -201,7 +941,6 @@ export default function ManagePage({
       setSaving(true);
       setError("");
       setSuccess("");
-      setCopied(false);
 
       const res = await fetch(
         `/api/manage/${code}?token=${encodeURIComponent(token)}`,
@@ -213,8 +952,12 @@ export default function ManagePage({
           body: JSON.stringify({
             productType,
             name,
+            ownerName,
             phone,
             email,
+            city,
+            addressDetail,
+            distinctiveFeature,
             petName,
             note,
             alerts,
@@ -222,6 +965,8 @@ export default function ManagePage({
               showName,
               showPhone,
               showEmail,
+              showCity,
+              showAddressDetail,
               showPetName,
               showNote
             },
@@ -244,10 +989,18 @@ export default function ManagePage({
       }
 
       const submitData = data as ManageSubmitResponse;
-      setSuccess(submitData.message || "Profil güncellendi.");
+      setSuccess(
+        submitData.message ||
+          "Değişiklikler kaydedildi. Herkese açık profil otomatik olarak güncellendi."
+      );
       setManageLink(submitData.manageLink || "");
       if (submitData.warning) {
         setWarning(submitData.warning);
+      }
+      setInitialSnapshot(currentSnapshot);
+
+      if (typeof window !== "undefined") {
+        window.scrollTo({ top: 0, behavior: "smooth" });
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Bir hata oluştu.");
@@ -258,9 +1011,11 @@ export default function ManagePage({
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-white px-4 py-10 text-neutral-900">
-        <div className="mx-auto max-w-2xl">
-          <p>Yükleniyor...</p>
+      <main className="min-h-screen bg-neutral-100 px-4 py-8 text-neutral-900 sm:px-5 sm:py-10">
+        <div className="mx-auto max-w-3xl">
+          <div className="rounded-[2rem] border border-neutral-200 bg-white px-6 py-7 shadow-sm">
+            <p className="text-sm text-neutral-600">Yükleniyor...</p>
+          </div>
         </div>
       </main>
     );
@@ -268,22 +1023,24 @@ export default function ManagePage({
 
   if (error && (error.includes("Geçersiz") || error.includes("eksik"))) {
     return (
-      <main className="min-h-screen bg-white px-4 py-10 text-neutral-900">
+      <main className="min-h-screen bg-neutral-100 px-4 py-8 text-neutral-900 sm:px-5 sm:py-10">
         <div className="mx-auto max-w-2xl">
           <div className="mb-6">
-            <p className="text-sm uppercase tracking-[0.2em] text-neutral-500">
-              Dokuntag Manage
+            <p className="text-sm uppercase tracking-[0.24em] text-neutral-500">
+              Dokuntag Yönetim
             </p>
-            <h1 className="mt-2 text-3xl font-semibold">Profil yönetimi</h1>
+            <h1 className="mt-2 text-3xl font-semibold tracking-tight">
+              Profil yönetimi
+            </h1>
           </div>
 
-          <div className="rounded-2xl border border-red-200 bg-red-50 p-5">
+          <div className="rounded-[2rem] border border-red-200 bg-red-50 p-5 shadow-sm">
             <p className="text-sm text-red-700">{error}</p>
 
-            <div className="mt-4 rounded-xl border border-neutral-200 bg-white p-4 text-sm text-neutral-700">
-              Manage linkinizi kaybettiyseniz{" "}
-              <a href="/recover" className="font-medium underline">
-                recovery sayfasından yeni link oluşturabilirsiniz
+            <div className="mt-4 rounded-2xl border border-neutral-200 bg-white p-4 text-sm text-neutral-700">
+              Yönetim bağlantınızı kaybettiyseniz{" "}
+              <a href="/recover" className="font-medium underline underline-offset-4">
+                kurtarma sayfasından yeni bağlantı oluşturabilirsiniz
               </a>
               .
             </div>
@@ -294,362 +1051,658 @@ export default function ManagePage({
   }
 
   return (
-    <main className="min-h-screen bg-white px-4 py-10 text-neutral-900">
-      <div className="mx-auto max-w-2xl">
-        <div className="mb-8">
+    <main className="min-h-screen bg-neutral-100 px-4 py-8 text-neutral-900 sm:px-5 sm:py-10">
+      <div className="mx-auto max-w-3xl">
+        <div className="mb-6">
           <a
             href="/my"
-            className="text-sm text-neutral-500 hover:underline"
+            className="inline-flex items-center text-sm text-neutral-500 transition hover:text-neutral-900 hover:underline"
           >
             ← Ürünlerim
           </a>
 
-          <p className="mt-3 text-sm uppercase tracking-[0.2em] text-neutral-500">
-            Dokuntag Manage
-          </p>
-          <h1 className="mt-2 text-3xl font-semibold">Profil yönetimi</h1>
-          <p className="mt-2 text-sm text-neutral-600">Kod: {code}</p>
-        </div>
+          <div className="mt-4 overflow-hidden rounded-[2rem] border border-neutral-200 bg-white shadow-sm">
+            <div className="border-b border-neutral-200 bg-gradient-to-br from-white via-neutral-50 to-neutral-100/80 p-5 sm:p-6">
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <div>
+                  <p className="text-sm uppercase tracking-[0.24em] text-neutral-500">
+                    Dokuntag Yönetim
+                  </p>
+                  <h1 className="mt-2 text-3xl font-semibold tracking-tight">
+                    Profil yönetimi
+                  </h1>
+                  <p className="mt-3 max-w-2xl text-sm leading-6 text-neutral-600">
+                    Bu ürünün herkese açık profilini, iletişim seçeneklerini ve gelen mesajlarını buradan yönetebilirsiniz.
+                  </p>
+                </div>
 
-        <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
-          {warning}
-        </div>
+                <a
+                  href={shareLink}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm font-medium transition hover:border-neutral-400 hover:bg-neutral-50"
+                >
+                  Public sayfayı aç
+                </a>
+              </div>
 
-        <div className="mb-6 rounded-2xl border border-neutral-200 bg-white p-5 space-y-5">
-          <div>
-            <p className="text-sm font-medium text-neutral-900">Public link</p>
+              <div className="mt-5 flex flex-wrap gap-2">
+                <span className="rounded-full border border-neutral-300 bg-white px-3 py-1 text-xs font-medium text-neutral-700">
+                  Kod: {code}
+                </span>
+                <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700">
+                  Durum: aktif
+                </span>
+                <span className="rounded-full border border-neutral-300 bg-white px-3 py-1 text-xs font-medium text-neutral-700">
+                  Tip: {getProductTypeLabel(productType)}
+                </span>
+                {displaySecondaryName ? (
+                  <span className="rounded-full border border-neutral-300 bg-white px-3 py-1 text-xs font-medium text-neutral-700">
+                    Başlık: {displaySecondaryName}
+                  </span>
+                ) : null}
+              </div>
+            </div>
 
-            <div className="mt-2 flex gap-2">
-              <input
-                value={publicProfileLink}
-                readOnly
-                className="flex-1 rounded-xl border border-neutral-300 px-3 py-2 text-sm"
-              />
-
-              <button
-                type="button"
-                onClick={() => void copyPublicLink()}
-                className="rounded-xl border border-neutral-300 px-4 py-2 text-sm"
-              >
-                {copiedPublic ? "Kopyalandı" : "Kopyala"}
-              </button>
+            <div className="p-5 sm:p-6">
+              <div className="rounded-[1.5rem] border border-neutral-200 bg-neutral-50 px-4 py-4">
+                <p className="text-xs uppercase tracking-[0.16em] text-neutral-500">
+                  Aktif ürün
+                </p>
+                <p className="mt-2 text-xl font-semibold text-neutral-900">
+                  {displayPrimaryName}
+                </p>
+                <p className="mt-2 text-sm leading-6 text-neutral-600">
+                  Burada yaptığınız değişiklikler kaydedildiğinde herkese açık profil otomatik olarak güncellenir.
+                </p>
+              </div>
             </div>
           </div>
-
-          <div>
-            <p className="text-sm font-medium text-neutral-900">Yönetim linki</p>
-
-            <div className="mt-2 flex gap-2">
-              <input
-                value={manageLink}
-                readOnly
-                className="flex-1 rounded-xl border border-neutral-300 px-3 py-2 text-sm"
-              />
-
-              <button
-                type="button"
-                onClick={() => void copyManageLink()}
-                className="rounded-xl border border-neutral-300 px-4 py-2 text-sm"
-              >
-                {copied ? "Kopyalandı" : "Kopyala"}
-              </button>
-            </div>
-          </div>
-
-          <div className="flex flex-wrap gap-3 pt-2">
-            <a
-              href={publicProfileLink}
-              target="_blank"
-              rel="noreferrer"
-              className="rounded-xl bg-neutral-900 px-4 py-2 text-sm text-white"
-            >
-              Profili Gör
-            </a>
-
-            <button
-              type="button"
-              onClick={() =>
-                window.open(
-                  `https://wa.me/?text=${encodeURIComponent(publicProfileLink)}`,
-                  "_blank"
-                )
-              }
-              className="rounded-xl border border-neutral-300 px-4 py-2 text-sm"
-            >
-              WhatsApp ile paylaş
-            </button>
-
-            <a
-              href={saveToLinksHref}
-              className="rounded-xl border border-neutral-300 px-4 py-2 text-sm"
-            >
-              Ürünlerime ekle
-            </a>
-          </div>
         </div>
+
+        {unreadCount > 0 ? (
+          <button
+            type="button"
+            onClick={scrollToMessages}
+            className="mb-5 flex w-full items-center justify-between rounded-[1.5rem] border border-amber-300 bg-amber-50 px-5 py-4 text-left shadow-sm transition hover:border-amber-400 hover:bg-amber-100"
+          >
+            <div>
+              <p className="text-sm font-semibold text-amber-900">
+                Yeni mesajlarınız var
+              </p>
+              <p className="mt-1 text-sm text-amber-700">
+                {unreadCount} okunmamış mesaj bulundu. Tıklayarak mesajlar bölümüne geçebilirsiniz.
+              </p>
+            </div>
+
+            <span className="rounded-full border border-amber-300 bg-white px-3 py-1 text-xs font-semibold text-amber-800">
+              {unreadCount} yeni
+            </span>
+          </button>
+        ) : null}
 
         {error ? (
-          <div className="mb-6 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+          <div className="mb-5 rounded-[1.5rem] border border-red-200 bg-red-50 px-4 py-4 text-sm text-red-700">
             {error}
           </div>
         ) : null}
 
         {success ? (
-          <div className="mb-6 rounded-2xl border border-green-200 bg-green-50 p-4 text-sm text-green-700">
-            {success}
+          <div className="mb-5 rounded-[1.5rem] border border-emerald-200 bg-emerald-50 px-4 py-4 shadow-sm">
+            <p className="text-sm font-semibold text-emerald-900">
+              Kaydedildi
+            </p>
+            <p className="mt-1 text-sm leading-6 text-emerald-700">
+              {success}
+            </p>
           </div>
         ) : null}
 
-        <form onSubmit={handleSubmit} className="space-y-8">
-          <section className="rounded-2xl border border-neutral-200 p-5">
-            <h2 className="text-lg font-semibold">Ürün tipi</h2>
+        <div className="mb-5 grid gap-3 sm:grid-cols-3">
+          <InfoCard
+            title="Görünür alan"
+            value={visibleFieldCount}
+            subtext="Public sayfada"
+          />
+          <InfoCard
+            title="Hızlı iletişim"
+            value={enabledQuickActionsCount}
+            subtext="Aktif seçenek"
+          />
+          <InfoCard
+            title="Yeni mesaj"
+            value={unreadCount}
+            subtext="Okunmamış kayıt"
+          />
+        </div>
 
-            <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
-              <button
-                type="button"
-                onClick={() => setProductType("pet")}
-                className={`rounded-xl border px-4 py-4 text-sm ${
-                  productType === "pet"
-                    ? "border-neutral-900 bg-neutral-900 text-white"
-                    : "border-neutral-300 bg-white text-neutral-900"
-                }`}
-              >
-                🐶 Evcil hayvan
-              </button>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <SectionCard
+            id="basic"
+            title="Temel bilgiler"
+            description="Ürün ve profil bilgilerini düzenleyin."
+            isOpen={openSection === "basic"}
+            onToggle={toggleSection}
+          >
+            <div className="grid gap-4">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field label="Ürün tipi">
+                  <select
+                    value={productType}
+                    onChange={(e) => setProductType(e.target.value as ProductType)}
+                    className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
+                  >
+                    <option value="item">Eşya</option>
+                    <option value="key">Anahtar</option>
+                    <option value="pet">Evcil hayvan</option>
+                    <option value="person">Kişi</option>
+                  </select>
+                </Field>
 
-              <button
-                type="button"
-                onClick={() => setProductType("item")}
-                className={`rounded-xl border px-4 py-4 text-sm ${
-                  productType === "item"
-                    ? "border-neutral-900 bg-neutral-900 text-white"
-                    : "border-neutral-300 bg-white text-neutral-900"
-                }`}
-              >
-                🎒 Ürün
-              </button>
+                <Field label={getPrimaryNameLabel(productType)}>
+                  <input
+                    value={petName}
+                    onChange={(e) => setPetName(e.target.value)}
+                    className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
+                    placeholder="Ana görünen isim"
+                    required
+                  />
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <InlineToggle
+                      checked={showPetName}
+                      label={`${getPrimaryNameLabel(productType)} görünsün`}
+                      onChange={setShowPetName}
+                    />
+                  </div>
+                </Field>
+              </div>
 
-              <button
-                type="button"
-                onClick={() => setProductType("key")}
-                className={`rounded-xl border px-4 py-4 text-sm ${
-                  productType === "key"
-                    ? "border-neutral-900 bg-neutral-900 text-white"
-                    : "border-neutral-300 bg-white text-neutral-900"
-                }`}
-              >
-                🔑 Anahtar
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setProductType("person")}
-                className={`rounded-xl border px-4 py-4 text-sm ${
-                  productType === "person"
-                    ? "border-neutral-900 bg-neutral-900 text-white"
-                    : "border-neutral-300 bg-white text-neutral-900"
-                }`}
-              >
-                🧍 Birey
-              </button>
-            </div>
-          </section>
-
-          <section className="rounded-2xl border border-neutral-200 p-5">
-            <h2 className="text-lg font-semibold">Temel bilgiler</h2>
-
-            <div className="mt-5 space-y-4">
-              <div>
-                <label className="mb-2 block text-sm font-medium">
-                  İsim / Etiket adı
-                </label>
+              <Field label={getSecondaryNameLabel(productType)} optional>
                 <input
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full rounded-xl border border-neutral-300 px-4 py-3 outline-none"
+                  className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
+                  placeholder="Sadece farklıysa girin"
+                  required
                 />
-              </div>
+                <p className="mt-2 text-xs text-neutral-500">
+                  Ana isimden farklıysa gösterilir.
+                </p>
+              </Field>
 
-              <div>
-                <label className="mb-2 block text-sm font-medium">Telefon</label>
+              <Field label={getOwnerNameLabel(productType)} optional>
                 <input
-                  value={phone}
-                  onChange={(e) => {
-                    const onlyNumbers = e.target.value.replace(/[^0-9]/g, "");
-                    setPhone(onlyNumbers);
-                  }}
-                  inputMode="numeric"
-                  pattern="[0-9]*"
-                  className="w-full rounded-xl border border-neutral-300 px-4 py-3 outline-none"
+                  value={ownerName}
+                  onChange={(e) => setOwnerName(e.target.value)}
+                  className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
+                  placeholder="İsteğe bağlı"
                 />
-              </div>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <InlineToggle
+                    checked={showName}
+                    label={`${getOwnerNameLabel(productType)} görünsün`}
+                    onChange={setShowName}
+                  />
+                </div>
+              </Field>
 
-              <div>
-                <label className="mb-2 block text-sm font-medium">Email</label>
+              <Field label="Ayırt edici özellik" optional>
                 <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full rounded-xl border border-neutral-300 px-4 py-3 outline-none"
+                  value={distinctiveFeature}
+                  onChange={(e) => setDistinctiveFeature(e.target.value)}
+                  className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
+                  placeholder={DISTINCTIVE_FEATURE_PLACEHOLDERS[productType]}
                 />
-              </div>
+              </Field>
 
-              <div>
-                <label className="mb-2 block text-sm font-medium">
-                  Evcil hayvan adı / ürün adı
-                </label>
-                <input
-                  value={petName}
-                  onChange={(e) => setPetName(e.target.value)}
-                  className="w-full rounded-xl border border-neutral-300 px-4 py-3 outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="mb-2 block text-sm font-medium">Not</label>
+              <Field label="Not" optional>
                 <textarea
                   value={note}
                   onChange={(e) => setNote(e.target.value)}
-                  className="min-h-[120px] w-full rounded-xl border border-neutral-300 px-4 py-3 outline-none"
+                  className="min-h-[120px] w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
+                  placeholder="Bulana göstermek istediğiniz kısa not"
                 />
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <InlineToggle
+                    checked={showNote}
+                    disabled={!note.trim()}
+                    label="Not görünsün"
+                    onChange={setShowNote}
+                  />
+                </div>
+              </Field>
+            </div>
+          </SectionCard>
+
+          <SectionCard
+            id="contact"
+            title="İletişim"
+            description="İletişim bilgilerini girin ve hangileri görünsün seçin."
+            isOpen={openSection === "contact"}
+            onToggle={toggleSection}
+          >
+            <div className="grid gap-4">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field label="Telefon">
+                  <input
+                    value={phone}
+                    onChange={(e) =>
+                      setPhone(e.target.value.replace(/[^0-9]/g, ""))
+                    }
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
+                    placeholder="05xxxxxxxxx"
+                  />
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <InlineToggle
+                      checked={allowDirectCall}
+                      disabled={!phone.trim()}
+                      label="Telefonla ulaşılabilsin"
+                      onChange={setAllowDirectCall}
+                    />
+                    <InlineToggle
+                      checked={allowDirectWhatsapp}
+                      disabled={!phone.trim() || !allowDirectCall}
+                      label="WhatsApp açılsın"
+                      onChange={setAllowDirectWhatsapp}
+                    />
+                    <InlineToggle
+                      checked={showPhone}
+                      disabled={!phone.trim() || !allowDirectCall}
+                      label="Telefon görünsün"
+                      onChange={setShowPhone}
+                    />
+                  </div>
+                </Field>
+
+                <Field label="E-posta">
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
+                    placeholder="ornek@mail.com"
+                  />
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <InlineToggle
+                      checked={showEmail}
+                      disabled={!email.trim()}
+                      label="E-posta görünsün"
+                      onChange={setShowEmail}
+                    />
+                  </div>
+                </Field>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field label="Şehir" optional>
+                  <input
+                    value={city}
+                    onChange={(e) => setCity(e.target.value)}
+                    className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
+                    placeholder="İsteğe bağlı"
+                  />
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <InlineToggle
+                      checked={showCity}
+                      disabled={!city.trim()}
+                      label="Şehir görünsün"
+                      onChange={setShowCity}
+                    />
+                  </div>
+                </Field>
+
+                <Field label="Adres detayı" optional>
+                  <input
+                    value={addressDetail}
+                    onChange={(e) => setAddressDetail(e.target.value)}
+                    className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
+                    placeholder="İsteğe bağlı"
+                  />
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <InlineToggle
+                      checked={showAddressDetail}
+                      disabled={!addressDetail.trim()}
+                      label="Adres detayı görünsün"
+                      onChange={setShowAddressDetail}
+                    />
+                  </div>
+                </Field>
               </div>
             </div>
-          </section>
+          </SectionCard>
 
-          <section className="rounded-2xl border border-neutral-200 p-5">
-            <h2 className="text-lg font-semibold">Hızlı iletişim izinleri</h2>
-            <p className="mt-2 text-sm text-neutral-600">
-              İsterseniz public sayfada tek tık arama ve WhatsApp butonları görünebilir.
-            </p>
-
-            <div className="mt-5 space-y-3">
-              <label className="flex items-center gap-3 rounded-xl border border-neutral-200 px-4 py-3">
-                <input
-                  type="checkbox"
-                  checked={allowDirectCall}
-                  onChange={(e) => setAllowDirectCall(e.target.checked)}
+          <SectionCard
+            id="alerts"
+            title="Uyarılar"
+            description="İsterseniz dikkat çekmesi gereken notları seçin."
+            isOpen={openSection === "alerts"}
+            onToggle={toggleSection}
+          >
+            <div className="grid gap-3">
+              {allowedAlerts.map((item) => (
+                <AlertOption
+                  key={`${productType}-${item}`}
+                  label={item}
+                  checked={alerts.includes(item)}
+                  onChange={() => toggleAlert(item)}
                 />
-                <span className="text-sm">Tek tık aramaya izin ver</span>
-              </label>
-
-              <label className="flex items-center gap-3 rounded-xl border border-neutral-200 px-4 py-3">
-                <input
-                  type="checkbox"
-                  checked={allowDirectWhatsapp}
-                  onChange={(e) => setAllowDirectWhatsapp(e.target.checked)}
-                />
-                <span className="text-sm">Tek tık WhatsApp’a izin ver</span>
-              </label>
-            </div>
-          </section>
-
-          <section className="rounded-2xl border border-neutral-200 p-5">
-            <h2 className="text-lg font-semibold">Uyarılar</h2>
-
-            <div className="mt-5 space-y-3">
-              {ALERT_OPTIONS.map((item) => (
-                <label
-                  key={item}
-                  className="flex items-center gap-3 rounded-xl border border-neutral-200 px-4 py-3"
-                >
-                  <input
-                    type="checkbox"
-                    checked={alerts.includes(item)}
-                    onChange={() => toggleAlert(item)}
-                  />
-                  <span className="text-sm">{item}</span>
-                </label>
               ))}
             </div>
-          </section>
+          </SectionCard>
 
-          <section className="rounded-2xl border border-neutral-200 p-5">
-            <h2 className="text-lg font-semibold">Public profilde göster</h2>
-
-            <div className="mt-5 space-y-3">
-              <label className="flex items-center gap-3 rounded-xl border border-neutral-200 px-4 py-3">
-                <input
-                  type="checkbox"
-                  checked={showName}
-                  onChange={(e) => setShowName(e.target.checked)}
-                />
-                <span className="text-sm">İsim göster</span>
-              </label>
-
-              <label className="flex items-center gap-3 rounded-xl border border-neutral-200 px-4 py-3">
-                <input
-                  type="checkbox"
-                  checked={showPhone}
-                  onChange={(e) => setShowPhone(e.target.checked)}
-                />
-                <span className="text-sm">Telefon göster</span>
-              </label>
-
-              <label className="flex items-center gap-3 rounded-xl border border-neutral-200 px-4 py-3">
-                <input
-                  type="checkbox"
-                  checked={showEmail}
-                  onChange={(e) => setShowEmail(e.target.checked)}
-                />
-                <span className="text-sm">Email göster</span>
-              </label>
-
-              <label className="flex items-center gap-3 rounded-xl border border-neutral-200 px-4 py-3">
-                <input
-                  type="checkbox"
-                  checked={showPetName}
-                  onChange={(e) => setShowPetName(e.target.checked)}
-                />
-                <span className="text-sm">Evcil hayvan / ürün adı göster</span>
-              </label>
-
-              <label className="flex items-center gap-3 rounded-xl border border-neutral-200 px-4 py-3">
-                <input
-                  type="checkbox"
-                  checked={showNote}
-                  onChange={(e) => setShowNote(e.target.checked)}
-                />
-                <span className="text-sm">Not göster</span>
-              </label>
-            </div>
-          </section>
-
-          <section className="rounded-2xl border border-neutral-200 p-5">
-            <h2 className="text-lg font-semibold">Recovery bilgileri</h2>
-
-            <div className="mt-5 space-y-4">
-              <div>
-                <label className="mb-2 block text-sm font-medium">
-                  Recovery telefon
-                </label>
-                <input
-                  value={recoveryPhone}
-                  onChange={(e) => setRecoveryPhone(e.target.value)}
-                  className="w-full rounded-xl border border-neutral-300 px-4 py-3 outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="mb-2 block text-sm font-medium">
-                  Recovery e-posta
-                </label>
-                <input
-                  type="email"
-                  value={recoveryEmail}
-                  onChange={(e) => setRecoveryEmail(e.target.value)}
-                  className="w-full rounded-xl border border-neutral-300 px-4 py-3 outline-none"
-                />
-              </div>
-            </div>
-          </section>
-
-          <button
-            type="submit"
-            disabled={saving}
-            className="w-full rounded-2xl bg-neutral-900 px-5 py-4 text-sm font-medium text-white disabled:opacity-60"
+          <SectionCard
+            id="recovery"
+            title="Kurtarma ve bağlantılar"
+            description="Yedek iletişim ve bağlantıları burada tutun."
+            isOpen={openSection === "recovery"}
+            onToggle={toggleSection}
           >
-            {saving ? "Kaydediliyor..." : "Değişiklikleri kaydet"}
-          </button>
+            <div className="grid gap-4">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field label="Kurtarma telefonu">
+                  <input
+                    value={recoveryPhone}
+                    onChange={(e) =>
+                      setRecoveryPhone(e.target.value.replace(/[^0-9]/g, ""))
+                    }
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
+                    placeholder="05xxxxxxxxx"
+                  />
+                </Field>
+
+                <Field label="Kurtarma e-postası">
+                  <input
+                    type="email"
+                    value={recoveryEmail}
+                    onChange={(e) => setRecoveryEmail(e.target.value)}
+                    className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
+                    placeholder="ornek@mail.com"
+                  />
+                </Field>
+              </div>
+
+              <div className="rounded-[1.5rem] border border-amber-200 bg-amber-50 px-4 py-4">
+                <p className="text-sm font-medium text-amber-900">Önemli not</p>
+                <p className="mt-1 text-sm leading-6 text-amber-800">
+                  {warning}
+                </p>
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                <button
+                  type="button"
+                  onClick={() => void copyManageLink()}
+                  className="rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm font-medium transition hover:border-neutral-400 hover:bg-neutral-50"
+                >
+                  {copiedManage ? "Yönetim linki kopyalandı" : "Yönetim linkini kopyala"}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => void copyShareLink()}
+                  className="rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm font-medium transition hover:border-neutral-400 hover:bg-neutral-50"
+                >
+                  {copiedPublic ? "Public link kopyalandı" : "Public linki kopyala"}
+                </button>
+              </div>
+            </div>
+          </SectionCard>
+
+          <SectionCard
+            id="messages"
+            title="Mesajlar"
+            description="Size gelen mesajları buradan yönetin."
+            isOpen={openSection === "messages"}
+            onToggle={toggleSection}
+            right={
+              unreadCount > 0 ? (
+                <span className="rounded-full border border-amber-300 bg-amber-50 px-2.5 py-1 text-[11px] font-semibold text-amber-800">
+                  {unreadCount} yeni
+                </span>
+              ) : null
+            }
+          >
+            <section ref={messagesRef}>
+              <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                  <p className="text-sm leading-6 text-neutral-600">
+                    Gelen mesajları buradan görebilir, sabitleyebilir, arşivleyebilir ve düzenleyebilirsiniz.
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => void loadLogs(code, token)}
+                    className="rounded-2xl border border-neutral-300 bg-white px-4 py-2 text-sm font-medium transition hover:border-neutral-400 hover:bg-neutral-50"
+                  >
+                    Yenile
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => void markAllAsRead()}
+                    disabled={markingRead || unreadCount === 0}
+                    className="rounded-2xl border border-neutral-300 bg-white px-4 py-2 text-sm font-medium transition hover:border-neutral-400 hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {markingRead ? "İşleniyor..." : "Tümünü okundu yap"}
+                  </button>
+                </div>
+              </div>
+
+              <div className="mb-4 grid gap-3 sm:grid-cols-3">
+                <select
+                  value={messageFilter}
+                  onChange={(e) => setMessageFilter(e.target.value as MessageFilter)}
+                  className="rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none"
+                >
+                  <option value="all">Tümü</option>
+                  <option value="unread">Okunmamış</option>
+                  <option value="read">Okunmuş</option>
+                  <option value="pinned">Sabitlenen</option>
+                  <option value="archived">Arşiv</option>
+                </select>
+
+                <select
+                  value={messageSort}
+                  onChange={(e) => setMessageSort(e.target.value as MessageSort)}
+                  className="rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none"
+                >
+                  <option value="newest">En yeni</option>
+                  <option value="oldest">En eski</option>
+                  <option value="unread-first">Önce okunmamış</option>
+                </select>
+
+                <input
+                  value={messageSearch}
+                  onChange={(e) => setMessageSearch(e.target.value)}
+                  className="rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none"
+                  placeholder="Mesaj ara"
+                />
+              </div>
+
+              {logsLoading ? (
+                <div className="rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-4 text-sm text-neutral-600">
+                  Mesajlar yükleniyor...
+                </div>
+              ) : filteredLogs.length === 0 ? (
+                <div className="rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-4 text-sm text-neutral-600">
+                  Bu filtrede mesaj bulunmuyor.
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {filteredLogs.map((log) => {
+                    const isArchived = Boolean(log.archivedAt);
+                    const isPinned = Boolean(log.pinnedAt);
+                    const isBusy = actingLogId === log.id || readingLogId === log.id;
+
+                    return (
+                      <div
+                        key={log.id}
+                        className="rounded-[1.5rem] border border-neutral-200 bg-neutral-50 p-4"
+                      >
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="rounded-full border border-neutral-300 bg-white px-3 py-1 text-xs text-neutral-700">
+                            {new Date(log.createdAt).toLocaleString("tr-TR")}
+                          </span>
+
+                          {Array.isArray(log.preferredContactMethods) &&
+                          log.preferredContactMethods.length > 0 ? (
+                            <span className="rounded-full border border-neutral-300 bg-white px-3 py-1 text-xs text-neutral-700">
+                              {log.preferredContactMethods
+                                .map((method) => getMethodLabel(method))
+                                .join(", ")}
+                            </span>
+                          ) : null}
+
+                          {isPinned ? (
+                            <span className="rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-xs font-medium text-sky-700">
+                              Sabitlendi
+                            </span>
+                          ) : null}
+
+                          {isArchived ? (
+                            <span className="rounded-full border border-neutral-300 bg-neutral-100 px-3 py-1 text-xs font-medium text-neutral-700">
+                              Arşivde
+                            </span>
+                          ) : log.readAt ? (
+                            <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700">
+                              Okundu
+                            </span>
+                          ) : (
+                            <span className="rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-medium text-amber-700">
+                              Yeni
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                          <div className="rounded-2xl bg-white p-3">
+                            <p className="text-xs text-neutral-400">Gönderen</p>
+                            <p className="mt-1 text-sm font-medium text-neutral-900">
+                              {log.senderName || "-"}
+                            </p>
+                          </div>
+
+                          <div className="rounded-2xl bg-white p-3">
+                            <p className="text-xs text-neutral-400">Telefon</p>
+                            <p className="mt-1 text-sm text-neutral-700">
+                              {maskPhone(log.senderPhone || "")}
+                            </p>
+                          </div>
+
+                          <div className="rounded-2xl bg-white p-3 sm:col-span-2">
+                            <p className="text-xs text-neutral-400">E-posta</p>
+                            <p className="mt-1 break-all text-sm text-neutral-700">
+                              {maskEmail(log.senderEmail || "")}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="mt-4 rounded-2xl border border-neutral-200 bg-white p-4">
+                          <p className="text-xs text-neutral-400">Mesaj</p>
+                          <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-6 text-neutral-800">
+                            {log.message || "-"}
+                          </p>
+                        </div>
+
+                        <div className="mt-4 flex flex-wrap gap-2">
+                          {!log.readAt && !isArchived ? (
+                            <button
+                              type="button"
+                              onClick={() => void markSingleAsRead(log.id)}
+                              disabled={isBusy}
+                              className="rounded-2xl border border-neutral-300 bg-white px-4 py-2 text-sm font-medium transition hover:border-neutral-400 hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-60"
+                            >
+                              {readingLogId === log.id ? "İşleniyor..." : "Okundu yap"}
+                            </button>
+                          ) : null}
+
+                          {!isArchived ? (
+                            <button
+                              type="button"
+                              onClick={() => void runLogAction(log.id, "pin")}
+                              disabled={isBusy}
+                              className="rounded-2xl border border-neutral-300 bg-white px-4 py-2 text-sm font-medium transition hover:border-neutral-400 hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-60"
+                            >
+                              {actingLogId === log.id
+                                ? "İşleniyor..."
+                                : isPinned
+                                  ? "Sabitlemeyi kaldır"
+                                  : "Sabitle"}
+                            </button>
+                          ) : null}
+
+                          {!isArchived ? (
+                            <button
+                              type="button"
+                              onClick={() => void runLogAction(log.id, "archive")}
+                              disabled={isBusy}
+                              className="rounded-2xl border border-neutral-300 bg-white px-4 py-2 text-sm font-medium transition hover:border-neutral-400 hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-60"
+                            >
+                              {actingLogId === log.id ? "İşleniyor..." : "Arşivle"}
+                            </button>
+                          ) : null}
+
+                          {pendingDeleteId === log.id ? (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => void runLogAction(log.id, "delete")}
+                                disabled={isBusy}
+                                className="rounded-2xl border border-red-300 bg-red-50 px-4 py-2 text-sm font-medium text-red-700 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
+                              >
+                                {actingLogId === log.id ? "Siliniyor..." : "Silmeyi onayla"}
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => setPendingDeleteId("")}
+                                className="rounded-2xl border border-neutral-300 bg-white px-4 py-2 text-sm font-medium transition hover:border-neutral-400 hover:bg-neutral-50"
+                              >
+                                Vazgeç
+                              </button>
+                            </>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => setPendingDeleteId(log.id)}
+                              className="rounded-2xl border border-neutral-300 bg-white px-4 py-2 text-sm font-medium transition hover:border-neutral-400 hover:bg-neutral-50"
+                            >
+                              Sil
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </section>
+          </SectionCard>
+
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <button
+              type="submit"
+              disabled={saving}
+              className="rounded-2xl bg-neutral-800 px-5 py-4 text-sm font-medium text-white transition hover:bg-neutral-700 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {saving ? "Kaydediliyor..." : isDirty ? "Değişiklikleri kaydet" : "Kaydedilecek değişiklik yok"}
+            </button>
+
+            <a
+              href={shareLink}
+              target="_blank"
+              rel="noreferrer"
+              className="rounded-2xl border border-neutral-300 bg-white px-5 py-4 text-center text-sm font-medium transition hover:border-neutral-400 hover:bg-neutral-50"
+            >
+              Herkese açık sayfayı aç
+            </a>
+          </div>
         </form>
       </div>
     </main>

@@ -104,7 +104,7 @@ export default function PublicProfileClient({
 
         <div>
           <label className="mb-2 block text-sm font-medium">
-            Size nasıl ulaşılsın?
+            Size nasıl ulaşılmasını istersiniz?
           </label>
 
           <div className="grid gap-3 sm:grid-cols-3">
@@ -136,7 +136,7 @@ export default function PublicProfileClient({
           />
           {needsPhone ? (
             <p className="mt-2 text-xs text-neutral-500">
-              Telefon veya WhatsApp seçildiği için bu alan gereklidir.
+              Telefon veya WhatsApp seçtiğiniz için bu alan gereklidir.
             </p>
           ) : null}
         </div>
@@ -152,7 +152,7 @@ export default function PublicProfileClient({
           />
           {needsEmail ? (
             <p className="mt-2 text-xs text-neutral-500">
-              Email seçildiği için bu alan gereklidir.
+              Email seçtiğiniz için bu alan gereklidir.
             </p>
           ) : null}
         </div>

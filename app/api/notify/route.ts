@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { findTagByCode } from "@/lib/tags";
+import { findTagByCode, readTags } from "@/lib/tags";
 import { isMailConfigured, sendOwnerNotification } from "@/lib/mailer";
 import {
   addNotifyLog,
@@ -60,6 +60,29 @@ function getClientIp(request: Request) {
   }
 
   return "unknown";
+}
+
+function shouldShowOwnerNameInEmail(ownerEmail: string) {
+  const normalizedOwnerEmail = normalizeEmail(ownerEmail);
+  if (!normalizedOwnerEmail) return false;
+
+  const allTags = readTags();
+
+  const sameOwnerCount = allTags.filter((tag) => {
+    return normalizeEmail(tag.profile.email) === normalizedOwnerEmail;
+  }).length;
+
+  return sameOwnerCount > 1;
+}
+
+function shouldShowSecondaryTitle(itemName: string, tagName: string) {
+  const normalizedItemName = getString(itemName).toLocaleLowerCase("tr-TR");
+  const normalizedTagName = getString(tagName).toLocaleLowerCase("tr-TR");
+
+  if (!normalizedTagName) return false;
+  if (!normalizedItemName) return true;
+
+  return normalizedItemName !== normalizedTagName;
 }
 
 export async function POST(request: Request) {
@@ -128,7 +151,7 @@ export async function POST(request: Request) {
 
     if (needsEmail && !senderEmail) {
       return NextResponse.json(
-        { error: "Email seçildiği için email zorunlu." },
+        { error: "E-posta seçildiği için e-posta zorunlu." },
         { status: 400 }
       );
     }
@@ -142,14 +165,14 @@ export async function POST(request: Request) {
 
     if (senderEmail.length > 120) {
       return NextResponse.json(
-        { error: "Email bilgisi çok uzun." },
+        { error: "E-posta bilgisi çok uzun." },
         { status: 400 }
       );
     }
 
     if (senderEmail && !isValidEmail(senderEmail)) {
       return NextResponse.json(
-        { error: "Geçerli bir email adresi girin." },
+        { error: "Geçerli bir e-posta adresi girin." },
         { status: 400 }
       );
     }
@@ -167,7 +190,7 @@ export async function POST(request: Request) {
 
     if (!tag.profile.email) {
       return NextResponse.json(
-        { error: "Bu etiket için alıcı email tanımlı değil." },
+        { error: "Bu etiket için alıcı e-posta tanımlı değil." },
         { status: 400 }
       );
     }
@@ -207,11 +230,32 @@ export async function POST(request: Request) {
       );
     }
 
+    const showOwnerNameInEmail = shouldShowOwnerNameInEmail(tag.profile.email);
+    const itemName = getString(tag.profile.petName || "");
+    const tagName = getString(tag.profile.name || "");
+    const ownerName = getString(tag.profile.ownerName || "");
+
     await sendOwnerNotification({
       to: tag.profile.email,
       tagCode: tag.code,
-      ownerName: tag.profile.name,
-      petName: tag.profile.petName,
+      ownerName,
+      tagName,
+      itemName,
+      senderName,
+      senderPhone,
+      senderEmail,
+      preferredContactMethods,
+      allowDirectCall: Boolean(tag.contactOptions?.allowDirectCall),
+      allowDirectWhatsapp: Boolean(tag.contactOptions?.allowDirectWhatsapp),
+      message,
+      showOwnerName: showOwnerNameInEmail,
+      showSecondaryTitle: shouldShowSecondaryTitle(itemName, tagName)
+    });
+
+    addNotifyLog({
+      tagCode: code,
+      senderFingerprint,
+      ip,
       senderName,
       senderPhone,
       senderEmail,
@@ -219,17 +263,11 @@ export async function POST(request: Request) {
       message
     });
 
-    addNotifyLog({
-      tagCode: code,
-      senderFingerprint,
-      ip
-    });
-
     const methodLabels = preferredContactMethods
       .map((method) => {
         if (method === "whatsapp") return "WhatsApp";
         if (method === "phone") return "Telefon / SMS";
-        if (method === "email") return "Email";
+        if (method === "email") return "E-posta";
         return method;
       })
       .join(", ");
