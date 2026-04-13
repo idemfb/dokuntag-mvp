@@ -1,10 +1,18 @@
 import { Resend } from "resend";
 import type { NotifyLogItem } from "@/lib/notify";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 function getEnv(name: string) {
   return process.env[name]?.trim() || "";
+}
+
+function getResendClient() {
+  const apiKey = getEnv("RESEND_API_KEY");
+
+  if (!apiKey) {
+    throw new Error("RESEND_API_KEY eksik");
+  }
+
+  return new Resend(apiKey);
 }
 
 export function isMailConfigured() {
@@ -138,6 +146,8 @@ export async function sendOwnerNotification(input: SendOwnerNotificationInput) {
   if (!from) {
     throw new Error("EMAIL_FROM eksik");
   }
+
+  const resend = getResendClient();
 
   const subject = buildSmartSubject({
     itemName: input.itemName,
@@ -302,6 +312,8 @@ export async function sendTransferMessagesArchiveEmail(input: {
     throw new Error("EMAIL_FROM eksik");
   }
 
+  const resend = getResendClient();
+
   const safeProductName = input.productName.trim() || input.tagCode.trim() || "Dokuntag ürünü";
   const subject = `Dokuntag mesaj arşivi - ${safeProductName}`;
 
@@ -413,6 +425,8 @@ export async function sendRecoveryMagicLinkEmail(input: {
   if (!from) {
     throw new Error("EMAIL_FROM eksik");
   }
+
+  const resend = getResendClient();
 
   const subject =
     input.entryType === "recover"
