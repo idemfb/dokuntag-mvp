@@ -15,7 +15,7 @@
       "allowDirectWhatsapp": true,
       "status": "active",
       "petName": "ahmet",
-      "updatedAt": "2026-04-14T14:15:38.041Z",
+      "updatedAt": "2026-04-15T11:02:25.324Z",
       "ownerName": "idem",
       "recovery": {
         "phone": "05063509722",
@@ -55,13 +55,6 @@
       "contactOptions": {
         "allowDirectCall": true,
         "allowDirectWhatsapp": true
-      },
-      "transfer": {
-        "token": "73ad10ed-3eeb-463e-b583-126ab7a154a9",
-        "status": "pending",
-        "createdAt": "2026-04-13T10:54:51.434Z",
-        "expiresAt": "2026-04-15T10:54:51.434Z",
-        "fromManageToken": "e0355fe4-4af7-463e-ae42-089f6a9421b1"
       }
     },
     {
