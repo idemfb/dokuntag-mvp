@@ -3,36 +3,51 @@ import { toggleNotifyLogArchived } from "@/lib/notify";
 import { validateManageToken } from "@/lib/tags";
 
 type Params = {
-  params: Promise<{ code: string; logId: string }>;
+  params: Promise<{
+    code: string;
+    logId: string;
+  }>;
 };
+
+function getTokenFromRequest(request: Request) {
+  const url = new URL(request.url);
+  return url.searchParams.get("token")?.trim() || "";
+}
+
+function normalizeCode(value: unknown) {
+  return typeof value === "string" ? value.trim().toUpperCase() : "";
+}
+
+function normalizeLogId(value: unknown) {
+  return typeof value === "string" ? value.trim() : "";
+}
 
 export async function POST(request: Request, { params }: Params) {
   try {
-    const { code, logId } = await params;
-    const normalizedCode = code.trim().toUpperCase();
-    const normalizedLogId = logId.trim();
-    const { searchParams } = new URL(request.url);
-    const token = searchParams.get("token") || "";
+    const resolvedParams = await params;
+    const code = normalizeCode(resolvedParams.code);
+    const logId = normalizeLogId(resolvedParams.logId);
+    const token = getTokenFromRequest(request);
 
-    if (!token) {
+    if (!code || !logId) {
       return NextResponse.json(
-        { error: "Yönetim bağlantısı eksik." },
+        { error: "Kod ve kayıt kimliği zorunludur." },
         { status: 400 }
       );
     }
 
-    const tag = validateManageToken(normalizedCode, token);
+    const validated = validateManageToken(code, token);
 
-    if (!tag) {
+    if (!validated) {
       return NextResponse.json(
-        { error: "Yönetim bağlantısı geçersiz veya süresi dolmuş." },
+        { error: "Yetkisiz erişim." },
         { status: 401 }
       );
     }
 
-    const result = toggleNotifyLogArchived({
-      tagCode: normalizedCode,
-      logId: normalizedLogId
+    const result = await toggleNotifyLogArchived({
+      tagCode: code,
+      logId
     });
 
     return NextResponse.json({
@@ -44,7 +59,7 @@ export async function POST(request: Request, { params }: Params) {
     console.error("NOTIFY_LOG_ARCHIVE_POST_ERROR", error);
 
     return NextResponse.json(
-      { error: "Mesaj arşivlenemedi." },
+      { error: "İşlem sırasında bir hata oluştu." },
       { status: 500 }
     );
   }
