@@ -46,7 +46,7 @@ export async function POST(request: Request, { params }: Params) {
       );
     }
 
-    const logs = getNotifyLogsByTagCode(normalizedCode);
+    const logs = await getNotifyLogsByTagCode(normalizedCode);
 
     await sendTransferMessagesArchiveEmail({
       to: tag.profile.email,
