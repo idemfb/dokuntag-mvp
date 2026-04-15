@@ -29,7 +29,7 @@ export async function GET(req: NextRequest) {
     }
 
     const tags = readTags();
-    const logs = readNotifyLog();
+    const logs = await readNotifyLog();
 
     const matchedProducts = tags.filter((tag) => {
       if (excludeCode && tag.code === excludeCode) {
