@@ -29,7 +29,7 @@ export async function POST(request: Request, { params }: Params) {
       );
     }
 
-    const result = markNotifyLogsAsRead(normalizedCode);
+    const result = await markNotifyLogsAsRead(normalized);
 
     return NextResponse.json({
       success: true,
