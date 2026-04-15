@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { updateTagByManageToken, validateManageToken } from "@/lib/tags";
 import {
   updateTagByManageTokenAsync,
   validateManageTokenAsync
@@ -74,8 +73,6 @@ export async function GET(request: Request, { params }: Params) {
     }
 
     const tag = await validateManageTokenAsync(normalizedCode, token);
-    const existing = await validateManageTokenAsync(normalizedCode, token);
-    const updated = await updateTagByManageTokenAsync({
 
     if (!tag) {
       return NextResponse.json(
@@ -84,8 +81,7 @@ export async function GET(request: Request, { params }: Params) {
       );
     }
 
-    // 🔥 TOKEN ROTATE (KRİTİK)
-    const updated = updateTagByManageToken({
+    const updated = await updateTagByManageTokenAsync({
       manageToken: token
     });
 
@@ -114,7 +110,7 @@ export async function GET(request: Request, { params }: Params) {
       managePath,
       manageLink: `${origin}${managePath}`,
       qrLink: `${origin}/api/qr/${updated.code}`,
-      qrDownloadLink: `${origin}/api/qr-download/${updated.code}`,
+      qrDownloadLink: `${origin}/api/qr-download/${updated.code}`
     });
   } catch (error) {
     console.error("MANAGE_GET_ERROR", error);
@@ -122,9 +118,7 @@ export async function GET(request: Request, { params }: Params) {
     return NextResponse.json(
       {
         error:
-          error instanceof Error
-            ? error.message
-            : "Bilgiler alınamadı."
+          error instanceof Error ? error.message : "Bilgiler alınamadı."
       },
       { status: 500 }
     );
@@ -145,7 +139,7 @@ export async function POST(request: Request, { params }: Params) {
       );
     }
 
-    const existing = validateManageToken(normalizedCode, token);
+    const existing = await validateManageTokenAsync(normalizedCode, token);
 
     if (!existing) {
       return NextResponse.json(
@@ -222,7 +216,7 @@ export async function POST(request: Request, { params }: Params) {
       );
     }
 
-    const updated = updateTagByManageToken({
+    const updated = await updateTagByManageTokenAsync({
       manageToken: token,
       productType,
       tagName: name,
@@ -255,7 +249,7 @@ export async function POST(request: Request, { params }: Params) {
     return NextResponse.json({
       success: true,
       managePath,
-      manageLink: `${origin}${managePath}`,
+      manageLink: `${origin}${managePath}`
     });
   } catch (error) {
     console.error("MANAGE_POST_ERROR", error);

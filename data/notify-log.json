@@ -1097,5 +1097,23 @@
       "email"
     ],
     "message": "vercel ready"
+  },
+  {
+    "id": "d05a83fe-6236-47af-a1b4-8dfe3c5d1b1e",
+    "tagCode": "TEST01",
+    "senderFingerprint": "4e97e70704b851559407990e8eae39dbcec3d98566917c175fc19335d5bc2148",
+    "ip": "::1",
+    "createdAt": "2026-04-15T15:32:04.622Z",
+    "readAt": "",
+    "pinnedAt": "",
+    "archivedAt": "",
+    "deletedAt": "",
+    "senderName": "mnbvcx",
+    "senderPhone": "055555",
+    "senderEmail": "adresesaglik@gmail.com",
+    "preferredContactMethods": [
+      "phone"
+    ],
+    "message": "mnbvcxz"
   }
 ]

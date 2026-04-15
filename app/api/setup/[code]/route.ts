@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { findTagByCode, upsertTag } from "@/lib/tags";
 import { findTagByCodeAsync, upsertTagAsync } from "@/lib/tags";
 
 type ProductType = "pet" | "item" | "key" | "person";
@@ -93,8 +92,6 @@ export async function GET(_req: NextRequest, context: RouteContext) {
     const normalizedCode = normalizeString(code).toUpperCase();
 
     const tag = await findTagByCodeAsync(normalizedCode);
-const existing = await findTagByCodeAsync(normalizedCode);
-const saved = await upsertTagAsync({
 
     if (!tag) {
       return NextResponse.json(
@@ -137,7 +134,7 @@ export async function PUT(req: NextRequest, context: RouteContext) {
     const { code } = await context.params;
     const normalizedCode = normalizeString(code).toUpperCase();
 
-    const existing = findTagByCode(normalizedCode);
+    const existing = await findTagByCodeAsync(normalizedCode);
 
     if (!existing) {
       return NextResponse.json(
@@ -226,7 +223,7 @@ export async function PUT(req: NextRequest, context: RouteContext) {
         )
       : [];
 
-    const saved = upsertTag({
+    const saved = await upsertTagAsync({
       code: normalizedCode,
       productType,
       tagName,

@@ -56,6 +56,14 @@ function isRedisEnabled() {
   );
 }
 
+function isVercelRuntime() {
+  return Boolean(process.env.VERCEL);
+}
+
+function shouldUseFileStorage() {
+  return !isRedisEnabled() && !isVercelRuntime();
+}
+
 function getRedis() {
   if (!isRedisEnabled()) {
     return null;
@@ -71,58 +79,37 @@ function getRedis() {
   return redisClient;
 }
 
-function ensureFile() {
-  if (!fs.existsSync(filePath)) {
-    fs.writeFileSync(filePath, "[]", "utf-8");
+function ensureFile(file: string) {
+  const dir = path.dirname(file);
+
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+
+  if (!fs.existsSync(file)) {
+    fs.writeFileSync(file, "[]", "utf-8");
   }
 }
 
-function ensureRecoverFile() {
-  if (!fs.existsSync(recoverFilePath)) {
-    fs.writeFileSync(recoverFilePath, "[]", "utf-8");
-  }
-}
-
-function readNotifyLogFromFile(): NotifyLogItem[] {
-  ensureFile();
-
+function readJsonArrayFile<T>(targetPath: string): T[] {
   try {
-    const file = fs.readFileSync(filePath, "utf-8");
+    ensureFile(targetPath);
+    const file = fs.readFileSync(targetPath, "utf-8");
     const parsed = JSON.parse(file);
 
     if (!Array.isArray(parsed)) {
       return [];
     }
 
-    return parsed as NotifyLogItem[];
+    return parsed as T[];
   } catch {
     return [];
   }
 }
 
-function writeNotifyLogToFile(items: NotifyLogItem[]) {
-  fs.writeFileSync(filePath, JSON.stringify(items, null, 2), "utf-8");
-}
-
-function readRecoverLogFromFile(): RecoverRequestLogItem[] {
-  ensureRecoverFile();
-
-  try {
-    const file = fs.readFileSync(recoverFilePath, "utf-8");
-    const parsed = JSON.parse(file);
-
-    if (!Array.isArray(parsed)) {
-      return [];
-    }
-
-    return parsed as RecoverRequestLogItem[];
-  } catch {
-    return [];
-  }
-}
-
-function writeRecoverLogToFile(items: RecoverRequestLogItem[]) {
-  fs.writeFileSync(recoverFilePath, JSON.stringify(items, null, 2), "utf-8");
+function writeJsonArrayFile<T>(targetPath: string, items: T[]) {
+  ensureFile(targetPath);
+  fs.writeFileSync(targetPath, JSON.stringify(items, null, 2), "utf-8");
 }
 
 async function readNotifyLogFromRedis(): Promise<NotifyLogItem[]> {
@@ -176,7 +163,11 @@ export async function readNotifyLog(): Promise<NotifyLogItem[]> {
     return readNotifyLogFromRedis();
   }
 
-  return readNotifyLogFromFile();
+  if (shouldUseFileStorage()) {
+    return readJsonArrayFile<NotifyLogItem>(filePath);
+  }
+
+  return [];
 }
 
 export async function writeNotifyLog(items: NotifyLogItem[]) {
@@ -185,7 +176,12 @@ export async function writeNotifyLog(items: NotifyLogItem[]) {
     return;
   }
 
-  writeNotifyLogToFile(items);
+  if (shouldUseFileStorage()) {
+    writeJsonArrayFile(filePath, items);
+    return;
+  }
+
+  console.warn("NOTIFY_LOG_WRITE_SKIPPED_NO_REDIS");
 }
 
 export async function readRecoverLog(): Promise<RecoverRequestLogItem[]> {
@@ -193,7 +189,11 @@ export async function readRecoverLog(): Promise<RecoverRequestLogItem[]> {
     return readRecoverLogFromRedis();
   }
 
-  return readRecoverLogFromFile();
+  if (shouldUseFileStorage()) {
+    return readJsonArrayFile<RecoverRequestLogItem>(recoverFilePath);
+  }
+
+  return [];
 }
 
 export async function writeRecoverLog(items: RecoverRequestLogItem[]) {
@@ -202,7 +202,12 @@ export async function writeRecoverLog(items: RecoverRequestLogItem[]) {
     return;
   }
 
-  writeRecoverLogToFile(items);
+  if (shouldUseFileStorage()) {
+    writeJsonArrayFile(recoverFilePath, items);
+    return;
+  }
+
+  console.warn("RECOVER_LOG_WRITE_SKIPPED_NO_REDIS");
 }
 
 function normalizeMethods(value?: string[]): NotifyContactMethod[] {

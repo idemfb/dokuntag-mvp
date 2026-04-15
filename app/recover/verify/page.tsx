@@ -1,4 +1,4 @@
-import { verifyRecoverySessionToken } from "@/lib/tags";
+import { verifyRecoverySessionTokenAsync } from "@/lib/tags";
 
 type ProductType = "pet" | "item" | "key" | "person";
 type TagStatus = "unclaimed" | "active" | "inactive";
@@ -102,7 +102,7 @@ export default async function RecoverVerifyPage({
     );
   }
 
-  const session = verifyRecoverySessionToken(token);
+  const session = await verifyRecoverySessionTokenAsync(token);
 
   if (!session) {
     return (

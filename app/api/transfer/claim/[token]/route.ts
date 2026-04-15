@@ -1,10 +1,6 @@
 import { NextResponse } from "next/server";
 import { deleteAllNotifyLogsByTagCode } from "@/lib/notify";
-import { claimTransfer, getTransferByToken } from "@/lib/tags";
-import {
-  claimTransferAsync,
-  getTransferByTokenAsync
-} from "@/lib/tags";
+import { claimTransferAsync, getTransferByTokenAsync } from "@/lib/tags";
 
 type Params = {
   params: Promise<{
@@ -29,8 +25,6 @@ export async function GET(request: Request, { params }: Params) {
   try {
     const { token } = await params;
     const transfer = await getTransferByTokenAsync(token);
-    const transferBeforeClaim = await getTransferByTokenAsync(token);
-    const claimed = await claimTransferAsync({
 
     if (!transfer) {
       return NextResponse.json(
@@ -125,9 +119,9 @@ export async function POST(request: Request, { params }: Params) {
       );
     }
 
-    const transferBeforeClaim = getTransferByToken(token);
+    const transferBeforeClaim = await getTransferByTokenAsync(token);
 
-    const claimed = claimTransfer({
+    const claimed = await claimTransferAsync({
       transferToken: token,
       productType,
       tagName,
