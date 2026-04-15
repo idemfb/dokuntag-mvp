@@ -1,4 +1,4 @@
-import { readDB, writeDB } from "@/lib/db";
+import { readDB, readDBAsync, writeDB, writeDBAsync } from "@/lib/db";
 
 export type ProductType = "pet" | "item" | "key" | "person";
 export type TagStatus = "unclaimed" | "active" | "inactive";
@@ -263,7 +263,60 @@ function getProducts(): TagRecord[] {
 
 function saveProducts(products: TagRecord[]) {
   const db = readDB();
+async function getProductsAsync(): Promise<TagRecord[]> {
+  const db = await readDBAsync();
 
+  if (Array.isArray((db as { products?: TagRecord[] }).products)) {
+    return (db as { products: TagRecord[] }).products;
+  }
+
+  if (Array.isArray(db)) {
+    return db as unknown as TagRecord[];
+  }
+
+  return [];
+}
+
+async function saveProductsAsync(products: TagRecord[]) {
+  const db = await readDBAsync();
+
+  if (Array.isArray(db)) {
+    await writeDBAsync(products as unknown as Record<string, unknown>);
+    return;
+  }
+
+  const nextDb =
+    db && typeof db === "object"
+      ? { ...(db as Record<string, unknown>), products }
+      : { products };
+
+  await writeDBAsync(nextDb);
+}
+
+async function cleanupTransientStatesAsync() {
+  const products = await getProductsAsync();
+  let changed = false;
+
+  const nextProducts = products.map((product) => {
+    const next = cleanupProductRuntimeState(product);
+
+    if (
+      next.recoverySession !== product.recoverySession ||
+      next.transfer !== product.transfer ||
+      next.updatedAt !== product.updatedAt
+    ) {
+      changed = true;
+    }
+
+    return next;
+  });
+
+  if (changed) {
+    await saveProductsAsync(nextProducts);
+  }
+
+  return nextProducts;
+}
   if (Array.isArray(db)) {
     writeDB(products as unknown as Record<string, unknown>);
     return;
@@ -1538,4 +1591,772 @@ export function runFullCleanup() {
     cleaned: changed,
     count: nextProducts.length
   };
+}
+export async function findTagByCodeAsync(code: string): Promise<TagView | null> {
+  const normalized = normalizeCode(code);
+  if (!normalized) return null;
+
+  const product = (await cleanupTransientStatesAsync()).find((item) => {
+    return (
+      normalizeCode(item.publicCode) === normalized ||
+      normalizeCode(item.oldCode || "") === normalized ||
+      normalizeCode((item as { code?: string }).code || "") === normalized
+    );
+  });
+
+  if (!product) {
+    return null;
+  }
+
+  if (!product.publicCode && (product as { code?: string }).code) {
+    product.publicCode = normalizeCode((product as { code?: string }).code || "");
+  }
+
+  return mapProductToTagView(product);
+}
+
+export async function validateManageTokenAsync(
+  codeOrToken: string,
+  maybeToken?: string
+): Promise<TagView | null> {
+  const products = await cleanupTransientStatesAsync();
+
+  if (maybeToken === undefined) {
+    const token = String(codeOrToken || "").trim();
+    if (!token) return null;
+
+    const product = products.find((item) => {
+      return String(item.manageToken || "").trim() === token;
+    });
+
+    return product ? mapProductToTagView(product) : null;
+  }
+
+  const code = normalizeCode(codeOrToken);
+  const token = String(maybeToken || "").trim();
+
+  if (!code || !token) return null;
+
+  const product = products.find((item) => {
+    const recordCode = normalizeCode(
+      item.publicCode || (item as { code?: string }).code || ""
+    );
+
+    const sameCode =
+      recordCode === code || normalizeCode(item.oldCode || "") === code;
+
+    const sameToken = String(item.manageToken || "").trim() === token;
+
+    return sameCode && sameToken;
+  });
+
+  return product ? mapProductToTagView(product) : null;
+}
+
+export async function upsertTagAsync(input: UpsertTagInput) {
+  const normalizedCode = normalizeCode(input.code);
+  if (!normalizedCode) {
+    throw new Error("Code zorunlu");
+  }
+
+  const products = await cleanupTransientStatesAsync();
+  const index = products.findIndex((item) => {
+    return normalizeCode(
+      item.publicCode || (item as { code?: string }).code || ""
+    ) === normalizedCode;
+  });
+
+  const now = new Date().toISOString();
+
+  const incomingVisibility = {
+    showName:
+      typeof input.visibility?.showName === "boolean"
+        ? input.visibility.showName
+        : typeof input.showName === "boolean"
+          ? input.showName
+          : true,
+    showPhone:
+      typeof input.visibility?.showPhone === "boolean"
+        ? input.visibility.showPhone
+        : typeof input.showPhone === "boolean"
+          ? input.showPhone
+          : false,
+    showEmail:
+      typeof input.visibility?.showEmail === "boolean"
+        ? input.visibility.showEmail
+        : typeof input.showEmail === "boolean"
+          ? input.showEmail
+          : false,
+    showCity:
+      typeof input.visibility?.showCity === "boolean"
+        ? input.visibility.showCity
+        : typeof input.showCity === "boolean"
+          ? input.showCity
+          : false,
+    showAddressDetail:
+      typeof input.visibility?.showAddressDetail === "boolean"
+        ? input.visibility.showAddressDetail
+        : typeof input.showAddressDetail === "boolean"
+          ? input.showAddressDetail
+          : false,
+    showPetName:
+      typeof input.visibility?.showPetName === "boolean"
+        ? input.visibility.showPetName
+        : typeof input.showPetName === "boolean"
+          ? input.showPetName
+          : true,
+    showNote:
+      typeof input.visibility?.showNote === "boolean"
+        ? input.visibility.showNote
+        : typeof input.showNote === "boolean"
+          ? input.showNote
+          : false
+  };
+
+  const nextProfile = buildProfile({
+    tagName: input.tagName,
+    ownerName: input.ownerName,
+    phone: input.phone,
+    email: input.email,
+    city: input.city,
+    addressDetail: input.addressDetail,
+    distinctiveFeature: input.distinctiveFeature,
+    petName: input.petName,
+    note: input.note
+  });
+
+  if (index === -1) {
+    const newProduct: TagRecord = {
+      publicCode: normalizedCode,
+      manageToken: crypto.randomUUID(),
+      productType: input.productType || "item",
+      name: nextProfile.name,
+      ownerName: nextProfile.ownerName,
+      phone: nextProfile.phone,
+      email: nextProfile.email,
+      city: nextProfile.city,
+      addressDetail: nextProfile.addressDetail,
+      distinctiveFeature: nextProfile.distinctiveFeature,
+      petName: nextProfile.petName,
+      note: nextProfile.note,
+      alerts: Array.isArray(input.alerts) ? input.alerts : [],
+      allowDirectCall: Boolean(input.allowDirectCall),
+      allowDirectWhatsapp: Boolean(input.allowDirectWhatsapp),
+      status: input.status || "active",
+      createdAt: now,
+      updatedAt: now,
+      recovery: {
+        phone: input.recoveryPhone || nextProfile.phone,
+        email: input.recoveryEmail || nextProfile.email
+      },
+      visibility: incomingVisibility,
+      profile: nextProfile,
+      contactOptions: {
+        allowDirectCall: Boolean(input.allowDirectCall),
+        allowDirectWhatsapp: Boolean(input.allowDirectWhatsapp)
+      },
+      ...incomingVisibility
+    };
+
+    products.push(newProduct);
+    await saveProductsAsync(products);
+    return mapProductToTagView(newProduct);
+  }
+
+  const current = products[index];
+  const currentVisibility = resolveVisibility(current);
+
+  const nextVisibility = {
+    showName:
+      typeof input.visibility?.showName === "boolean"
+        ? input.visibility.showName
+        : typeof input.showName === "boolean"
+          ? input.showName
+          : currentVisibility.showName,
+    showPhone:
+      typeof input.visibility?.showPhone === "boolean"
+        ? input.visibility.showPhone
+        : typeof input.showPhone === "boolean"
+          ? input.showPhone
+          : currentVisibility.showPhone,
+    showEmail:
+      typeof input.visibility?.showEmail === "boolean"
+        ? input.visibility.showEmail
+        : typeof input.showEmail === "boolean"
+          ? input.showEmail
+          : currentVisibility.showEmail,
+    showCity:
+      typeof input.visibility?.showCity === "boolean"
+        ? input.visibility.showCity
+        : typeof input.showCity === "boolean"
+          ? input.showCity
+          : currentVisibility.showCity,
+    showAddressDetail:
+      typeof input.visibility?.showAddressDetail === "boolean"
+        ? input.visibility.showAddressDetail
+        : typeof input.showAddressDetail === "boolean"
+          ? input.showAddressDetail
+          : currentVisibility.showAddressDetail,
+    showPetName:
+      typeof input.visibility?.showPetName === "boolean"
+        ? input.visibility.showPetName
+        : typeof input.showPetName === "boolean"
+          ? input.showPetName
+          : currentVisibility.showPetName,
+    showNote:
+      typeof input.visibility?.showNote === "boolean"
+        ? input.visibility.showNote
+        : typeof input.showNote === "boolean"
+          ? input.showNote
+          : currentVisibility.showNote
+  };
+
+  const mergedProfile = buildProfile({
+    tagName: input.tagName ?? getProfileName(current),
+    ownerName: input.ownerName ?? getOwnerName(current),
+    phone: input.phone ?? getPhone(current),
+    email: input.email ?? getEmail(current),
+    city: input.city ?? getCity(current),
+    addressDetail: input.addressDetail ?? getAddressDetail(current),
+    distinctiveFeature: input.distinctiveFeature ?? getDistinctiveFeature(current),
+    petName: input.petName ?? getPetName(current),
+    note: input.note ?? getNote(current)
+  });
+
+  products[index] = {
+    ...current,
+    publicCode: current.publicCode || normalizedCode,
+    productType: input.productType ?? current.productType ?? "item",
+    name: mergedProfile.name,
+    ownerName: mergedProfile.ownerName,
+    phone: mergedProfile.phone,
+    email: mergedProfile.email,
+    city: mergedProfile.city,
+    addressDetail: mergedProfile.addressDetail,
+    distinctiveFeature: mergedProfile.distinctiveFeature,
+    petName: mergedProfile.petName,
+    note: mergedProfile.note,
+    alerts: Array.isArray(input.alerts) ? input.alerts : getAlerts(current),
+    allowDirectCall:
+      input.allowDirectCall !== undefined
+        ? Boolean(input.allowDirectCall)
+        : resolveAllowDirectCall(current),
+    allowDirectWhatsapp:
+      input.allowDirectWhatsapp !== undefined
+        ? Boolean(input.allowDirectWhatsapp)
+        : resolveAllowDirectWhatsapp(current),
+    status: input.status ?? current.status ?? "active",
+    updatedAt: now,
+    recovery: {
+      phone: input.recoveryPhone ?? current.recovery?.phone ?? mergedProfile.phone,
+      email: input.recoveryEmail ?? current.recovery?.email ?? mergedProfile.email
+    },
+    visibility: nextVisibility,
+    profile: mergedProfile,
+    contactOptions: {
+      allowDirectCall:
+        input.allowDirectCall !== undefined
+          ? Boolean(input.allowDirectCall)
+          : resolveAllowDirectCall(current),
+      allowDirectWhatsapp:
+        input.allowDirectWhatsapp !== undefined
+          ? Boolean(input.allowDirectWhatsapp)
+          : resolveAllowDirectWhatsapp(current)
+    },
+    ...nextVisibility
+  };
+
+  await saveProductsAsync(products);
+  return mapProductToTagView(products[index]);
+}
+
+export async function updateTagByManageTokenAsync(input: UpdateByManageTokenInput) {
+  const normalizedToken = String(input.manageToken || "").trim();
+  if (!normalizedToken) {
+    throw new Error("manageToken zorunlu");
+  }
+
+  const products = await cleanupTransientStatesAsync();
+  const index = products.findIndex((item) => {
+    return String(item.manageToken || "").trim() === normalizedToken;
+  });
+
+  if (index === -1) {
+    return null;
+  }
+
+  const current = products[index];
+  const now = new Date().toISOString();
+  const currentVisibility = resolveVisibility(current);
+
+  const resolvedAllowDirectCall =
+    input.allowDirectCall !== undefined
+      ? Boolean(input.allowDirectCall)
+      : input.allowPhone !== undefined
+        ? Boolean(input.allowPhone)
+        : resolveAllowDirectCall(current);
+
+  const resolvedAllowDirectWhatsapp =
+    input.allowDirectWhatsapp !== undefined
+      ? Boolean(input.allowDirectWhatsapp)
+      : input.allowWhatsapp !== undefined
+        ? Boolean(input.allowWhatsapp)
+        : resolveAllowDirectWhatsapp(current);
+
+  const nextVisibility = {
+    showName:
+      typeof input.visibility?.showName === "boolean"
+        ? input.visibility.showName
+        : typeof input.showName === "boolean"
+          ? input.showName
+          : currentVisibility.showName,
+    showPhone:
+      typeof input.visibility?.showPhone === "boolean"
+        ? input.visibility.showPhone
+        : typeof input.showPhone === "boolean"
+          ? input.showPhone
+          : currentVisibility.showPhone,
+    showEmail:
+      typeof input.visibility?.showEmail === "boolean"
+        ? input.visibility.showEmail
+        : typeof input.showEmail === "boolean"
+          ? input.showEmail
+          : currentVisibility.showEmail,
+    showCity:
+      typeof input.visibility?.showCity === "boolean"
+        ? input.visibility.showCity
+        : typeof input.showCity === "boolean"
+          ? input.showCity
+          : currentVisibility.showCity,
+    showAddressDetail:
+      typeof input.visibility?.showAddressDetail === "boolean"
+        ? input.visibility.showAddressDetail
+        : typeof input.showAddressDetail === "boolean"
+          ? input.showAddressDetail
+          : currentVisibility.showAddressDetail,
+    showPetName:
+      typeof input.visibility?.showPetName === "boolean"
+        ? input.visibility.showPetName
+        : typeof input.showPetName === "boolean"
+          ? input.showPetName
+          : currentVisibility.showPetName,
+    showNote:
+      typeof input.visibility?.showNote === "boolean"
+        ? input.visibility.showNote
+        : typeof input.showNote === "boolean"
+          ? input.showNote
+          : currentVisibility.showNote
+  };
+
+  const mergedProfile = buildProfile({
+    tagName: input.tagName ?? getProfileName(current),
+    ownerName: input.ownerName ?? getOwnerName(current),
+    phone: input.phone ?? getPhone(current),
+    email: input.email ?? getEmail(current),
+    city: input.city ?? getCity(current),
+    addressDetail: input.addressDetail ?? getAddressDetail(current),
+    distinctiveFeature: input.distinctiveFeature ?? getDistinctiveFeature(current),
+    petName: input.petName ?? getPetName(current),
+    note: input.note ?? getNote(current)
+  });
+
+  products[index] = {
+    ...current,
+    productType: input.productType ?? current.productType ?? "item",
+    name: mergedProfile.name,
+    ownerName: mergedProfile.ownerName,
+    phone: mergedProfile.phone,
+    email: mergedProfile.email,
+    city: mergedProfile.city,
+    addressDetail: mergedProfile.addressDetail,
+    distinctiveFeature: mergedProfile.distinctiveFeature,
+    petName: mergedProfile.petName,
+    note: mergedProfile.note,
+    alerts: Array.isArray(input.alerts) ? input.alerts : getAlerts(current),
+    allowDirectCall: resolvedAllowDirectCall,
+    allowDirectWhatsapp: resolvedAllowDirectWhatsapp,
+    status: input.status ?? current.status ?? "active",
+    updatedAt: now,
+    recovery: {
+      phone: input.recoveryPhone ?? current.recovery?.phone ?? mergedProfile.phone,
+      email: input.recoveryEmail ?? current.recovery?.email ?? mergedProfile.email
+    },
+    visibility: nextVisibility,
+    profile: mergedProfile,
+    contactOptions: {
+      allowDirectCall: resolvedAllowDirectCall,
+      allowDirectWhatsapp: resolvedAllowDirectWhatsapp
+    },
+    ...nextVisibility
+  };
+
+  await saveProductsAsync(products);
+  return mapProductToTagView(products[index]);
+}
+
+export async function recoverManageAccessAsync(input: {
+  code: string;
+  phone?: string;
+  email?: string;
+}) {
+  const normalizedCodeInput = normalizeCode(input.code);
+  const normalizedPhoneInput = normalizeValue(input.phone || "");
+  const normalizedEmailInput = normalizeValue(input.email || "");
+
+  if (!normalizedCodeInput) {
+    return null;
+  }
+
+  const products = await cleanupTransientStatesAsync();
+
+  const index = products.findIndex((item) => {
+    const recordCode = normalizeCode(
+      item.publicCode || (item as { code?: string }).code || ""
+    );
+
+    const sameCode =
+      recordCode === normalizedCodeInput ||
+      normalizeCode(item.oldCode || "") === normalizedCodeInput;
+
+    if (!sameCode) return false;
+
+    const recoveryPhone = normalizeValue(item.recovery?.phone || "");
+    const recoveryEmail = normalizeValue(item.recovery?.email || "");
+    const profilePhone = normalizeValue(getPhone(item));
+    const profileEmail = normalizeValue(getEmail(item));
+
+    const hasRecoveryPhone = Boolean(recoveryPhone);
+    const hasRecoveryEmail = Boolean(recoveryEmail);
+
+    const phoneMatched =
+      Boolean(normalizedPhoneInput) &&
+      (
+        (hasRecoveryPhone && normalizedPhoneInput === recoveryPhone) ||
+        (!hasRecoveryPhone && normalizedPhoneInput === profilePhone)
+      );
+
+    const emailMatched =
+      Boolean(normalizedEmailInput) &&
+      (
+        (hasRecoveryEmail && normalizedEmailInput === recoveryEmail) ||
+        (!hasRecoveryEmail && normalizedEmailInput === profileEmail)
+      );
+
+    return phoneMatched || emailMatched;
+  });
+
+  if (index === -1) {
+    return null;
+  }
+
+  const current = products[index];
+  const newManageToken = crypto.randomUUID();
+
+  products[index] = {
+    ...current,
+    manageToken: newManageToken,
+    updatedAt: new Date().toISOString()
+  };
+
+  await saveProductsAsync(products);
+
+  return {
+    success: true,
+    code: products[index].publicCode,
+    manageToken: newManageToken,
+    managePath: `/manage/${products[index].publicCode}?token=${newManageToken}`,
+    manageLink: `http://localhost:3000/manage/${products[index].publicCode}?token=${newManageToken}`
+  };
+}
+
+export async function createRecoverySessionByEmailAsync(input: {
+  email: string;
+  entryType: RecoveryEntryType;
+  expiresInMinutes?: number;
+}) {
+  const normalizedEmail = normalizeValue(input.email);
+  if (!normalizedEmail) {
+    throw new Error("E-posta zorunlu.");
+  }
+
+  const products = await cleanupTransientStatesAsync();
+  const matches = products.filter((item) => {
+    const recoveryEmail = normalizeValue(getRecovery(item).email);
+    return Boolean(recoveryEmail) && recoveryEmail === normalizedEmail;
+  });
+
+  if (matches.length === 0) {
+    return null;
+  }
+
+  const token = crypto.randomUUID();
+  const now = new Date();
+  const expiresInMinutes =
+    typeof input.expiresInMinutes === "number" &&
+    Number.isFinite(input.expiresInMinutes) &&
+    input.expiresInMinutes > 0
+      ? input.expiresInMinutes
+      : 20;
+  const expiresAt = new Date(now.getTime() + expiresInMinutes * 60 * 1000).toISOString();
+
+  const touchedCodes: string[] = [];
+
+  for (let i = 0; i < products.length; i += 1) {
+    const recoveryEmail = normalizeValue(getRecovery(products[i]).email);
+    if (recoveryEmail !== normalizedEmail) continue;
+
+    touchedCodes.push(products[i].publicCode);
+    products[i] = {
+      ...products[i],
+      updatedAt: now.toISOString(),
+      recoverySession: {
+        token,
+        email: normalizedEmail,
+        entryType: input.entryType,
+        status: "pending",
+        createdAt: now.toISOString(),
+        expiresAt
+      }
+    };
+  }
+
+  await saveProductsAsync(products);
+
+  return {
+    success: true,
+    token,
+    email: normalizedEmail,
+    entryType: input.entryType,
+    expiresAt,
+    matchedCount: touchedCodes.length,
+    codes: touchedCodes
+  };
+}
+
+export async function verifyRecoverySessionTokenAsync(token: string) {
+  const normalizedToken = String(token || "").trim();
+  if (!normalizedToken) {
+    return null;
+  }
+
+  const products = await cleanupTransientStatesAsync();
+  const matchedProducts = products.filter((item) => {
+    return String(item.recoverySession?.token || "").trim() === normalizedToken;
+  });
+
+  if (matchedProducts.length === 0) {
+    return null;
+  }
+
+  const session = matchedProducts[0].recoverySession;
+  if (!session?.token || !session.email || !session.entryType) {
+    return null;
+  }
+
+  const status = getRecoverySessionStatus(matchedProducts[0]);
+
+  return {
+    token: session.token,
+    email: session.email,
+    entryType: session.entryType,
+    status,
+    expiresAt: session.expiresAt || "",
+    items: matchedProducts.map(mapProductToRecoveryListedItem)
+  };
+}
+
+export async function consumeRecoverySessionTokenAsync(token: string) {
+  const normalizedToken = String(token || "").trim();
+  if (!normalizedToken) {
+    return null;
+  }
+
+  const products = await cleanupTransientStatesAsync();
+  const matchingIndexes: number[] = [];
+
+  for (let i = 0; i < products.length; i += 1) {
+    if (String(products[i].recoverySession?.token || "").trim() === normalizedToken) {
+      matchingIndexes.push(i);
+    }
+  }
+
+  if (matchingIndexes.length === 0) {
+    return null;
+  }
+
+  const first = products[matchingIndexes[0]];
+  const session = first.recoverySession;
+  if (!session?.token || !session.email || !session.entryType) {
+    return null;
+  }
+
+  const status = getRecoverySessionStatus(first);
+
+  if (status !== "pending") {
+    return {
+      success: false,
+      reason: status
+    } as const;
+  }
+
+  const usedAt = new Date().toISOString();
+
+  for (const index of matchingIndexes) {
+    products[index] = {
+      ...products[index],
+      updatedAt: usedAt,
+      recoverySession: {
+        ...products[index].recoverySession,
+        status: "used",
+        usedAt
+      }
+    };
+  }
+
+  await saveProductsAsync(products);
+
+  return {
+    success: true,
+    token: session.token,
+    email: session.email,
+    entryType: session.entryType,
+    usedAt,
+    items: matchingIndexes.map((index) => mapProductToRecoveryListedItem(products[index]))
+  } as const;
+}
+
+export async function getTransferByTokenAsync(token: string) {
+  const normalizedToken = String(token || "").trim();
+  if (!normalizedToken) return null;
+
+  const products = await cleanupTransientStatesAsync();
+  const product = products.find((item) => {
+    return String(item.transfer?.token || "").trim() === normalizedToken;
+  });
+
+  if (!product || !product.transfer?.token) {
+    return null;
+  }
+
+  const transferStatus = getTransferStatus(product);
+
+  return {
+    code: product.publicCode,
+    productType: product.productType || "item",
+    currentProfile: {
+      name: getProfileName(product),
+      ownerName: getOwnerName(product),
+      phone: getPhone(product),
+      email: getEmail(product),
+      city: getCity(product),
+      addressDetail: getAddressDetail(product),
+      distinctiveFeature: getDistinctiveFeature(product),
+      petName: getPetName(product),
+      note: getNote(product)
+    },
+    transfer: {
+      token: product.transfer.token,
+      status: transferStatus,
+      createdAt: product.transfer.createdAt || "",
+      expiresAt: product.transfer.expiresAt || "",
+      usedAt: product.transfer.usedAt || ""
+    }
+  };
+}
+
+export async function claimTransferAsync(input: ClaimTransferInput) {
+  const normalizedToken = String(input.transferToken || "").trim();
+  if (!normalizedToken) {
+    throw new Error("Geçersiz devir bağlantısı.");
+  }
+
+  const products = await cleanupTransientStatesAsync();
+  const index = products.findIndex((item) => {
+    return String(item.transfer?.token || "").trim() === normalizedToken;
+  });
+
+  if (index === -1) {
+    return null;
+  }
+
+  const current = products[index];
+  const transferStatus = getTransferStatus(current);
+
+  if (transferStatus !== "pending") {
+    return {
+      success: false,
+      reason: transferStatus
+    } as const;
+  }
+
+  const nextVisibility = {
+    showName: Boolean(input.visibility?.showName),
+    showPhone: Boolean(input.visibility?.showPhone),
+    showEmail: Boolean(input.visibility?.showEmail),
+    showCity: Boolean(input.visibility?.showCity),
+    showAddressDetail: Boolean(input.visibility?.showAddressDetail),
+    showPetName: Boolean(input.visibility?.showPetName),
+    showNote: Boolean(input.visibility?.showNote)
+  };
+
+  const nextProfile = buildProfile({
+    tagName: input.tagName,
+    ownerName: input.ownerName,
+    phone: input.phone,
+    email: input.email,
+    city: input.city,
+    addressDetail: input.addressDetail,
+    distinctiveFeature: input.distinctiveFeature,
+    petName: input.petName,
+    note: input.note
+  });
+
+  const now = new Date().toISOString();
+  const newManageToken = crypto.randomUUID();
+
+  products[index] = {
+    ...current,
+    manageToken: newManageToken,
+    productType: input.productType ?? current.productType ?? "item",
+    name: nextProfile.name,
+    ownerName: nextProfile.ownerName,
+    phone: nextProfile.phone,
+    email: nextProfile.email,
+    city: nextProfile.city,
+    addressDetail: nextProfile.addressDetail,
+    distinctiveFeature: nextProfile.distinctiveFeature,
+    petName: nextProfile.petName,
+    note: nextProfile.note,
+    alerts: Array.isArray(input.alerts) ? input.alerts : [],
+    allowDirectCall: Boolean(input.allowDirectCall),
+    allowDirectWhatsapp: Boolean(input.allowDirectWhatsapp),
+    status: "active",
+    updatedAt: now,
+    recovery: {
+      phone: input.recoveryPhone || nextProfile.phone,
+      email: input.recoveryEmail || nextProfile.email
+    },
+    visibility: nextVisibility,
+    profile: nextProfile,
+    contactOptions: {
+      allowDirectCall: Boolean(input.allowDirectCall),
+      allowDirectWhatsapp: Boolean(input.allowDirectWhatsapp)
+    },
+    transfer: {
+      ...current.transfer,
+      status: "used",
+      usedAt: now
+    },
+    ...nextVisibility
+  };
+
+  await saveProductsAsync(products);
+
+  return {
+    success: true,
+    code: products[index].publicCode,
+    manageToken: newManageToken,
+    managePath: `/manage/${products[index].publicCode}?token=${newManageToken}`,
+    manageLink: `http://localhost:3000/manage/${products[index].publicCode}?token=${newManageToken}`
+  } as const;
 }

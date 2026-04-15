@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sendRecoveryMagicLinkEmail, isMailConfigured } from "@/lib/mailer";
 import { createRecoverySessionByEmail } from "@/lib/tags";
+import { createRecoverySessionByEmailAsync } from "@/lib/tags";
 import {
   addRecoverLog,
   checkRecoverCooldown,
@@ -85,7 +86,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const session = createRecoverySessionByEmail({
+    const session = await createRecoverySessionByEmailAsync({
       email,
       entryType
     });

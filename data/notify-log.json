@@ -1077,5 +1077,25 @@
       "phone"
     ],
     "message": "local"
+  },
+  {
+    "id": "0a543217-55cd-4b2c-ab74-f19c7c313f17",
+    "tagCode": "TEST01",
+    "senderFingerprint": "8d33579a3165b37647edf7acd87ad8f5fceeb38522e62d2948bf228c4c2d03b2",
+    "ip": "::1",
+    "createdAt": "2026-04-15T12:20:38.929Z",
+    "readAt": "",
+    "pinnedAt": "",
+    "archivedAt": "",
+    "deletedAt": "",
+    "senderName": "idem",
+    "senderPhone": "05063509722",
+    "senderEmail": "adresesaglik@gmail.com",
+    "preferredContactMethods": [
+      "phone",
+      "whatsapp",
+      "email"
+    ],
+    "message": "vercel ready"
   }
 ]

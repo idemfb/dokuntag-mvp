@@ -3,6 +3,10 @@ import {
   consumeRecoverySessionToken,
   recoverManageAccess
 } from "@/lib/tags";
+import {
+  consumeRecoverySessionTokenAsync,
+  recoverManageAccessAsync
+} from "@/lib/tags";
 
 function normalizeCode(value: unknown) {
   return typeof value === "string" ? value.trim().toUpperCase() : "";
@@ -30,7 +34,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 🔥 KRİTİK: önce consume et (atomic kontrol)
-    const consumed = consumeRecoverySessionToken(token);
+    const consumed = await consumeRecoverySessionTokenAsync(token);
 
     if (!consumed) {
       return NextResponse.json(
@@ -72,7 +76,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const recovered = recoverManageAccess({
+    const recovered = await recoverManageAccessAsync({
       code,
       email: consumed.email
     });

@@ -1,7 +1,33 @@
 import fs from "fs";
 import path from "path";
+import { Redis } from "@upstash/redis";
 
 export const DB_PATH = path.join(process.cwd(), "data", "db.json");
+const REDIS_DB_KEY = "dokuntag:db";
+
+let redisClient: Redis | null = null;
+
+function isRedisEnabled() {
+  return Boolean(
+    process.env.UPSTASH_REDIS_REST_URL?.trim() &&
+      process.env.UPSTASH_REDIS_REST_TOKEN?.trim()
+  );
+}
+
+function getRedis() {
+  if (!isRedisEnabled()) {
+    return null;
+  }
+
+  if (!redisClient) {
+    redisClient = new Redis({
+      url: process.env.UPSTASH_REDIS_REST_URL!.trim(),
+      token: process.env.UPSTASH_REDIS_REST_TOKEN!.trim()
+    });
+  }
+
+  return redisClient;
+}
 
 export function readDB() {
   if (!fs.existsSync(DB_PATH)) {
@@ -15,4 +41,30 @@ export function readDB() {
 export function writeDB(data: any) {
   fs.writeFileSync(DB_PATH, JSON.stringify(data, null, 2));
 }
-import { runFullCleanup } from "@/lib/tags";
+
+export async function readDBAsync() {
+  const redis = getRedis();
+
+  if (redis) {
+    const data = await redis.get<any>(REDIS_DB_KEY);
+
+    if (data && typeof data === "object") {
+      return data;
+    }
+
+    return { products: [] };
+  }
+
+  return readDB();
+}
+
+export async function writeDBAsync(data: any) {
+  const redis = getRedis();
+
+  if (redis) {
+    await redis.set(REDIS_DB_KEY, data);
+    return;
+  }
+
+  writeDB(data);
+}

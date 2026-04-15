@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
 import { updateTagByManageToken, validateManageToken } from "@/lib/tags";
+import {
+  updateTagByManageTokenAsync,
+  validateManageTokenAsync
+} from "@/lib/tags";
 
 type Params = {
   params: Promise<{
@@ -69,7 +73,9 @@ export async function GET(request: Request, { params }: Params) {
       );
     }
 
-    const tag = validateManageToken(normalizedCode, token);
+    const tag = await validateManageTokenAsync(normalizedCode, token);
+    const existing = await validateManageTokenAsync(normalizedCode, token);
+    const updated = await updateTagByManageTokenAsync({
 
     if (!tag) {
       return NextResponse.json(
