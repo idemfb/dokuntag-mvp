@@ -132,18 +132,20 @@ export async function POST(request: NextRequest) {
         : "dokuntag-qr-batch";
 
     const zipBuffer = await zip.generateAsync({
-      type: "nodebuffer",
-      compression: "DEFLATE",
-      compressionOptions: { level: 9 }
-    });
+  type: "nodebuffer",
+  compression: "DEFLATE",
+  compressionOptions: { level: 9 }
+});
 
-    return new NextResponse(zipBuffer, {
-      headers: {
-        "Content-Type": "application/zip",
-        "Content-Disposition": `attachment; filename="${zipName}.zip"`,
-        "Cache-Control": "no-store"
-      }
-    });
+const zipBytes = new Uint8Array(zipBuffer);
+
+return new NextResponse(zipBytes, {
+  headers: {
+    "Content-Type": "application/zip",
+    "Content-Disposition": `attachment; filename="${zipName}.zip"`,
+    "Cache-Control": "no-store"
+  }
+});
   } catch (error) {
     console.error("DOWNLOAD_BATCH_ZIP_ERROR", error);
 
