@@ -1019,5 +1019,25 @@
       "email"
     ],
     "message": "mail kontrol"
+  },
+  {
+    "id": "92ca2bd9-0e25-4fdb-b2fb-aba2ef4040e6",
+    "tagCode": "TEST01",
+    "senderFingerprint": "8d33579a3165b37647edf7acd87ad8f5fceeb38522e62d2948bf228c4c2d03b2",
+    "ip": "::1",
+    "createdAt": "2026-04-15T08:51:26.705Z",
+    "readAt": "",
+    "pinnedAt": "",
+    "archivedAt": "",
+    "deletedAt": "",
+    "senderName": "srdfs",
+    "senderPhone": "05063509722",
+    "senderEmail": "adresesaglik@gmail.com",
+    "preferredContactMethods": [
+      "phone",
+      "whatsapp",
+      "email"
+    ],
+    "message": "hfgfdsadsa"
   }
 ]
