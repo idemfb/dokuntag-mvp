@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sendRecoveryMagicLinkEmail, isMailConfigured } from "@/lib/mailer";
 import { createRecoverySessionByEmail } from "@/lib/tags";
+import {
+  addRecoverLog,
+  checkRecoverCooldown,
+  createRecoverFingerprint
+} from "@/lib/notify";
 
 function normalizeEmail(value: unknown) {
   return typeof value === "string" ? value.trim().toLowerCase() : "";
@@ -17,6 +22,20 @@ function getBaseUrl(request: NextRequest) {
   }
 
   return request.nextUrl.origin.replace(/\/+$/, "");
+}
+
+function getClientIp(request: NextRequest) {
+  const forwardedFor = request.headers.get("x-forwarded-for");
+  if (forwardedFor) {
+    return forwardedFor.split(",")[0]?.trim() || "unknown";
+  }
+
+  const realIp = request.headers.get("x-real-ip");
+  if (realIp) {
+    return realIp.trim();
+  }
+
+  return "unknown";
 }
 
 export async function POST(request: NextRequest) {
@@ -36,6 +55,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (email.length > 120) {
+      return NextResponse.json(
+        { error: "Geçersiz e-posta." },
+        { status: 400 }
+      );
+    }
+
     if (!isMailConfigured()) {
       return NextResponse.json(
         { error: "Mail sistemi şu an hazır değil." },
@@ -43,9 +69,32 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const ip = getClientIp(request);
+    const fingerprint = createRecoverFingerprint({ ip, email });
+
+    const cooldownResult = await checkRecoverCooldown({
+      email,
+      fingerprint,
+      ip
+    });
+
+    if (!cooldownResult.allowed) {
+      return NextResponse.json(
+        { error: cooldownResult.error },
+        { status: 429 }
+      );
+    }
+
     const session = createRecoverySessionByEmail({
       email,
       entryType
+    });
+
+    await addRecoverLog({
+      email,
+      entryType,
+      fingerprint,
+      ip
     });
 
     if (session) {

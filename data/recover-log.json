@@ -1,0 +1,66 @@
+[
+  {
+    "id": "d604afa0-6428-4cb6-9d35-f301f962c500",
+    "email": "i.dem@hotmail.com",
+    "entryType": "my",
+    "fingerprint": "10f34b1244566bb397b6ce86323723b3701c6698a1f2a21e8b4e39bd76d13e12",
+    "ip": "::1",
+    "createdAt": "2026-04-14T08:45:07.973Z"
+  },
+  {
+    "id": "e8e5388d-3eb3-4c95-a949-969010b36b7d",
+    "email": "i.dem@hotmail.com",
+    "entryType": "recover",
+    "fingerprint": "10f34b1244566bb397b6ce86323723b3701c6698a1f2a21e8b4e39bd76d13e12",
+    "ip": "::1",
+    "createdAt": "2026-04-14T08:52:53.519Z"
+  },
+  {
+    "id": "e6e7dea8-0647-4c30-96f4-5bf5901c0979",
+    "email": "i.dem@hotmail.com",
+    "entryType": "recover",
+    "fingerprint": "10f34b1244566bb397b6ce86323723b3701c6698a1f2a21e8b4e39bd76d13e12",
+    "ip": "::1",
+    "createdAt": "2026-04-14T09:07:44.017Z"
+  },
+  {
+    "id": "27b33c6d-135d-4c68-a425-1557b757260e",
+    "email": "i.dem@hotmail.com",
+    "entryType": "my",
+    "fingerprint": "10f34b1244566bb397b6ce86323723b3701c6698a1f2a21e8b4e39bd76d13e12",
+    "ip": "::1",
+    "createdAt": "2026-04-14T09:09:12.469Z"
+  },
+  {
+    "id": "ab51d8a0-5e0d-4774-be23-f54c03bbb594",
+    "email": "i.dem@hotmail.com",
+    "entryType": "recover",
+    "fingerprint": "10f34b1244566bb397b6ce86323723b3701c6698a1f2a21e8b4e39bd76d13e12",
+    "ip": "::1",
+    "createdAt": "2026-04-14T09:13:52.572Z"
+  },
+  {
+    "id": "fcf9adc8-9d0f-4935-824f-ac04a8e07a0a",
+    "email": "i.dem@hotmail.com",
+    "entryType": "recover",
+    "fingerprint": "10f34b1244566bb397b6ce86323723b3701c6698a1f2a21e8b4e39bd76d13e12",
+    "ip": "::1",
+    "createdAt": "2026-04-14T09:17:43.382Z"
+  },
+  {
+    "id": "41b03b69-f181-400e-ae67-e060a07c454d",
+    "email": "i.dem@hotmail.com",
+    "entryType": "recover",
+    "fingerprint": "10f34b1244566bb397b6ce86323723b3701c6698a1f2a21e8b4e39bd76d13e12",
+    "ip": "::1",
+    "createdAt": "2026-04-14T09:27:19.390Z"
+  },
+  {
+    "id": "2d78825c-be72-4318-b414-dc9636ab84fb",
+    "email": "i.dem@hotmail.com",
+    "entryType": "recover",
+    "fingerprint": "10f34b1244566bb397b6ce86323723b3701c6698a1f2a21e8b4e39bd76d13e12",
+    "ip": "::1",
+    "createdAt": "2026-04-14T14:14:35.326Z"
+  }
+]

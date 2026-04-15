@@ -93,7 +93,7 @@ export async function POST(request: Request) {
     const senderName = getString(body.senderName);
     const senderPhone = normalizePhone(body.senderPhone);
     const senderEmail = normalizeEmail(body.senderEmail);
-    const message = normalizeMessage(body.message);
+    const message = normalizeMessage(body.message).slice(0, 1000);
     const website = getString(body.website);
     const preferredContactMethods = normalizeMethods(body.preferredContactMethods);
 
@@ -220,7 +220,7 @@ export async function POST(request: Request) {
       senderEmail
     });
 
-    const cooldownCheck = checkNotifyCooldown({
+    const cooldownCheck = await checkNotifyCooldown({
       tagCode: code,
       senderFingerprint,
       ip
@@ -236,6 +236,17 @@ export async function POST(request: Request) {
         { status: 429 }
       );
     }
+
+    await addNotifyLog({
+      tagCode: code,
+      senderFingerprint,
+      ip,
+      senderName,
+      senderPhone,
+      senderEmail,
+      preferredContactMethods,
+      message
+    });
 
     const showOwnerNameInEmail = shouldShowOwnerNameInEmail(tag.profile.email);
     const itemName = getString(tag.profile.petName || "");
@@ -257,17 +268,6 @@ export async function POST(request: Request) {
       message,
       showOwnerName: showOwnerNameInEmail,
       showSecondaryTitle: shouldShowSecondaryTitle(itemName, tagName)
-    });
-
-    addNotifyLog({
-      tagCode: code,
-      senderFingerprint,
-      ip,
-      senderName,
-      senderPhone,
-      senderEmail,
-      preferredContactMethods,
-      message
     });
 
     const methodLabels = preferredContactMethods

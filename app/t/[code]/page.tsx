@@ -1,57 +1,38 @@
-"use client";
+import { redirect } from "next/navigation";
+import { findTagByCode } from "@/lib/tags";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-
-type Tag = {
-  code: string;
-  status: "unclaimed" | "active";
-  name?: string;
-  phone?: string;
+type PageProps = {
+  params: Promise<{ code: string }>;
 };
 
-export default function TagRedirectPage({
-  params,
-}: {
-  params: Promise<{ code: string }>;
-}) {
-  const router = useRouter();
-  const [message, setMessage] = useState("Yönlendiriliyor...");
+export default async function TagRedirectPage({ params }: PageProps) {
+  const resolvedParams = await params;
+  const code = resolvedParams.code.trim().toUpperCase();
 
-  useEffect(() => {
-    let mounted = true;
+  if (!code) {
+    return <main className="p-10">Geçersiz etiket kodu.</main>;
+  }
 
-    async function run() {
-      const resolved = await params;
-      const code = resolved.code.toUpperCase();
+  let tag: ReturnType<typeof findTagByCode> = null;
 
-      const res = await fetch(`/api/tag/${code}`, {
-        cache: "no-store",
-      });
+  try {
+    tag = findTagByCode(code);
+  } catch (error) {
+    console.error("TAG_REDIRECT_PAGE_ERROR", error);
+    return <main className="p-10">Yönlendirme sırasında bir hata oluştu.</main>;
+  }
 
-      if (!mounted) return;
+  if (!tag) {
+    return <main className="p-10">Etiket bulunamadı.</main>;
+  }
 
-      if (!res.ok) {
-        setMessage("Etiket bulunamadı.");
-        return;
-      }
+  if (tag.status === "unclaimed") {
+    redirect(`/setup/${code}`);
+  }
 
-      const tag = (await res.json()) as Tag;
+  if (tag.status === "active") {
+    redirect(`/p/${code}`);
+  }
 
-      if (tag.status === "unclaimed") {
-        router.replace(`/setup/${code}`);
-        return;
-      }
-
-      router.replace(`/p/${code}`);
-    }
-
-    run();
-
-    return () => {
-      mounted = false;
-    };
-  }, [params, router]);
-
-  return <main className="p-10">{message}</main>;
+  return <main className="p-10">Bu etiket şu an aktif değil.</main>;
 }

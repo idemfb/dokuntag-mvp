@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
 type ProductType = "pet" | "item" | "key" | "person";
-type OpenSection = "basic" | "contact" | "alerts" | null;
+type OpenSection = "basic" | "contact" | "recovery" | "alerts" | null;
 
 type SetupForm = {
   productType: ProductType;
@@ -12,7 +12,6 @@ type SetupForm = {
   tagName: string;
   ownerName: string;
   phone: string;
-  email: string;
   city: string;
   addressDetail: string;
   distinctiveFeature: string;
@@ -22,11 +21,13 @@ type SetupForm = {
   allowWhatsapp: boolean;
   showName: boolean;
   showPhone: boolean;
-  showEmail: boolean;
   showCity: boolean;
   showAddressDetail: boolean;
   showPetName: boolean;
   showNote: boolean;
+  recoveryPhone: string;
+  recoveryEmail: string;
+  useRecoveryEmailAsContact: boolean;
 };
 
 type Props = {
@@ -80,7 +81,6 @@ const initialForm: SetupForm = {
   tagName: "",
   ownerName: "",
   phone: "",
-  email: "",
   city: "",
   addressDetail: "",
   distinctiveFeature: "",
@@ -90,11 +90,13 @@ const initialForm: SetupForm = {
   allowWhatsapp: false,
   showName: true,
   showPhone: false,
-  showEmail: false,
   showCity: false,
   showAddressDetail: false,
   showPetName: true,
-  showNote: false
+  showNote: false,
+  recoveryPhone: "",
+  recoveryEmail: "",
+  useRecoveryEmailAsContact: false
 };
 
 function getPrimaryNameLabel(productType: ProductType) {
@@ -112,7 +114,6 @@ function getOwnerNameLabel(productType: ProductType) {
 function getSecondaryNameLabel(productType: ProductType) {
   if (productType === "pet") return "Etiket başlığı";
   if (productType === "person") return "Profil başlığı";
-  if (productType === "key") return "Etiket / kısa başlık";
   return "Etiket / kısa başlık";
 }
 
@@ -360,6 +361,22 @@ export default function SetupCodePage({ params }: Props) {
     setOpenSection((prev) => (prev === id ? null : id));
   }
 
+  function updateField<K extends keyof SetupForm>(key: K, value: SetupForm[K]) {
+    setForm((prev) => ({
+      ...prev,
+      [key]: value
+    }));
+  }
+
+  function toggleAlert(alert: string, checked: boolean) {
+    setForm((prev) => ({
+      ...prev,
+      alerts: checked
+        ? [...prev.alerts, alert]
+        : prev.alerts.filter((item) => item !== alert)
+    }));
+  }
+
   useEffect(() => {
     let active = true;
 
@@ -395,13 +412,16 @@ export default function SetupCodePage({ params }: Props) {
             data.tag?.visibility?.allowWhatsapp
         );
 
+        const recoveryPhone = data.tag?.recovery?.phone ?? "";
+        const recoveryEmail = data.tag?.recovery?.email ?? "";
+        const contactEmail = data.tag?.profile?.email ?? "";
+
         setForm({
           productType: (data.tag?.productType ?? "item") as ProductType,
           petName: data.tag?.profile?.petName ?? "",
           tagName: data.tag?.profile?.tagName ?? data.tag?.profile?.name ?? "",
           ownerName: data.tag?.profile?.ownerName ?? "",
           phone: data.tag?.profile?.phone ?? "",
-          email: data.tag?.profile?.email ?? "",
           city: data.tag?.profile?.city ?? "",
           addressDetail: data.tag?.profile?.addressDetail ?? "",
           distinctiveFeature: data.tag?.profile?.distinctiveFeature ?? "",
@@ -411,11 +431,17 @@ export default function SetupCodePage({ params }: Props) {
           allowWhatsapp,
           showName: Boolean(data.tag?.visibility?.showName),
           showPhone: Boolean(data.tag?.visibility?.showPhone),
-          showEmail: Boolean(data.tag?.visibility?.showEmail),
           showCity: Boolean(data.tag?.visibility?.showCity),
           showAddressDetail: Boolean(data.tag?.visibility?.showAddressDetail),
           showPetName: Boolean(data.tag?.visibility?.showPetName),
-          showNote: Boolean(data.tag?.visibility?.showNote)
+          showNote: Boolean(data.tag?.visibility?.showNote),
+          recoveryPhone,
+          recoveryEmail,
+          useRecoveryEmailAsContact: Boolean(
+            recoveryEmail &&
+              contactEmail &&
+              recoveryEmail.trim().toLowerCase() === contactEmail.trim().toLowerCase()
+          )
         });
       } catch (err) {
         if (!active) return;
@@ -433,34 +459,25 @@ export default function SetupCodePage({ params }: Props) {
   }, [params]);
 
   const hasPhone = useMemo(() => Boolean(form.phone.trim()), [form.phone]);
-  const hasEmail = useMemo(() => Boolean(form.email.trim()), [form.email]);
   const hasCity = useMemo(() => Boolean(form.city.trim()), [form.city]);
   const hasAddressDetail = useMemo(
     () => Boolean(form.addressDetail.trim()),
     [form.addressDetail]
   );
   const hasNote = useMemo(() => Boolean(form.note.trim()), [form.note]);
+  const hasRecoveryPhone = useMemo(
+    () => Boolean(form.recoveryPhone.trim()),
+    [form.recoveryPhone]
+  );
+  const hasRecoveryEmail = useMemo(
+    () => Boolean(form.recoveryEmail.trim()),
+    [form.recoveryEmail]
+  );
 
   const alertOptions = useMemo(
     () => ALERT_OPTIONS_BY_TYPE[form.productType],
     [form.productType]
   );
-
-  function updateField<K extends keyof SetupForm>(key: K, value: SetupForm[K]) {
-    setForm((prev) => ({
-      ...prev,
-      [key]: value
-    }));
-  }
-
-  function toggleAlert(alert: string, checked: boolean) {
-    setForm((prev) => ({
-      ...prev,
-      alerts: checked
-        ? [...prev.alerts, alert]
-        : prev.alerts.filter((item) => item !== alert)
-    }));
-  }
 
   useEffect(() => {
     setForm((prev) => ({
@@ -490,12 +507,6 @@ export default function SetupCodePage({ params }: Props) {
   }, [hasPhone, form.allowPhone, form.showPhone]);
 
   useEffect(() => {
-    if (!hasEmail && form.showEmail) {
-      updateField("showEmail", false);
-    }
-  }, [hasEmail, form.showEmail]);
-
-  useEffect(() => {
     if (!hasCity && form.showCity) {
       updateField("showCity", false);
     }
@@ -514,10 +525,17 @@ export default function SetupCodePage({ params }: Props) {
   }, [hasNote, form.showNote]);
 
   useEffect(() => {
-    const phone = normalizePhone(form.phone);
-    const email = normalizeEmail(form.email);
+    if (!hasRecoveryEmail && form.useRecoveryEmailAsContact) {
+      updateField("useRecoveryEmailAsContact", false);
+    }
+  }, [hasRecoveryEmail, form.useRecoveryEmailAsContact]);
 
-    if (!phone && !email) {
+  useEffect(() => {
+    const phone = normalizePhone(form.phone);
+    const recoveryPhone = normalizePhone(form.recoveryPhone);
+    const recoveryEmail = normalizeEmail(form.recoveryEmail);
+
+    if (!phone && !recoveryPhone && !recoveryEmail) {
       setContactInsights(null);
       return;
     }
@@ -529,7 +547,8 @@ export default function SetupCodePage({ params }: Props) {
         const paramsValue = new URLSearchParams();
 
         if (phone) paramsValue.set("phone", phone);
-        if (email) paramsValue.set("email", email);
+        if (recoveryPhone) paramsValue.set("phone", recoveryPhone);
+        if (recoveryEmail) paramsValue.set("email", recoveryEmail);
         if (code) paramsValue.set("excludeCode", code);
 
         const res = await fetch(
@@ -558,7 +577,7 @@ export default function SetupCodePage({ params }: Props) {
       active = false;
       window.clearTimeout(timeoutId);
     };
-  }, [form.phone, form.email, code]);
+  }, [form.phone, form.recoveryPhone, form.recoveryEmail, code]);
 
   async function copyText(value: string, type: "public" | "manage") {
     try {
@@ -580,6 +599,22 @@ export default function SetupCodePage({ params }: Props) {
     setError("");
 
     try {
+      if (!form.phone.trim()) {
+        throw new Error("İletişim telefonu zorunludur.");
+      }
+
+      if (!form.recoveryPhone.trim() && !form.recoveryEmail.trim()) {
+        throw new Error(
+          "Kurtarma için telefon veya e-posta alanlarından en az biri zorunludur."
+        );
+      }
+
+      if (form.useRecoveryEmailAsContact && !form.recoveryEmail.trim()) {
+        throw new Error(
+          "İletişim maili olarak kullanmak için kurtarma e-postası girilmelidir."
+        );
+      }
+
       const res = await fetch(`/api/setup/${code}`, {
         method: "PUT",
         headers: {
@@ -779,6 +814,10 @@ export default function SetupCodePage({ params }: Props) {
                 </p>
               </div>
 
+              <div className="mt-5 rounded-[1.5rem] border border-blue-200 bg-blue-50 px-4 py-4 text-sm leading-6 text-blue-900">
+                Kurtarma bilgilerinizi yönetim panelinden dilediğiniz zaman güncelleyebilirsiniz.
+              </div>
+
               <div className="mt-5 grid gap-3 sm:grid-cols-3">
                 <button
                   type="button"
@@ -868,8 +907,8 @@ export default function SetupCodePage({ params }: Props) {
               />
               <GuideStep
                 step="2. Adım"
-                title="İletişim tercihlerini seçin"
-                text="Telefon, e-posta ve görünür olacak alanları belirleyin."
+                title="İletişim ve kurtarma bilgilerini ekleyin"
+                text="Telefon ve zorunlu kurtarma alanlarını belirleyin."
               />
               <GuideStep
                 step="3. Adım"
@@ -879,7 +918,7 @@ export default function SetupCodePage({ params }: Props) {
             </div>
 
             <div className="mt-4 rounded-[1.5rem] border border-blue-200 bg-blue-50 px-4 py-4 text-sm leading-6 text-blue-900">
-              İpucu: İsterseniz sadece gerekli alanları görünür yapabilirsiniz. Kısa başlık, ana isimden farklıysa daha anlamlı görünür.
+              Public e-posta görünümü kapalıdır. Kurtarma bilgileri yalnızca size yeniden erişim sağlamak ve isterseniz sistem içi iletişim için kullanılır.
             </div>
           </div>
         </section>
@@ -1015,63 +1054,44 @@ export default function SetupCodePage({ params }: Props) {
           <SectionCard
             id="contact"
             title="İletişim"
-            description="İletişim bilgilerini girin ve hangileri görünsün seçin."
+            description="Bulana açık olacak telefon bilgilerini belirleyin."
             isOpen={openSection === "contact"}
             onToggle={toggleSection}
           >
             <div className="grid gap-4">
-              <div className="grid gap-4 sm:grid-cols-2">
-                <Field label="Telefon" optional>
-                  <input
-                    value={form.phone}
-                    onChange={(e) =>
-                      updateField("phone", e.target.value.replace(/[^0-9]/g, ""))
-                    }
-                    inputMode="numeric"
-                    pattern="[0-9]*"
-                    className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
-                    placeholder="05xxxxxxxxx"
+              <Field label="Telefon">
+                <input
+                  value={form.phone}
+                  onChange={(e) =>
+                    updateField("phone", e.target.value.replace(/[^0-9]/g, ""))
+                  }
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
+                  placeholder="05xxxxxxxxx"
+                  required
+                />
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <InlineToggle
+                    checked={form.allowPhone}
+                    disabled={!hasPhone}
+                    label="Telefonla ulaşılabilsin"
+                    onChange={(value) => updateField("allowPhone", value)}
                   />
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    <InlineToggle
-                      checked={form.allowPhone}
-                      disabled={!hasPhone}
-                      label="Telefonla ulaşılabilsin"
-                      onChange={(value) => updateField("allowPhone", value)}
-                    />
-                    <InlineToggle
-                      checked={form.allowWhatsapp}
-                      disabled={!hasPhone || !form.allowPhone}
-                      label="WhatsApp açılsın"
-                      onChange={(value) => updateField("allowWhatsapp", value)}
-                    />
-                    <InlineToggle
-                      checked={form.showPhone}
-                      disabled={!hasPhone || !form.allowPhone}
-                      label="Telefon görünsün"
-                      onChange={(value) => updateField("showPhone", value)}
-                    />
-                  </div>
-                </Field>
-
-                <Field label="E-posta" optional>
-                  <input
-                    type="email"
-                    value={form.email}
-                    onChange={(e) => updateField("email", e.target.value)}
-                    className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
-                    placeholder="ornek@mail.com"
+                  <InlineToggle
+                    checked={form.allowWhatsapp}
+                    disabled={!hasPhone || !form.allowPhone}
+                    label="WhatsApp açılsın"
+                    onChange={(value) => updateField("allowWhatsapp", value)}
                   />
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    <InlineToggle
-                      checked={form.showEmail}
-                      disabled={!hasEmail}
-                      label="E-posta görünsün"
-                      onChange={(value) => updateField("showEmail", value)}
-                    />
-                  </div>
-                </Field>
-              </div>
+                  <InlineToggle
+                    checked={form.showPhone}
+                    disabled={!hasPhone || !form.allowPhone}
+                    label="Telefon görünsün"
+                    onChange={(value) => updateField("showPhone", value)}
+                  />
+                </div>
+              </Field>
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <Field label="Şehir" optional>
@@ -1111,6 +1131,59 @@ export default function SetupCodePage({ params }: Props) {
                     />
                   </div>
                 </Field>
+              </div>
+            </div>
+          </SectionCard>
+
+          <SectionCard
+            id="recovery"
+            title="Kurtarma bilgileri"
+            description="Yönetim erişimini tekrar alabilmeniz için en az 1 alan zorunludur."
+            isOpen={openSection === "recovery"}
+            onToggle={toggleSection}
+          >
+            <div className="grid gap-4">
+              <div className="rounded-[1.5rem] border border-blue-200 bg-blue-50 px-4 py-4 text-sm leading-6 text-blue-900">
+                Bu bilgiler herkese açık profilde görünmez. Kurtarma ve isterseniz sistem içi iletişim için kullanılır.
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field label="Kurtarma telefonu" optional>
+                  <input
+                    value={form.recoveryPhone}
+                    onChange={(e) =>
+                      updateField(
+                        "recoveryPhone",
+                        e.target.value.replace(/[^0-9]/g, "")
+                      )
+                    }
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
+                    placeholder="05xxxxxxxxx"
+                  />
+                </Field>
+
+                <Field label="Kurtarma e-postası" optional>
+                  <input
+                    type="email"
+                    value={form.recoveryEmail}
+                    onChange={(e) => updateField("recoveryEmail", e.target.value)}
+                    className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
+                    placeholder="ornek@mail.com"
+                  />
+                </Field>
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                <InlineToggle
+                  checked={form.useRecoveryEmailAsContact}
+                  disabled={!hasRecoveryEmail}
+                  label="Bu e-posta iletişim maili olarak da kullanılsın"
+                  onChange={(value) =>
+                    updateField("useRecoveryEmailAsContact", value)
+                  }
+                />
               </div>
             </div>
           </SectionCard>

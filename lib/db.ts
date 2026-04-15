@@ -15,3 +15,4 @@ export function readDB() {
 export function writeDB(data: any) {
   fs.writeFileSync(DB_PATH, JSON.stringify(data, null, 2));
 }
+import { runFullCleanup } from "@/lib/tags";

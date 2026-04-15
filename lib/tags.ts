@@ -530,8 +530,70 @@ function mapProductToRecoveryListedItem(product: TagRecord): RecoveryListedItem 
   };
 }
 
+function shouldClearRecoverySession(session?: RecoverySession) {
+  if (!session?.token) return false;
+  if (session.status === "used") return true;
+
+  const expiresAt = session.expiresAt ? new Date(session.expiresAt).getTime() : 0;
+  return Boolean(expiresAt && expiresAt < Date.now());
+}
+
+function shouldClearTransfer(transfer?: TagTransfer) {
+  if (!transfer?.token) return false;
+  if (transfer.status === "used" || transfer.status === "cancelled") return true;
+
+  const expiresAt = transfer.expiresAt ? new Date(transfer.expiresAt).getTime() : 0;
+  return Boolean(expiresAt && expiresAt < Date.now());
+}
+
+function cleanupProductRuntimeState(product: TagRecord): TagRecord {
+  const next: TagRecord = { ...product };
+  let changed = false;
+
+  if (shouldClearRecoverySession(next.recoverySession)) {
+    delete next.recoverySession;
+    changed = true;
+  }
+
+  if (shouldClearTransfer(next.transfer)) {
+    delete next.transfer;
+    changed = true;
+  }
+
+  if (changed) {
+    next.updatedAt = new Date().toISOString();
+  }
+
+  return next;
+}
+
+function cleanupTransientStates() {
+  const products = getProducts();
+  let changed = false;
+
+  const nextProducts = products.map((product) => {
+    const next = cleanupProductRuntimeState(product);
+
+    if (
+      next.recoverySession !== product.recoverySession ||
+      next.transfer !== product.transfer ||
+      next.updatedAt !== product.updatedAt
+    ) {
+      changed = true;
+    }
+
+    return next;
+  });
+
+  if (changed) {
+    saveProducts(nextProducts);
+  }
+
+  return nextProducts;
+}
+
 export function readTags(): TagView[] {
-  return getProducts().map(mapProductToTagView);
+  return cleanupTransientStates().map(mapProductToTagView);
 }
 
 export function getAllTags(): TagView[] {
@@ -542,7 +604,7 @@ export function findTagByCode(code: string): TagView | null {
   const normalized = normalizeCode(code);
   if (!normalized) return null;
 
-  const product = getProducts().find((item) => {
+  const product = cleanupTransientStates().find((item) => {
     return (
       normalizeCode(item.publicCode) === normalized ||
       normalizeCode(item.oldCode || "") === normalized ||
@@ -565,7 +627,7 @@ export function findTagByManageToken(token: string): TagView | null {
   const normalized = String(token || "").trim();
   if (!normalized) return null;
 
-  const product = getProducts().find((item) => {
+  const product = cleanupTransientStates().find((item) => {
     return String(item.manageToken || "").trim() === normalized;
   });
 
@@ -573,7 +635,7 @@ export function findTagByManageToken(token: string): TagView | null {
 }
 
 export function validateManageToken(codeOrToken: string, maybeToken?: string) {
-  const products = getProducts();
+  const products = cleanupTransientStates();
 
   if (maybeToken === undefined) {
     const token = String(codeOrToken || "").trim();
@@ -613,7 +675,7 @@ export function upsertTag(input: UpsertTagInput) {
     throw new Error("Code zorunlu");
   }
 
-  const products = getProducts();
+  const products = cleanupTransientStates();
   const index = products.findIndex((item) => {
     return normalizeCode(
       item.publicCode || (item as { code?: string }).code || ""
@@ -830,7 +892,7 @@ export function updateTagByManageToken(input: UpdateByManageTokenInput) {
     throw new Error("manageToken zorunlu");
   }
 
-  const products = getProducts();
+  const products = cleanupTransientStates();
   const index = products.findIndex((item) => {
     return String(item.manageToken || "").trim() === normalizedToken;
   });
@@ -960,7 +1022,7 @@ export function createTransferByManageToken(input: {
     throw new Error("Geçersiz devir isteği.");
   }
 
-  const products = getProducts();
+  const products = cleanupTransientStates();
   const index = products.findIndex((item) => {
     const itemCode = normalizeCode(
       item.publicCode || (item as { code?: string }).code || ""
@@ -1018,7 +1080,7 @@ export function getTransferByToken(token: string) {
   const normalizedToken = String(token || "").trim();
   if (!normalizedToken) return null;
 
-  const products = getProducts();
+  const products = cleanupTransientStates();
   const product = products.find((item) => {
     return String(item.transfer?.token || "").trim() === normalizedToken;
   });
@@ -1059,7 +1121,7 @@ export function claimTransfer(input: ClaimTransferInput) {
     throw new Error("Geçersiz devir bağlantısı.");
   }
 
-  const products = getProducts();
+  const products = cleanupTransientStates();
   const index = products.findIndex((item) => {
     return String(item.transfer?.token || "").trim() === normalizedToken;
   });
@@ -1161,7 +1223,7 @@ export function cancelTransferByManageToken(input: {
     throw new Error("Geçersiz iptal isteği.");
   }
 
-  const products = getProducts();
+  const products = cleanupTransientStates();
   const index = products.findIndex((item) => {
     const itemCode = normalizeCode(
       item.publicCode || (item as { code?: string }).code || ""
@@ -1217,7 +1279,7 @@ export function recoverManageAccess(input: {
     return null;
   }
 
-  const products = getProducts();
+  const products = cleanupTransientStates();
 
   const index = products.findIndex((item) => {
     const recordCode = normalizeCode(
@@ -1289,7 +1351,7 @@ export function createRecoverySessionByEmail(input: {
     throw new Error("E-posta zorunlu.");
   }
 
-  const products = getProducts();
+  const products = cleanupTransientStates();
   const matches = products.filter((item) => {
     const recoveryEmail = normalizeValue(getRecovery(item).email);
     return Boolean(recoveryEmail) && recoveryEmail === normalizedEmail;
@@ -1349,7 +1411,7 @@ export function verifyRecoverySessionToken(token: string) {
     return null;
   }
 
-  const products = getProducts();
+  const products = cleanupTransientStates();
   const matchedProducts = products.filter((item) => {
     return String(item.recoverySession?.token || "").trim() === normalizedToken;
   });
@@ -1381,7 +1443,7 @@ export function consumeRecoverySessionToken(token: string) {
     return null;
   }
 
-  const products = getProducts();
+  const products = cleanupTransientStates();
   const matchingIndexes: number[] = [];
 
   for (let i = 0; i < products.length; i += 1) {
@@ -1441,10 +1503,39 @@ export function listRecoveryItemsByEmail(email: string): RecoveryListedItem[] {
     return [];
   }
 
-  return getProducts()
+  return cleanupTransientStates()
     .filter((item) => {
       const recoveryEmail = normalizeValue(getRecovery(item).email);
       return Boolean(recoveryEmail) && recoveryEmail === normalizedEmail;
     })
     .map(mapProductToRecoveryListedItem);
+}
+
+// 🔥 MANUEL CLEANUP EXPORT
+export function runFullCleanup() {
+  const products = getProducts();
+  let changed = false;
+
+  const nextProducts = products.map((product) => {
+    const next = cleanupProductRuntimeState(product);
+
+    if (
+      next.recoverySession !== product.recoverySession ||
+      next.transfer !== product.transfer ||
+      next.updatedAt !== product.updatedAt
+    ) {
+      changed = true;
+    }
+
+    return next;
+  });
+
+  if (changed) {
+    saveProducts(nextProducts);
+  }
+
+  return {
+    cleaned: changed,
+    count: nextProducts.length
+  };
 }

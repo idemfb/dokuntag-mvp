@@ -9,7 +9,6 @@ type SetupBody = {
   tagName?: string;
   ownerName?: string;
   phone?: string;
-  email?: string;
   city?: string;
   addressDetail?: string;
   distinctiveFeature?: string;
@@ -19,11 +18,13 @@ type SetupBody = {
   allowWhatsapp?: boolean;
   showName?: boolean;
   showPhone?: boolean;
-  showEmail?: boolean;
   showCity?: boolean;
   showAddressDetail?: boolean;
   showPetName?: boolean;
   showNote?: boolean;
+  recoveryPhone?: string;
+  recoveryEmail?: string;
+  useRecoveryEmailAsContact?: boolean;
 };
 
 type RouteContext = {
@@ -70,6 +71,19 @@ function normalizeProductType(value: unknown): ProductType {
 
 function normalizeString(value: unknown) {
   return String(value ?? "").trim();
+}
+
+function normalizePhone(value: unknown) {
+  return normalizeString(value).replace(/[^0-9]/g, "");
+}
+
+function normalizeEmail(value: unknown) {
+  return normalizeString(value).toLowerCase();
+}
+
+function isValidEmail(value: string) {
+  if (!value) return false;
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 }
 
 export async function GET(_req: NextRequest, context: RouteContext) {
@@ -147,16 +161,53 @@ export async function PUT(req: NextRequest, context: RouteContext) {
     const petName = normalizeString(body.petName);
     const tagName = normalizeString(body.tagName);
     const ownerName = normalizeString(body.ownerName);
-    const phone = normalizeString(body.phone);
-    const email = normalizeString(body.email);
+    const phone = normalizePhone(body.phone);
     const city = normalizeString(body.city);
     const addressDetail = normalizeString(body.addressDetail);
     const distinctiveFeature = normalizeString(body.distinctiveFeature);
     const note = normalizeString(body.note);
 
+    const recoveryPhone = normalizePhone(body.recoveryPhone);
+    const recoveryEmail = normalizeEmail(body.recoveryEmail);
+    const useRecoveryEmailAsContact = Boolean(body.useRecoveryEmailAsContact);
+
     if (!petName) {
       return NextResponse.json(
         { ok: false, error: "Ana isim zorunludur." },
+        { status: 400 }
+      );
+    }
+
+    if (!phone) {
+      return NextResponse.json(
+        { ok: false, error: "İletişim telefonu zorunludur." },
+        { status: 400 }
+      );
+    }
+
+    if (!recoveryPhone && !recoveryEmail) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: "Kurtarma için telefon veya e-posta alanlarından en az biri zorunludur."
+        },
+        { status: 400 }
+      );
+    }
+
+    if (recoveryEmail && !isValidEmail(recoveryEmail)) {
+      return NextResponse.json(
+        { ok: false, error: "Geçerli bir kurtarma e-posta adresi girin." },
+        { status: 400 }
+      );
+    }
+
+    if (useRecoveryEmailAsContact && !recoveryEmail) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: "İletişim maili olarak kullanmak için kurtarma e-postası girilmelidir."
+        },
         { status: 400 }
       );
     }
@@ -179,7 +230,7 @@ export async function PUT(req: NextRequest, context: RouteContext) {
       petName,
       ownerName,
       phone,
-      email,
+      email: useRecoveryEmailAsContact ? recoveryEmail : "",
       city,
       addressDetail,
       distinctiveFeature,
@@ -190,14 +241,14 @@ export async function PUT(req: NextRequest, context: RouteContext) {
       visibility: {
         showName: Boolean(body.showName ?? true),
         showPhone: Boolean(body.showPhone && allowDirectCall && phone),
-        showEmail: Boolean(body.showEmail && email),
+        showEmail: false,
         showCity: Boolean(body.showCity && city),
         showAddressDetail: Boolean(body.showAddressDetail && addressDetail),
         showPetName: Boolean(body.showPetName ?? true),
         showNote: Boolean(body.showNote && note)
       },
-      recoveryPhone: phone,
-      recoveryEmail: email,
+      recoveryPhone,
+      recoveryEmail,
       status: "active"
     });
 

@@ -1,6 +1,7 @@
 import fs from "fs";
 import path from "path";
 import crypto from "crypto";
+import { Redis } from "@upstash/redis";
 
 export type NotifyContactMethod = "phone" | "whatsapp" | "email";
 
@@ -21,12 +22,54 @@ export type NotifyLogItem = {
   message?: string;
 };
 
+export type RecoverRequestLogItem = {
+  id: string;
+  email: string;
+  entryType: "my" | "recover";
+  fingerprint: string;
+  ip: string;
+  createdAt: string;
+};
+
 const filePath = path.join(process.cwd(), "data", "notify-log.json");
+const recoverFilePath = path.join(process.cwd(), "data", "recover-log.json");
 
 const COOLDOWN_SECONDS = 300;
 const MAX_ATTEMPTS = 5;
 const WINDOW_MS = 15 * 60 * 1000;
 const ARCHIVE_RETENTION_DAYS = 180;
+
+const RECOVER_COOLDOWN_SECONDS = 60;
+const RECOVER_MAX_ATTEMPTS = 5;
+const RECOVER_WINDOW_MS = 15 * 60 * 1000;
+const RECOVER_RETENTION_DAYS = 30;
+
+const NOTIFY_REDIS_KEY = "dokuntag:notify-log";
+const RECOVER_REDIS_KEY = "dokuntag:recover-log";
+
+let redisClient: Redis | null = null;
+
+function isRedisEnabled() {
+  return Boolean(
+    process.env.UPSTASH_REDIS_REST_URL?.trim() &&
+      process.env.UPSTASH_REDIS_REST_TOKEN?.trim()
+  );
+}
+
+function getRedis() {
+  if (!isRedisEnabled()) {
+    return null;
+  }
+
+  if (!redisClient) {
+    redisClient = new Redis({
+      url: process.env.UPSTASH_REDIS_REST_URL!.trim(),
+      token: process.env.UPSTASH_REDIS_REST_TOKEN!.trim()
+    });
+  }
+
+  return redisClient;
+}
 
 function ensureFile() {
   if (!fs.existsSync(filePath)) {
@@ -34,7 +77,13 @@ function ensureFile() {
   }
 }
 
-export function readNotifyLog(): NotifyLogItem[] {
+function ensureRecoverFile() {
+  if (!fs.existsSync(recoverFilePath)) {
+    fs.writeFileSync(recoverFilePath, "[]", "utf-8");
+  }
+}
+
+function readNotifyLogFromFile(): NotifyLogItem[] {
   ensureFile();
 
   try {
@@ -51,8 +100,109 @@ export function readNotifyLog(): NotifyLogItem[] {
   }
 }
 
-export function writeNotifyLog(items: NotifyLogItem[]) {
+function writeNotifyLogToFile(items: NotifyLogItem[]) {
   fs.writeFileSync(filePath, JSON.stringify(items, null, 2), "utf-8");
+}
+
+function readRecoverLogFromFile(): RecoverRequestLogItem[] {
+  ensureRecoverFile();
+
+  try {
+    const file = fs.readFileSync(recoverFilePath, "utf-8");
+    const parsed = JSON.parse(file);
+
+    if (!Array.isArray(parsed)) {
+      return [];
+    }
+
+    return parsed as RecoverRequestLogItem[];
+  } catch {
+    return [];
+  }
+}
+
+function writeRecoverLogToFile(items: RecoverRequestLogItem[]) {
+  fs.writeFileSync(recoverFilePath, JSON.stringify(items, null, 2), "utf-8");
+}
+
+async function readNotifyLogFromRedis(): Promise<NotifyLogItem[]> {
+  const redis = getRedis();
+  if (!redis) {
+    return [];
+  }
+
+  try {
+    const items = await redis.get<NotifyLogItem[]>(NOTIFY_REDIS_KEY);
+    return Array.isArray(items) ? items : [];
+  } catch {
+    return [];
+  }
+}
+
+async function writeNotifyLogToRedis(items: NotifyLogItem[]) {
+  const redis = getRedis();
+  if (!redis) {
+    return;
+  }
+
+  await redis.set(NOTIFY_REDIS_KEY, items);
+}
+
+async function readRecoverLogFromRedis(): Promise<RecoverRequestLogItem[]> {
+  const redis = getRedis();
+  if (!redis) {
+    return [];
+  }
+
+  try {
+    const items = await redis.get<RecoverRequestLogItem[]>(RECOVER_REDIS_KEY);
+    return Array.isArray(items) ? items : [];
+  } catch {
+    return [];
+  }
+}
+
+async function writeRecoverLogToRedis(items: RecoverRequestLogItem[]) {
+  const redis = getRedis();
+  if (!redis) {
+    return;
+  }
+
+  await redis.set(RECOVER_REDIS_KEY, items);
+}
+
+export async function readNotifyLog(): Promise<NotifyLogItem[]> {
+  if (isRedisEnabled()) {
+    return readNotifyLogFromRedis();
+  }
+
+  return readNotifyLogFromFile();
+}
+
+export async function writeNotifyLog(items: NotifyLogItem[]) {
+  if (isRedisEnabled()) {
+    await writeNotifyLogToRedis(items);
+    return;
+  }
+
+  writeNotifyLogToFile(items);
+}
+
+export async function readRecoverLog(): Promise<RecoverRequestLogItem[]> {
+  if (isRedisEnabled()) {
+    return readRecoverLogFromRedis();
+  }
+
+  return readRecoverLogFromFile();
+}
+
+export async function writeRecoverLog(items: RecoverRequestLogItem[]) {
+  if (isRedisEnabled()) {
+    await writeRecoverLogToRedis(items);
+    return;
+  }
+
+  writeRecoverLogToFile(items);
 }
 
 function normalizeMethods(value?: string[]): NotifyContactMethod[] {
@@ -70,13 +220,36 @@ function normalizeTagCode(tagCode: string) {
   return String(tagCode || "").trim().toUpperCase();
 }
 
+function normalizeEmail(value: string) {
+  return String(value || "").trim().toLowerCase();
+}
+
 function getArchiveRetentionMs() {
   return ARCHIVE_RETENTION_DAYS * 24 * 60 * 60 * 1000;
+}
+
+function getRecoverRetentionMs() {
+  return RECOVER_RETENTION_DAYS * 24 * 60 * 60 * 1000;
 }
 
 function cleanupExpiredLogs(items: NotifyLogItem[]) {
   const now = Date.now();
   const retentionMs = getArchiveRetentionMs();
+
+  return items.filter((item) => {
+    const createdAt = new Date(item.createdAt).getTime();
+
+    if (Number.isNaN(createdAt)) {
+      return false;
+    }
+
+    return now - createdAt < retentionMs;
+  });
+}
+
+function cleanupExpiredRecoverLogs(items: RecoverRequestLogItem[]) {
+  const now = Date.now();
+  const retentionMs = getRecoverRetentionMs();
 
   return items.filter((item) => {
     const createdAt = new Date(item.createdAt).getTime();
@@ -102,12 +275,21 @@ export function createSenderFingerprint(input: {
   return crypto.createHash("sha256").update(raw).digest("hex");
 }
 
-export function checkNotifyCooldown(input: {
+export function createRecoverFingerprint(input: {
+  ip: string;
+  email: string;
+}) {
+  const raw = `${input.ip}|${normalizeEmail(input.email)}`.trim().toLowerCase();
+
+  return crypto.createHash("sha256").update(raw).digest("hex");
+}
+
+export async function checkNotifyCooldown(input: {
   tagCode: string;
   senderFingerprint: string;
   ip: string;
 }) {
-  const items = readNotifyLog();
+  const items = await readNotifyLog();
   const now = Date.now();
   const normalizedTagCode = normalizeTagCode(input.tagCode);
 
@@ -146,7 +328,70 @@ export function checkNotifyCooldown(input: {
   return { allowed: true };
 }
 
-export function addNotifyLog(input: {
+export async function checkRecoverCooldown(input: {
+  email: string;
+  fingerprint: string;
+  ip: string;
+}) {
+  const items = cleanupExpiredRecoverLogs(await readRecoverLog());
+  const now = Date.now();
+  const normalizedEmailValue = normalizeEmail(input.email);
+
+  const recentItem = items.find((item) => {
+    const sameEmail = normalizeEmail(item.email) === normalizedEmailValue;
+    const sameFingerprint = item.fingerprint === input.fingerprint;
+    const createdAt = new Date(item.createdAt).getTime();
+
+    return (
+      sameEmail &&
+      sameFingerprint &&
+      now - createdAt < RECOVER_COOLDOWN_SECONDS * 1000
+    );
+  });
+
+  if (recentItem) {
+    return {
+      allowed: false,
+      error: "Yeni bağlantı istemeden önce kısa bir süre bekleyin."
+    };
+  }
+
+  const attemptsFromIp = items.filter((item) => {
+    const createdAt = new Date(item.createdAt).getTime();
+    return item.ip === input.ip && now - createdAt < RECOVER_WINDOW_MS;
+  });
+
+  if (attemptsFromIp.length >= RECOVER_MAX_ATTEMPTS) {
+    return {
+      allowed: false,
+      error: "Çok fazla doğrulama denemesi yaptınız. Lütfen daha sonra tekrar deneyin."
+    };
+  }
+
+  return { allowed: true };
+}
+
+export async function addRecoverLog(input: {
+  email: string;
+  entryType: "my" | "recover";
+  fingerprint: string;
+  ip: string;
+}) {
+  const items = cleanupExpiredRecoverLogs(await readRecoverLog());
+
+  items.push({
+    id: crypto.randomUUID(),
+    email: normalizeEmail(input.email),
+    entryType: input.entryType,
+    fingerprint: input.fingerprint,
+    ip: input.ip,
+    createdAt: new Date().toISOString()
+  });
+
+  await writeRecoverLog(items);
+}
+
+export async function addNotifyLog(input: {
   tagCode: string;
   senderFingerprint: string;
   ip: string;
@@ -156,10 +401,9 @@ export function addNotifyLog(input: {
   preferredContactMethods?: string[];
   message?: string;
 }) {
-  const items = readNotifyLog();
-  const cleaned = cleanupExpiredLogs(items);
+  const items = cleanupExpiredLogs(await readNotifyLog());
 
-  cleaned.push({
+  items.push({
     id: crypto.randomUUID(),
     tagCode: normalizeTagCode(input.tagCode),
     senderFingerprint: input.senderFingerprint,
@@ -176,31 +420,33 @@ export function addNotifyLog(input: {
     message: input.message || ""
   });
 
-  writeNotifyLog(cleaned);
+  await writeNotifyLog(items);
 }
 
-export function getNotifyLogsByTagCode(tagCode: string) {
+export async function getNotifyLogsByTagCode(tagCode: string) {
   const normalizedTagCode = normalizeTagCode(tagCode);
 
   if (!normalizedTagCode) {
     return [];
   }
 
-  return readNotifyLog()
-    .filter((item) => normalizeTagCode(item.tagCode) === normalizedTagCode && !item.deletedAt)
+  return (await readNotifyLog())
+    .filter(
+      (item) => normalizeTagCode(item.tagCode) === normalizedTagCode && !item.deletedAt
+    )
     .sort((a, b) => {
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     });
 }
 
-export function deleteAllNotifyLogsByTagCode(tagCode: string) {
+export async function deleteAllNotifyLogsByTagCode(tagCode: string) {
   const normalizedTagCode = normalizeTagCode(tagCode);
 
   if (!normalizedTagCode) {
     return { deletedCount: 0 };
   }
 
-  const items = readNotifyLog();
+  const items = await readNotifyLog();
   let deletedCount = 0;
   const deletedAt = new Date().toISOString();
 
@@ -220,20 +466,20 @@ export function deleteAllNotifyLogsByTagCode(tagCode: string) {
   });
 
   if (deletedCount > 0) {
-    writeNotifyLog(updatedItems);
+    await writeNotifyLog(updatedItems);
   }
 
   return { deletedCount };
 }
 
-export function markNotifyLogsAsRead(tagCode: string) {
+export async function markNotifyLogsAsRead(tagCode: string) {
   const normalizedTagCode = normalizeTagCode(tagCode);
 
   if (!normalizedTagCode) {
     return { updatedCount: 0 };
   }
 
-  const items = readNotifyLog();
+  const items = await readNotifyLog();
   let updatedCount = 0;
   const readAt = new Date().toISOString();
 
@@ -255,13 +501,13 @@ export function markNotifyLogsAsRead(tagCode: string) {
   });
 
   if (updatedCount > 0) {
-    writeNotifyLog(updatedItems);
+    await writeNotifyLog(updatedItems);
   }
 
   return { updatedCount };
 }
 
-export function markSingleNotifyLogAsRead(input: {
+export async function markSingleNotifyLogAsRead(input: {
   tagCode: string;
   logId: string;
 }) {
@@ -272,7 +518,7 @@ export function markSingleNotifyLogAsRead(input: {
     return { updated: false };
   }
 
-  const items = readNotifyLog();
+  const items = await readNotifyLog();
   let updated = false;
   const readAt = new Date().toISOString();
 
@@ -297,13 +543,13 @@ export function markSingleNotifyLogAsRead(input: {
   });
 
   if (updated) {
-    writeNotifyLog(updatedItems);
+    await writeNotifyLog(updatedItems);
   }
 
   return { updated };
 }
 
-export function toggleNotifyLogPinned(input: {
+export async function toggleNotifyLogPinned(input: {
   tagCode: string;
   logId: string;
 }) {
@@ -314,7 +560,7 @@ export function toggleNotifyLogPinned(input: {
     return { updated: false, pinned: false };
   }
 
-  const items = readNotifyLog();
+  const items = await readNotifyLog();
   let updated = false;
   let pinned = false;
 
@@ -337,13 +583,13 @@ export function toggleNotifyLogPinned(input: {
   });
 
   if (updated) {
-    writeNotifyLog(updatedItems);
+    await writeNotifyLog(updatedItems);
   }
 
   return { updated, pinned };
 }
 
-export function toggleNotifyLogArchived(input: {
+export async function toggleNotifyLogArchived(input: {
   tagCode: string;
   logId: string;
 }) {
@@ -354,7 +600,7 @@ export function toggleNotifyLogArchived(input: {
     return { updated: false, archived: false };
   }
 
-  const items = readNotifyLog();
+  const items = await readNotifyLog();
   let updated = false;
   let archived = false;
 
@@ -378,13 +624,13 @@ export function toggleNotifyLogArchived(input: {
   });
 
   if (updated) {
-    writeNotifyLog(updatedItems);
+    await writeNotifyLog(updatedItems);
   }
 
   return { updated, archived };
 }
 
-export function deleteNotifyLog(input: {
+export async function deleteNotifyLog(input: {
   tagCode: string;
   logId: string;
 }) {
@@ -395,7 +641,7 @@ export function deleteNotifyLog(input: {
     return { deleted: false };
   }
 
-  const items = readNotifyLog();
+  const items = await readNotifyLog();
   let deleted = false;
 
   const updatedItems = items.map((item) => {
@@ -418,20 +664,20 @@ export function deleteNotifyLog(input: {
   });
 
   if (deleted) {
-    writeNotifyLog(updatedItems);
+    await writeNotifyLog(updatedItems);
   }
 
   return { deleted };
 }
 
-export function getUnreadNotifyCount(tagCode: string) {
+export async function getUnreadNotifyCount(tagCode: string) {
   const normalizedTagCode = normalizeTagCode(tagCode);
 
   if (!normalizedTagCode) {
     return 0;
   }
 
-  return readNotifyLog().filter((item) => {
+  return (await readNotifyLog()).filter((item) => {
     return (
       normalizeTagCode(item.tagCode) === normalizedTagCode &&
       !item.readAt &&

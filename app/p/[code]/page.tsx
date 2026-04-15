@@ -549,11 +549,14 @@ export default function PublicPage({
   const showPetName = getVisibleFlag(data, "showPetName");
   const showNote = getVisibleFlag(data, "showNote");
 
+  const primaryPetName = data.petName?.trim() || "";
+  const secondaryName = data.name?.trim() || "";
+
   const showSecondaryNameSeparately =
-    Boolean(data.name?.trim()) &&
-    Boolean(data.petName?.trim()) &&
-    data.name.trim().toLocaleLowerCase("tr-TR") !==
-      data.petName.trim().toLocaleLowerCase("tr-TR");
+   Boolean(secondaryName) &&
+    Boolean(primaryPetName) &&
+    secondaryName.toLocaleLowerCase("tr-TR") !==
+    primaryPetName.toLocaleLowerCase("tr-TR");
 
   const hasVisibleProfileInfo =
     (showPetName && Boolean(data.petName)) ||

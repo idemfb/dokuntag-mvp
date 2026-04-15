@@ -46,7 +46,6 @@ function normalizeProductType(value: unknown): ProductType {
   if (value === "pet" || value === "item" || value === "key" || value === "person") {
     return value;
   }
-
   return "item";
 }
 
@@ -79,23 +78,37 @@ export async function GET(request: Request, { params }: Params) {
       );
     }
 
-    const managePath = `/manage/${tag.code}?token=${tag.manageToken}`;
+    // 🔥 TOKEN ROTATE (KRİTİK)
+    const updated = updateTagByManageToken({
+      manageToken: token
+    });
+
+    if (!updated) {
+      return NextResponse.json(
+        { error: "Token yenilenemedi." },
+        { status: 500 }
+      );
+    }
+
+    const managePath = `/manage/${updated.code}?token=${updated.manageToken}`;
 
     return NextResponse.json({
-      code: tag.code,
-      productType: tag.productType || "item",
-      profile: tag.profile,
-      alerts: tag.alerts,
-      alertOptions: ALERT_OPTIONS_BY_TYPE[tag.productType || "item"],
-      visibility: tag.visibility,
+      code: updated.code,
+      productType: updated.productType || "item",
+      profile: updated.profile,
+      alerts: updated.alerts,
+      alertOptions: ALERT_OPTIONS_BY_TYPE[updated.productType || "item"],
+      visibility: updated.visibility,
       contactOptions: {
-        allowDirectCall: Boolean(tag.contactOptions?.allowDirectCall),
-        allowDirectWhatsapp: Boolean(tag.contactOptions?.allowDirectWhatsapp)
+        allowDirectCall: Boolean(updated.contactOptions?.allowDirectCall),
+        allowDirectWhatsapp: Boolean(updated.contactOptions?.allowDirectWhatsapp)
       },
-      recovery: tag.recovery,
-      status: tag.status === "inactive" ? "inactive" : "active",
+      recovery: updated.recovery,
+      status: updated.status === "inactive" ? "inactive" : "active",
       managePath,
-      manageLink: `${origin}${managePath}`
+      manageLink: `${origin}${managePath}`,
+      qrLink: `${origin}/api/qr/${updated.code}`,
+      qrDownloadLink: `${origin}/api/qr-download/${updated.code}`,
     });
   } catch (error) {
     console.error("MANAGE_GET_ERROR", error);
@@ -191,46 +204,17 @@ export async function POST(request: Request, { params }: Params) {
 
     if (!phone && !email) {
       return NextResponse.json(
-        { error: "Telefon veya e-posta alanlarından en az biri zorunludur." },
+        { error: "Telefon veya e-posta zorunlu." },
         { status: 400 }
       );
     }
 
     if (!petName) {
       return NextResponse.json(
-        { error: "Ürün adı / kişi adı zorunludur." },
+        { error: "Ürün adı zorunludur." },
         { status: 400 }
       );
     }
-
-    if (!recovery.phone && !recovery.email) {
-      return NextResponse.json(
-        { error: "Kurtarma bilgileri için en az bir alan girilmelidir." },
-        { status: 400 }
-      );
-    }
-
-    const contactOptions = {
-      allowDirectCall: rawContactOptions.allowDirectCall && Boolean(phone),
-      allowDirectWhatsapp:
-        rawContactOptions.allowDirectCall &&
-        rawContactOptions.allowDirectWhatsapp &&
-        Boolean(phone)
-    };
-
-    const visibility = {
-      showName: rawVisibility.showName,
-      showPhone:
-        rawVisibility.showPhone &&
-        contactOptions.allowDirectCall &&
-        Boolean(phone),
-      showEmail: rawVisibility.showEmail && Boolean(email),
-      showCity: rawVisibility.showCity && Boolean(city),
-      showAddressDetail:
-        rawVisibility.showAddressDetail && Boolean(addressDetail),
-      showPetName: rawVisibility.showPetName,
-      showNote: rawVisibility.showNote && Boolean(note)
-    };
 
     const updated = updateTagByManageToken({
       manageToken: token,
@@ -245,25 +229,18 @@ export async function POST(request: Request, { params }: Params) {
       petName,
       note,
       alerts,
-      allowDirectCall: contactOptions.allowDirectCall,
-      allowDirectWhatsapp: contactOptions.allowDirectWhatsapp,
+      allowDirectCall: rawContactOptions.allowDirectCall,
+      allowDirectWhatsapp: rawContactOptions.allowDirectWhatsapp,
       recoveryPhone: recovery.phone,
       recoveryEmail: recovery.email,
       status: nextStatus,
-      visibility,
-      showName: visibility.showName,
-      showPhone: visibility.showPhone,
-      showEmail: visibility.showEmail,
-      showCity: visibility.showCity,
-      showAddressDetail: visibility.showAddressDetail,
-      showPetName: visibility.showPetName,
-      showNote: visibility.showNote
+      visibility: rawVisibility
     });
 
     if (!updated) {
       return NextResponse.json(
-        { error: "Güncelleme yapılamadı." },
-        { status: 400 }
+        { error: "Güncelleme başarısız." },
+        { status: 500 }
       );
     }
 
@@ -271,14 +248,8 @@ export async function POST(request: Request, { params }: Params) {
 
     return NextResponse.json({
       success: true,
-      code: updated.code,
-      message: "Bilgiler başarıyla güncellendi.",
-      publicLink: `${origin}/p/${updated.code}`,
       managePath,
       manageLink: `${origin}${managePath}`,
-      status: updated.status === "inactive" ? "inactive" : "active",
-      warning:
-        "Bu size özel yönetim bağlantısıdır. Lütfen güvenli şekilde saklayın ve başkalarıyla paylaşmayın."
     });
   } catch (error) {
     console.error("MANAGE_POST_ERROR", error);
