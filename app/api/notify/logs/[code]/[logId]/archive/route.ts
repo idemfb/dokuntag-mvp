@@ -30,9 +30,9 @@ export async function POST(request: Request, { params }: Params) {
       );
     }
 
-    const result = toggleNotifyLogArchived({
-      tagCode: normalizedCode,
-      logId: normalizedLogId
+    const result = await toggleNotifyLogArchived({
+    tagCode: code,
+    logId
     });
 
     return NextResponse.json({
