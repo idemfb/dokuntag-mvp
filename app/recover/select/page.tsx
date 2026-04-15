@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "next/navigation";
 
 function getMainSiteUrl() {
   const value =
@@ -53,13 +52,15 @@ function EmptyState({
 }
 
 export default function RecoverSelectPage() {
-  const searchParams = useSearchParams();
+const [token, setToken] = useState("");
+const [code, setCode] = useState("");
 
-  const token = useMemo(() => searchParams.get("token")?.trim() || "", [searchParams]);
-  const code = useMemo(
-    () => (searchParams.get("code")?.trim().toUpperCase() || ""),
-    [searchParams]
-  );
+useEffect(() => {
+  const params = new URLSearchParams(window.location.search);
+
+  setToken(params.get("token") || "");
+  setCode(params.get("code")?.toUpperCase() || "");
+}, []);
 
   const mainSiteUrl = getMainSiteUrl();
 

@@ -1,7 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
 
 type BatchItem = {
   code: string;
@@ -64,14 +63,17 @@ function getConfig(size: Size) {
 }
 
 export default function BatchPrintPage() {
-  const searchParams = useSearchParams();
+  const [items, setItems] = useState<BatchItem[]>([]);
+const [size, setSize] = useState<Size>("3cm");
+const [shape, setShape] = useState<Shape>("round");
 
-  const items = useMemo(() => parseItems(searchParams.get("data")), [searchParams]);
-  const initialSize = normalizeSize(searchParams.get("size"));
-  const initialShape = normalizeShape(searchParams.get("shape"));
+useEffect(() => {
+  const params = new URLSearchParams(window.location.search);
 
-  const [shape, setShape] = useState<Shape>(initialShape);
-  const [size, setSize] = useState<Size>(initialSize);
+  setItems(parseItems(params.get("data")));
+  setSize(normalizeSize(params.get("size")));
+  setShape(normalizeShape(params.get("shape")));
+}, []);
 
   const config = getConfig(size);
 

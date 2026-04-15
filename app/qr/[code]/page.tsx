@@ -1,7 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { useParams, useSearchParams } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
 
 type SizeOption = "2.5cm" | "3cm" | "4cm";
 
@@ -19,12 +18,19 @@ function encode(value: string) {
 }
 
 export default function QrPage() {
-  const params = useParams<{ code: string }>();
-  const searchParams = useSearchParams();
-
-  const code = String(params?.code || "").trim().toUpperCase();
-  const token = searchParams.get("token")?.trim() || "";
+  const [code, setCode] = useState("");
+  const [token, setToken] = useState("");
   const [size, setSize] = useState<SizeOption>("3cm");
+
+  useEffect(() => {
+    const parts = window.location.pathname.split("/");
+    const codeFromUrl = parts[parts.length - 1];
+
+    const params = new URLSearchParams(window.location.search);
+
+    setCode(codeFromUrl?.toUpperCase() || "");
+    setToken(params.get("token") || "");
+  }, []);
 
   const baseUrl = getBaseUrl();
   const targetUrl = `${baseUrl}/t/${code}`;
@@ -44,10 +50,7 @@ export default function QrPage() {
   }, [baseUrl, code, size, token]);
 
   const printUrl = useMemo(() => {
-    const data = encode(
-      JSON.stringify([{ code }])
-    );
-
+    const data = encode(JSON.stringify([{ code }]));
     return `/admin/batch/print?data=${data}&size=${encode(size)}&shape=round`;
   }, [code, size]);
 
