@@ -1,9 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
-  consumeRecoverySessionToken,
-  recoverManageAccess
-} from "@/lib/tags";
-import {
   consumeRecoverySessionTokenAsync,
   recoverManageAccessAsync
 } from "@/lib/tags";
@@ -33,7 +29,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 🔥 KRİTİK: önce consume et (atomic kontrol)
     const consumed = await consumeRecoverySessionTokenAsync(token);
 
     if (!consumed) {
@@ -64,10 +59,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // consume başarılıysa artık session güvenli
-    const selectedItem = consumed.items.find(
-      (item) => item.code === code
-    );
+    const selectedItem = consumed.items.find((item) => item.code === code);
 
     if (!selectedItem) {
       return NextResponse.json(
