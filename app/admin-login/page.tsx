@@ -1,11 +1,11 @@
 "use client";
 
-export const dynamic = "force-dynamic";
-import { useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
-function getNextPath(searchParams: URLSearchParams) {
-  const next = searchParams.get("next")?.trim() || "/admin/batch";
+function getNextPath(search: string) {
+  const params = new URLSearchParams(search);
+  const next = params.get("next")?.trim() || "/admin/batch";
 
   if (!next.startsWith("/")) {
     return "/admin/batch";
@@ -20,11 +20,17 @@ function getNextPath(searchParams: URLSearchParams) {
 
 export default function AdminLoginPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
 
   const [key, setKey] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [nextPath, setNextPath] = useState("/admin/batch");
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setNextPath(getNextPath(window.location.search));
+    }
+  }, []);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -49,7 +55,7 @@ export default function AdminLoginPage() {
         throw new Error(data?.error || "Giriş başarısız.");
       }
 
-      router.replace(getNextPath(searchParams));
+      router.replace(nextPath);
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Bir hata oluştu.");
