@@ -29,7 +29,7 @@ export async function GET(request: Request, { params }: Params) {
       );
     }
 
-    const logs = readNotifyLog()
+    const logs = (await readNotifyLog())
       .filter((item) => item.tagCode === normalized && !item.deletedAt)
       .sort((a, b) => {
         const aPinned = a.pinnedAt ? 1 : 0;
@@ -45,7 +45,7 @@ export async function GET(request: Request, { params }: Params) {
 
     return NextResponse.json({
       items: logs,
-      unreadCount: getUnreadNotifyCount(normalized)
+      unreadCount: await getUnreadNotifyCount(normalized)
     });
   } catch (error) {
     console.error("NOTIFY_LOGS_GET_ERROR", error);

@@ -1059,5 +1059,23 @@
       "email"
     ],
     "message": "fgbndgbdgbd"
+  },
+  {
+    "id": "e2d93a85-e076-497e-a395-e852e914db6f",
+    "tagCode": "TEST01",
+    "senderFingerprint": "8d33579a3165b37647edf7acd87ad8f5fceeb38522e62d2948bf228c4c2d03b2",
+    "ip": "::1",
+    "createdAt": "2026-04-15T09:19:03.562Z",
+    "readAt": "",
+    "pinnedAt": "",
+    "archivedAt": "",
+    "deletedAt": "",
+    "senderName": "local",
+    "senderPhone": "05063509722",
+    "senderEmail": "adresesaglik@gmail.com",
+    "preferredContactMethods": [
+      "phone"
+    ],
+    "message": "local"
   }
 ]

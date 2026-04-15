@@ -30,7 +30,7 @@ export async function POST(request: Request, { params }: Params) {
       );
     }
 
-    const result = deleteNotifyLog({
+    const result = await deleteNotifyLog({
       tagCode: normalizedCode,
       logId: normalizedLogId
     });

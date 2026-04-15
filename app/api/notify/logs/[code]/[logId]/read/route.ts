@@ -30,7 +30,7 @@ export async function POST(request: Request, { params }: Params) {
       );
     }
 
-    const result = markSingleNotifyLogAsRead({
+    const result = await markSingleNotifyLogAsRead({
       tagCode: normalizedCode,
       logId: normalizedLogId
     });

@@ -30,7 +30,7 @@ export async function POST(request: Request, { params }: Params) {
       );
     }
 
-    const result = toggleNotifyLogPinned({
+    const result = await toggleNotifyLogPinned({
       tagCode: normalizedCode,
       logId: normalizedLogId
     });
