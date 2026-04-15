@@ -70,5 +70,21 @@
     "fingerprint": "10f34b1244566bb397b6ce86323723b3701c6698a1f2a21e8b4e39bd76d13e12",
     "ip": "::1",
     "createdAt": "2026-04-15T12:28:04.372Z"
+  },
+  {
+    "id": "d7bc824e-8cce-4b41-8e0f-3ed8653fd1fd",
+    "email": "i.dem@hotmail.com",
+    "entryType": "my",
+    "fingerprint": "10f34b1244566bb397b6ce86323723b3701c6698a1f2a21e8b4e39bd76d13e12",
+    "ip": "::1",
+    "createdAt": "2026-04-15T15:52:07.882Z"
+  },
+  {
+    "id": "d899429e-da34-49c9-b224-fe566f5e0783",
+    "email": "i.dem@hotmail.com",
+    "entryType": "my",
+    "fingerprint": "10f34b1244566bb397b6ce86323723b3701c6698a1f2a21e8b4e39bd76d13e12",
+    "ip": "::1",
+    "createdAt": "2026-04-15T15:56:34.534Z"
   }
 ]

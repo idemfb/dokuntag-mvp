@@ -83,9 +83,10 @@ export default async function RecoverVerifyPage({
   searchParams: Promise<{ token?: string }>;
 }) {
   const resolvedSearchParams = await searchParams;
-  const token = typeof resolvedSearchParams?.token === "string"
-    ? resolvedSearchParams.token.trim()
-    : "";
+  const token =
+    typeof resolvedSearchParams?.token === "string"
+      ? resolvedSearchParams.token.trim()
+      : "";
 
   const mainSiteUrl = getMainSiteUrl();
 
@@ -185,7 +186,8 @@ export default async function RecoverVerifyPage({
             </div>
 
             <div className="mt-4 rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-4 text-sm leading-6 text-neutral-700">
-              E-posta: <span className="font-medium text-neutral-900">{session.email}</span>
+              E-posta:{" "}
+              <span className="font-medium text-neutral-900">{session.email}</span>
             </div>
           </div>
         </section>

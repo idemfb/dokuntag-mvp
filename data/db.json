@@ -15,7 +15,7 @@
       "allowDirectWhatsapp": true,
       "status": "active",
       "petName": "ahmet",
-      "updatedAt": "2026-04-15T12:29:11.162Z",
+      "updatedAt": "2026-04-15T15:56:34.523Z",
       "ownerName": "idem",
       "recovery": {
         "phone": "05063509722",
@@ -55,6 +55,14 @@
       "contactOptions": {
         "allowDirectCall": true,
         "allowDirectWhatsapp": true
+      },
+      "recoverySession": {
+        "token": "e33aab97-d5e7-433f-92f7-90aa879f6c61",
+        "email": "i.dem@hotmail.com",
+        "entryType": "my",
+        "status": "pending",
+        "createdAt": "2026-04-15T15:56:34.523Z",
+        "expiresAt": "2026-04-15T16:16:34.523Z"
       }
     },
     {
@@ -148,7 +156,7 @@
       "addressDetail": "osmaniye mahallesi fabrikalar geçidi sokak no:9/a (Özel Zirve Sağlık Kabini)",
       "distinctiveFeature": "mavi halkalı",
       "petName": "kabin anahtarı",
-      "updatedAt": "2026-04-15T12:29:11.162Z",
+      "updatedAt": "2026-04-15T15:56:34.523Z",
       "recovery": {
         "phone": "05063509722",
         "email": "i.dem@hotmail.com"
@@ -184,11 +192,19 @@
       "showCity": false,
       "showAddressDetail": false,
       "showPetName": false,
-      "showNote": true
+      "showNote": true,
+      "recoverySession": {
+        "token": "e33aab97-d5e7-433f-92f7-90aa879f6c61",
+        "email": "i.dem@hotmail.com",
+        "entryType": "my",
+        "status": "pending",
+        "createdAt": "2026-04-15T15:56:34.523Z",
+        "expiresAt": "2026-04-15T16:16:34.523Z"
+      }
     },
     {
       "publicCode": "TEST02",
-      "manageToken": "7d8d8b87-0545-4f57-888b-ca27e34d5cc3",
+      "manageToken": "6eb000c1-0d39-42b6-b887-9d88e14aa6ac",
       "productType": "person",
       "name": "asel",
       "phone": "05063509722",
@@ -209,7 +225,7 @@
       "addressDetail": "avcılar",
       "distinctiveFeature": "gözlük",
       "petName": "asel",
-      "updatedAt": "2026-04-15T12:29:11.162Z",
+      "updatedAt": "2026-04-15T15:56:34.523Z",
       "recovery": {
         "phone": "05063509722",
         "email": "i.dem@hotmail.com"
@@ -245,7 +261,15 @@
       "showCity": true,
       "showAddressDetail": true,
       "showPetName": true,
-      "showNote": true
+      "showNote": true,
+      "recoverySession": {
+        "token": "e33aab97-d5e7-433f-92f7-90aa879f6c61",
+        "email": "i.dem@hotmail.com",
+        "entryType": "my",
+        "status": "pending",
+        "createdAt": "2026-04-15T15:56:34.523Z",
+        "expiresAt": "2026-04-15T16:16:34.523Z"
+      }
     },
     {
       "publicCode": "7FUFPC",
@@ -4214,7 +4238,7 @@
       "allowDirectWhatsapp": false,
       "status": "active",
       "createdAt": "2026-04-14T10:53:12.001Z",
-      "updatedAt": "2026-04-15T12:29:11.163Z",
+      "updatedAt": "2026-04-15T15:56:34.523Z",
       "recovery": {
         "phone": "05063509722",
         "email": "i.dem@hotmail.com"
@@ -4250,7 +4274,15 @@
       "showCity": true,
       "showAddressDetail": false,
       "showPetName": true,
-      "showNote": true
+      "showNote": true,
+      "recoverySession": {
+        "token": "e33aab97-d5e7-433f-92f7-90aa879f6c61",
+        "email": "i.dem@hotmail.com",
+        "entryType": "my",
+        "status": "pending",
+        "createdAt": "2026-04-15T15:56:34.523Z",
+        "expiresAt": "2026-04-15T16:16:34.523Z"
+      }
     },
     {
       "publicCode": "H3NM8R",
@@ -18723,7 +18755,7 @@
       "allowDirectWhatsapp": true,
       "status": "active",
       "createdAt": "2026-04-14T14:05:02.833Z",
-      "updatedAt": "2026-04-15T12:29:11.163Z",
+      "updatedAt": "2026-04-15T15:56:34.523Z",
       "recovery": {
         "phone": "05063509722",
         "email": "i.dem@hotmail.com"
@@ -18759,7 +18791,15 @@
       "showCity": false,
       "showAddressDetail": false,
       "showPetName": true,
-      "showNote": true
+      "showNote": true,
+      "recoverySession": {
+        "token": "e33aab97-d5e7-433f-92f7-90aa879f6c61",
+        "email": "i.dem@hotmail.com",
+        "entryType": "my",
+        "status": "pending",
+        "createdAt": "2026-04-15T15:56:34.523Z",
+        "expiresAt": "2026-04-15T16:16:34.523Z"
+      }
     },
     {
       "publicCode": "HC7S2E",
