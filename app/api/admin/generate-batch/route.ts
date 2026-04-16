@@ -75,7 +75,7 @@ export async function POST(request: NextRequest) {
     for (let i = 0; i < count; i += 1) {
       const code = generateUniqueCode();
 
-      upsertTag({
+      await upsertTag({
         code,
         productType: "item",
         tagName: code,

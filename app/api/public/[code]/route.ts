@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { findTagByCode } from "@/lib/tags";
+import { findTagByCodeAsync } from "@/lib/tags";
 
 export async function GET(
   req: NextRequest,
@@ -16,7 +16,8 @@ export async function GET(
     }
 
     const normalizedCode = String(code).trim().toUpperCase();
-    const tag = findTagByCode(normalizedCode);
+
+    const tag = await findTagByCodeAsync(normalizedCode);
 
     if (!tag) {
       return NextResponse.json(
