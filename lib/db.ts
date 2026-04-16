@@ -15,9 +15,7 @@ function isRedisEnabled() {
 }
 
 function getRedis() {
-  if (!isRedisEnabled()) {
-    return null;
-  }
+  if (!isRedisEnabled()) return null;
 
   if (!redisClient) {
     redisClient = new Redis({
@@ -48,11 +46,17 @@ export async function readDBAsync() {
   if (redis) {
     const data = await redis.get<any>(REDIS_DB_KEY);
 
-    if (data && typeof data === "object") {
-      return data;
+    // 🔥 KRİTİK: Redis boşsa → local db.json'dan yükle
+    if (!data || !data.products || data.products.length === 0) {
+      const local = readDB();
+
+      if (local.products?.length) {
+        await redis.set(REDIS_DB_KEY, local);
+        return local;
+      }
     }
 
-    return { products: [] };
+    return data || { products: [] };
   }
 
   return readDB();
