@@ -163,7 +163,7 @@ export async function PUT(req: NextRequest, context: RouteContext) {
     const ownerName = normalizeString(body.ownerName);
     const phone = normalizePhone(body.phone);
     const city = normalizeString(body.city);
-    const addressDetail = normalizeString(body.addressDetail);
+    const addressDetail = "";
     const distinctiveFeature = normalizeString(body.distinctiveFeature);
     const note = normalizeString(body.note);
 
@@ -243,7 +243,7 @@ export async function PUT(req: NextRequest, context: RouteContext) {
         showPhone: Boolean(body.showPhone && allowDirectCall && phone),
         showEmail: false,
         showCity: Boolean(body.showCity && city),
-        showAddressDetail: Boolean(body.showAddressDetail && addressDetail),
+        showAddressDetail: false,
         showPetName: Boolean(body.showPetName ?? true),
         showNote: Boolean(body.showNote && note)
       },

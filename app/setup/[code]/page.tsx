@@ -47,6 +47,18 @@ type ContactInsightsResponse = {
   }>;
 };
 
+
+const TURKIYE_CITIES = [
+  "Adana", "Adıyaman", "Afyonkarahisar", "Ağrı", "Aksaray", "Amasya", "Ankara", "Antalya", "Ardahan", "Artvin",
+  "Aydın", "Balıkesir", "Bartın", "Batman", "Bayburt", "Bilecik", "Bingöl", "Bitlis", "Bolu", "Burdur",
+  "Bursa", "Çanakkale", "Çankırı", "Çorum", "Denizli", "Diyarbakır", "Düzce", "Edirne", "Elazığ", "Erzincan",
+  "Erzurum", "Eskişehir", "Gaziantep", "Giresun", "Gümüşhane", "Hakkâri", "Hatay", "Iğdır", "Isparta", "İstanbul",
+  "İzmir", "Kahramanmaraş", "Karabük", "Karaman", "Kars", "Kastamonu", "Kayseri", "Kırıkkale", "Kırklareli", "Kırşehir",
+  "Kilis", "Kocaeli", "Konya", "Kütahya", "Malatya", "Manisa", "Mardin", "Mersin", "Muğla", "Muş",
+  "Nevşehir", "Niğde", "Ordu", "Osmaniye", "Rize", "Sakarya", "Samsun", "Siirt", "Sinop", "Sivas",
+  "Şanlıurfa", "Şırnak", "Tekirdağ", "Tokat", "Trabzon", "Tunceli", "Uşak", "Van", "Yalova", "Yozgat", "Zonguldak"
+] as const;
+
 const ALERT_OPTIONS_BY_TYPE: Record<ProductType, string[]> = {
   pet: [
     "Acil bana ulaşın",
@@ -423,7 +435,7 @@ export default function SetupCodePage({ params }: Props) {
           ownerName: data.tag?.profile?.ownerName ?? "",
           phone: data.tag?.profile?.phone ?? "",
           city: data.tag?.profile?.city ?? "",
-          addressDetail: data.tag?.profile?.addressDetail ?? "",
+          addressDetail: "",
           distinctiveFeature: data.tag?.profile?.distinctiveFeature ?? "",
           note: data.tag?.profile?.note ?? "",
           alerts: Array.isArray(data.tag?.alerts) ? data.tag.alerts : [],
@@ -432,7 +444,7 @@ export default function SetupCodePage({ params }: Props) {
           showName: Boolean(data.tag?.visibility?.showName),
           showPhone: Boolean(data.tag?.visibility?.showPhone),
           showCity: Boolean(data.tag?.visibility?.showCity),
-          showAddressDetail: Boolean(data.tag?.visibility?.showAddressDetail),
+          showAddressDetail: false,
           showPetName: Boolean(data.tag?.visibility?.showPetName),
           showNote: Boolean(data.tag?.visibility?.showNote),
           recoveryPhone,
@@ -460,10 +472,6 @@ export default function SetupCodePage({ params }: Props) {
 
   const hasPhone = useMemo(() => Boolean(form.phone.trim()), [form.phone]);
   const hasCity = useMemo(() => Boolean(form.city.trim()), [form.city]);
-  const hasAddressDetail = useMemo(
-    () => Boolean(form.addressDetail.trim()),
-    [form.addressDetail]
-  );
   const hasNote = useMemo(() => Boolean(form.note.trim()), [form.note]);
   const hasRecoveryPhone = useMemo(
     () => Boolean(form.recoveryPhone.trim()),
@@ -513,10 +521,10 @@ export default function SetupCodePage({ params }: Props) {
   }, [hasCity, form.showCity]);
 
   useEffect(() => {
-    if (!hasAddressDetail && form.showAddressDetail) {
+    if (form.showAddressDetail) {
       updateField("showAddressDetail", false);
     }
-  }, [hasAddressDetail, form.showAddressDetail]);
+  }, [form.showAddressDetail]);
 
   useEffect(() => {
     if (!hasNote && form.showNote) {
@@ -1095,42 +1103,40 @@ export default function SetupCodePage({ params }: Props) {
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <Field label="Şehir" optional>
-                  <input
+                  <select
                     value={form.city}
                     onChange={(e) => updateField("city", e.target.value)}
                     className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
-                    placeholder="İsteğe bağlı"
-                  />
+                  >
+                    <option value="">Seçiniz</option>
+                    {TURKIYE_CITIES.map((item) => (
+                      <option key={item} value={item}>
+                        {item}
+                      </option>
+                    ))}
+                  </select>
                   <div className="mt-3 flex flex-wrap gap-2">
                     <InlineToggle
                       checked={form.showCity}
-                      disabled={!hasCity}
+                      disabled={!form.city.trim()}
                       label="Şehir görünsün"
                       onChange={(value) => updateField("showCity", value)}
                     />
                   </div>
+                  {form.productType === "key" ? (
+                    <p className="mt-2 text-xs leading-5 text-amber-700">
+                      Anahtar ürünlerinde şehir bilgisi bile güvenlik riski oluşturabilir. Gerekmedikçe kapalı bırakın.
+                    </p>
+                  ) : null}
                 </Field>
 
-                <Field label="Adres detayı" optional>
-                  <input
-                    value={form.addressDetail}
-                    onChange={(e) =>
-                      updateField("addressDetail", e.target.value)
-                    }
-                    className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
-                    placeholder="İsteğe bağlı"
-                  />
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    <InlineToggle
-                      checked={form.showAddressDetail}
-                      disabled={!hasAddressDetail}
-                      label="Adres detayı görünsün"
-                      onChange={(value) =>
-                        updateField("showAddressDetail", value)
-                      }
-                    />
-                  </div>
-                </Field>
+                <div className="rounded-[1.5rem] border border-neutral-200 bg-neutral-50 px-4 py-4">
+                  <p className="text-sm font-medium text-neutral-900">Adres bilgisi size özeldir</p>
+                  <p className="mt-2 text-sm leading-6 text-neutral-600">
+                    Güvenlik nedeniyle adres detayı Dokuntag içinde kimseyle paylaşılmaz ve public profilde gösterilmez.
+                    Adres belirtmek isterseniz bunu not alanına manuel olarak yazmanız gerekir.
+                  </p>
+                </div>
               </div>
             </div>
           </SectionCard>

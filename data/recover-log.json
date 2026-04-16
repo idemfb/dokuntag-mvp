@@ -94,5 +94,45 @@
     "fingerprint": "10f34b1244566bb397b6ce86323723b3701c6698a1f2a21e8b4e39bd76d13e12",
     "ip": "::1",
     "createdAt": "2026-04-16T06:17:24.351Z"
+  },
+  {
+    "id": "64706d6b-c3b0-4d08-86a4-3cb40e38944d",
+    "email": "i.dem@hotmail.com",
+    "entryType": "my",
+    "fingerprint": "10f34b1244566bb397b6ce86323723b3701c6698a1f2a21e8b4e39bd76d13e12",
+    "ip": "::1",
+    "createdAt": "2026-04-16T08:55:38.693Z"
+  },
+  {
+    "id": "4b90e1aa-7dfe-4329-95a4-2445de21e9df",
+    "email": "i.dem@hotmail.com",
+    "entryType": "my",
+    "fingerprint": "10f34b1244566bb397b6ce86323723b3701c6698a1f2a21e8b4e39bd76d13e12",
+    "ip": "::1",
+    "createdAt": "2026-04-16T09:21:42.680Z"
+  },
+  {
+    "id": "a77a8873-b4e8-481a-ad0e-4863a3432968",
+    "email": "adresesaglik@gmail.com",
+    "entryType": "my",
+    "fingerprint": "40ce786ce64250b03e8ebdf55d03a1e1ab07e507c43879487c007932bad40d25",
+    "ip": "::1",
+    "createdAt": "2026-04-16T09:51:09.671Z"
+  },
+  {
+    "id": "aa5053b2-9881-4c42-9ad8-ac783680e213",
+    "email": "i.dem@hotmail.com",
+    "entryType": "my",
+    "fingerprint": "10f34b1244566bb397b6ce86323723b3701c6698a1f2a21e8b4e39bd76d13e12",
+    "ip": "::1",
+    "createdAt": "2026-04-16T09:52:28.837Z"
+  },
+  {
+    "id": "3511dac0-c8c2-4b81-acd7-fc221ba649d0",
+    "email": "adresesaglik@gmail.com",
+    "entryType": "recover",
+    "fingerprint": "40ce786ce64250b03e8ebdf55d03a1e1ab07e507c43879487c007932bad40d25",
+    "ip": "::1",
+    "createdAt": "2026-04-16T09:55:11.256Z"
   }
 ]

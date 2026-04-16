@@ -2,6 +2,90 @@
 
 import { use, useEffect, useState } from "react";
 
+const TURKIYE_CITIES = [
+  "Adana",
+  "Adıyaman",
+  "Afyonkarahisar",
+  "Ağrı",
+  "Aksaray",
+  "Amasya",
+  "Ankara",
+  "Antalya",
+  "Ardahan",
+  "Artvin",
+  "Aydın",
+  "Balıkesir",
+  "Bartın",
+  "Batman",
+  "Bayburt",
+  "Bilecik",
+  "Bingöl",
+  "Bitlis",
+  "Bolu",
+  "Burdur",
+  "Bursa",
+  "Çanakkale",
+  "Çankırı",
+  "Çorum",
+  "Denizli",
+  "Diyarbakır",
+  "Düzce",
+  "Edirne",
+  "Elazığ",
+  "Erzincan",
+  "Erzurum",
+  "Eskişehir",
+  "Gaziantep",
+  "Giresun",
+  "Gümüşhane",
+  "Hakkâri",
+  "Hatay",
+  "Iğdır",
+  "Isparta",
+  "İstanbul",
+  "İzmir",
+  "Kahramanmaraş",
+  "Karabük",
+  "Karaman",
+  "Kars",
+  "Kastamonu",
+  "Kayseri",
+  "Kırıkkale",
+  "Kırklareli",
+  "Kırşehir",
+  "Kilis",
+  "Kocaeli",
+  "Konya",
+  "Kütahya",
+  "Malatya",
+  "Manisa",
+  "Mardin",
+  "Mersin",
+  "Muğla",
+  "Muş",
+  "Nevşehir",
+  "Niğde",
+  "Ordu",
+  "Osmaniye",
+  "Rize",
+  "Sakarya",
+  "Samsun",
+  "Siirt",
+  "Sinop",
+  "Sivas",
+  "Şanlıurfa",
+  "Şırnak",
+  "Tekirdağ",
+  "Tokat",
+  "Trabzon",
+  "Tunceli",
+  "Uşak",
+  "Van",
+  "Yalova",
+  "Yozgat",
+  "Zonguldak"
+];
+
 type ProductType = "pet" | "item" | "key" | "person";
 type TransferStatus = "pending" | "used" | "expired" | "cancelled";
 
@@ -66,7 +150,7 @@ export default function TransferPage({
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [city, setCity] = useState("");
-  const [addressDetail, setAddressDetail] = useState("");
+  const [addressDetail] = useState("");
   const [distinctiveFeature, setDistinctiveFeature] = useState("");
   const [petName, setPetName] = useState("");
   const [note, setNote] = useState("");
@@ -77,7 +161,7 @@ export default function TransferPage({
   const [showPhone, setShowPhone] = useState(false);
   const [showEmail, setShowEmail] = useState(false);
   const [showCity, setShowCity] = useState(false);
-  const [showAddressDetail, setShowAddressDetail] = useState(false);
+  const [showAddressDetail] = useState(false);
   const [showPetName, setShowPetName] = useState(true);
   const [showNote, setShowNote] = useState(false);
 
@@ -144,7 +228,6 @@ export default function TransferPage({
           phone,
           email,
           city,
-          addressDetail,
           distinctiveFeature,
           petName,
           note,
@@ -153,7 +236,7 @@ export default function TransferPage({
             showPhone,
             showEmail,
             showCity,
-            showAddressDetail,
+            showAddressDetail: false,
             showPetName,
             showNote
           },
@@ -343,20 +426,23 @@ export default function TransferPage({
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
                 <label className="mb-2 block text-sm font-medium">Şehir</label>
-                <input
+                <select
                   value={city}
                   onChange={(e) => setCity(e.target.value)}
                   className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none"
-                />
+                >
+                  <option value="">Şehir seçin</option>
+                  {TURKIYE_CITIES.map((item) => (
+                    <option key={item} value={item}>
+                      {item}
+                    </option>
+                  ))}
+                </select>
               </div>
 
-              <div>
-                <label className="mb-2 block text-sm font-medium">Adres detayı</label>
-                <input
-                  value={addressDetail}
-                  onChange={(e) => setAddressDetail(e.target.value)}
-                  className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none"
-                />
+              <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm leading-6 text-amber-900">
+                Adres bilgisi güvenlik nedeniyle sistemde paylaşılmaz ve yalnızca size özeldir.
+                Adres belirtmek isterseniz bunu not alanına manuel olarak yazmanız gerekir.
               </div>
             </div>
 
@@ -396,10 +482,6 @@ export default function TransferPage({
                 <label className="flex items-center gap-2 text-sm">
                   <input type="checkbox" checked={showCity} onChange={(e) => setShowCity(e.target.checked)} />
                   Şehir görünsün
-                </label>
-                <label className="flex items-center gap-2 text-sm">
-                  <input type="checkbox" checked={showAddressDetail} onChange={(e) => setShowAddressDetail(e.target.checked)} />
-                  Adres detayı görünsün
                 </label>
                 <label className="flex items-center gap-2 text-sm">
                   <input type="checkbox" checked={showPetName} onChange={(e) => setShowPetName(e.target.checked)} />

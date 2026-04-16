@@ -37,6 +37,18 @@ const ALERT_OPTIONS_BY_TYPE: Record<ProductType, string[]> = {
   ]
 };
 
+
+const TURKIYE_CITIES = [
+  "Adana", "Adıyaman", "Afyonkarahisar", "Ağrı", "Aksaray", "Amasya", "Ankara", "Antalya", "Ardahan", "Artvin",
+  "Aydın", "Balıkesir", "Bartın", "Batman", "Bayburt", "Bilecik", "Bingöl", "Bitlis", "Bolu", "Burdur",
+  "Bursa", "Çanakkale", "Çankırı", "Çorum", "Denizli", "Diyarbakır", "Düzce", "Edirne", "Elazığ", "Erzincan",
+  "Erzurum", "Eskişehir", "Gaziantep", "Giresun", "Gümüşhane", "Hakkâri", "Hatay", "Iğdır", "Isparta", "İstanbul",
+  "İzmir", "Kahramanmaraş", "Karabük", "Karaman", "Kars", "Kastamonu", "Kayseri", "Kırıkkale", "Kırklareli", "Kırşehir",
+  "Kilis", "Kocaeli", "Konya", "Kütahya", "Malatya", "Manisa", "Mardin", "Mersin", "Muğla", "Muş",
+  "Nevşehir", "Niğde", "Ordu", "Osmaniye", "Rize", "Sakarya", "Samsun", "Siirt", "Sinop", "Sivas",
+  "Şanlıurfa", "Şırnak", "Tekirdağ", "Tokat", "Trabzon", "Tunceli", "Uşak", "Van", "Yalova", "Yozgat", "Zonguldak"
+] as const;
+
 const DISTINCTIVE_FEATURE_PLACEHOLDERS: Record<ProductType, string> = {
   pet: "Örn: sağ kulağında beyaz leke, mavi tasma",
   item: "Örn: siyah sırt çantası, köşesi hafif çizik",
@@ -183,6 +195,7 @@ function buildFormSnapshot(input: {
   allowDirectWhatsapp: boolean;
   recoveryPhone: string;
   recoveryEmail: string;
+  useRecoveryEmailAsContact: boolean;
 }) {
   return JSON.stringify({
     productType: input.productType,
@@ -207,7 +220,8 @@ function buildFormSnapshot(input: {
     allowDirectCall: input.allowDirectCall,
     allowDirectWhatsapp: input.allowDirectWhatsapp,
     recoveryPhone: input.recoveryPhone.trim(),
-    recoveryEmail: input.recoveryEmail.trim()
+    recoveryEmail: input.recoveryEmail.trim(),
+    useRecoveryEmailAsContact: input.useRecoveryEmailAsContact
   });
 }
 
@@ -465,8 +479,14 @@ export default function ManagePage({
   const [allowDirectWhatsapp, setAllowDirectWhatsapp] = useState(false);
   const [recoveryPhone, setRecoveryPhone] = useState("");
   const [recoveryEmail, setRecoveryEmail] = useState("");
+  const [useRecoveryEmailAsContact, setUseRecoveryEmailAsContact] = useState(false);
   const [copiedManage, setCopiedManage] = useState(false);
   const [copiedPublic, setCopiedPublic] = useState(false);
+  const [transferLoading, setTransferLoading] = useState(false);
+  const [transferLink, setTransferLink] = useState("");
+  const [transferError, setTransferError] = useState("");
+  const [transferSuccess, setTransferSuccess] = useState("");
+  const [copiedTransfer, setCopiedTransfer] = useState(false);
 
   const [logs, setLogs] = useState<NotifyLogItem[]>([]);
   const [logsLoading, setLogsLoading] = useState(false);
@@ -603,6 +623,10 @@ export default function ManagePage({
         );
         const nextRecoveryPhone = manageData.recovery?.phone || "";
         const nextRecoveryEmail = manageData.recovery?.email || "";
+        const nextUseRecoveryEmailAsContact =
+          Boolean(nextRecoveryEmail) &&
+          nextEmail.trim().toLocaleLowerCase("tr-TR") ===
+            nextRecoveryEmail.trim().toLocaleLowerCase("tr-TR");
 
         setProductType(nextProductType);
         setStatus(nextStatus);
@@ -626,6 +650,7 @@ export default function ManagePage({
         setAllowDirectWhatsapp(nextAllowDirectWhatsapp);
         setRecoveryPhone(nextRecoveryPhone);
         setRecoveryEmail(nextRecoveryEmail);
+        setUseRecoveryEmailAsContact(nextUseRecoveryEmailAsContact);
         setManageLink(manageData.manageLink || "");
         setConfirmDeactivate(false);
 
@@ -653,7 +678,8 @@ export default function ManagePage({
             allowDirectCall: nextAllowDirectCall,
             allowDirectWhatsapp: nextAllowDirectWhatsapp,
             recoveryPhone: nextRecoveryPhone,
-            recoveryEmail: nextRecoveryEmail
+            recoveryEmail: nextRecoveryEmail,
+            useRecoveryEmailAsContact: nextUseRecoveryEmailAsContact
           })
         );
 
@@ -679,6 +705,11 @@ export default function ManagePage({
       setAllowDirectWhatsapp(false);
     }
   }, [allowDirectCall, allowDirectWhatsapp]);
+  useEffect(() => {
+    if (!useRecoveryEmailAsContact) return;
+    setEmail(recoveryEmail.trim());
+  }, [useRecoveryEmailAsContact, recoveryEmail]);
+
 
   useEffect(() => {
     if (!city.trim() && showCity) {
@@ -691,6 +722,12 @@ export default function ManagePage({
       setShowAddressDetail(false);
     }
   }, [addressDetail, showAddressDetail]);
+
+  useEffect(() => {
+    if (showAddressDetail) {
+      setShowAddressDetail(false);
+    }
+  }, [showAddressDetail]);
 
   useEffect(() => {
     if (!note.trim() && showNote) {
@@ -758,7 +795,8 @@ export default function ManagePage({
       allowDirectCall,
       allowDirectWhatsapp,
       recoveryPhone,
-      recoveryEmail
+      recoveryEmail,
+      useRecoveryEmailAsContact
     });
   }, [
     productType,
@@ -782,7 +820,8 @@ export default function ManagePage({
     allowDirectCall,
     allowDirectWhatsapp,
     recoveryPhone,
-    recoveryEmail
+    recoveryEmail,
+    useRecoveryEmailAsContact
   ]);
 
   const isDirty = Boolean(initialSnapshot) && currentSnapshot !== initialSnapshot;
@@ -900,6 +939,89 @@ export default function ManagePage({
     await navigator.clipboard.writeText(shareLink);
     setCopiedPublic(true);
     setTimeout(() => setCopiedPublic(false), 1500);
+  }
+
+  async function copyTransferLink() {
+    if (!transferLink) return;
+    await navigator.clipboard.writeText(transferLink);
+    setCopiedTransfer(true);
+    setTimeout(() => setCopiedTransfer(false), 1500);
+  }
+
+  async function handleCreateTransfer() {
+    if (!code || !token || transferLoading || isDirty) return;
+
+    try {
+      setTransferLoading(true);
+      setTransferError("");
+      setTransferSuccess("");
+
+      const res = await fetch(
+        `/api/transfer/create/${code}?token=${encodeURIComponent(token)}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          }
+        }
+      );
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data?.error || "Devir linki oluşturulamadı.");
+      }
+
+      const nextTransferLink =
+        typeof data?.transferLink === "string" ? data.transferLink : "";
+
+      setTransferLink(nextTransferLink);
+      setTransferSuccess(
+        data?.message ||
+          "Devir linki oluşturuldu. Ürün güvenlik için pasif duruma alındı."
+      );
+      setStatus("inactive");
+      setConfirmDeactivate(false);
+
+      setInitialSnapshot(
+        buildFormSnapshot({
+          productType,
+          status: "inactive",
+          name,
+          ownerName,
+          phone,
+          email: useRecoveryEmailAsContact ? recoveryEmail : email,
+          city,
+          addressDetail,
+          distinctiveFeature,
+          petName,
+          note,
+          alerts,
+          showName,
+          showPhone,
+          showEmail: false,
+          showCity,
+          showAddressDetail,
+          showPetName,
+          showNote,
+          allowDirectCall,
+          allowDirectWhatsapp,
+          recoveryPhone,
+          recoveryEmail,
+          useRecoveryEmailAsContact
+        })
+      );
+
+      if (typeof window !== "undefined") {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+    } catch (err) {
+      setTransferError(
+        err instanceof Error ? err.message : "Devir linki oluşturulamadı."
+      );
+    } finally {
+      setTransferLoading(false);
+    }
   }
 
   async function markAllAsRead() {
@@ -1021,7 +1143,7 @@ export default function ManagePage({
             name,
             ownerName,
             phone,
-            email,
+            email: useRecoveryEmailAsContact ? recoveryEmail : email,
             city,
             addressDetail,
             distinctiveFeature,
@@ -1073,7 +1195,7 @@ export default function ManagePage({
         name,
         ownerName,
         phone,
-        email,
+        email: useRecoveryEmailAsContact ? recoveryEmail : email,
         city,
         addressDetail,
         distinctiveFeature,
@@ -1090,7 +1212,8 @@ export default function ManagePage({
         allowDirectCall,
         allowDirectWhatsapp,
         recoveryPhone,
-        recoveryEmail
+        recoveryEmail,
+        useRecoveryEmailAsContact
       });
 
       setInitialSnapshot(nextSnapshot);
@@ -1126,7 +1249,7 @@ export default function ManagePage({
             name,
             ownerName,
             phone,
-            email,
+            email: useRecoveryEmailAsContact ? recoveryEmail : email,
             city,
             addressDetail,
             distinctiveFeature,
@@ -1201,7 +1324,8 @@ export default function ManagePage({
           allowDirectCall,
           allowDirectWhatsapp,
           recoveryPhone,
-          recoveryEmail
+          recoveryEmail,
+          useRecoveryEmailAsContact
         })
       );
 
@@ -1605,20 +1729,47 @@ export default function ManagePage({
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
+                    disabled={useRecoveryEmailAsContact}
+                    className={`w-full rounded-2xl border px-4 py-3 text-sm outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200 ${
+                      useRecoveryEmailAsContact
+                        ? "cursor-not-allowed border-neutral-200 bg-neutral-100 text-neutral-500"
+                        : "border-neutral-300 bg-white"
+                    }`}
                     placeholder="ornek@mail.com"
                   />
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <InlineToggle
+                      checked={useRecoveryEmailAsContact}
+                      disabled={!recoveryEmail.trim()}
+                      label="Kurtarma e-postasını iletişim maili olarak kullan"
+                      onChange={(checked) => {
+                        setUseRecoveryEmailAsContact(checked);
+                        if (checked) {
+                          setEmail(recoveryEmail.trim());
+                        }
+                      }}
+                    />
+                  </div>
+                  <p className="mt-2 text-xs text-neutral-500">
+                    Public profilde e-posta görünmez. Bu alan mesaj bildirimleri için kullanılır.
+                  </p>
                 </Field>
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <Field label="Şehir" optional>
-                  <input
+                  <select
                     value={city}
                     onChange={(e) => setCity(e.target.value)}
                     className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
-                    placeholder="İsteğe bağlı"
-                  />
+                  >
+                    <option value="">Seçiniz</option>
+                    {TURKIYE_CITIES.map((item) => (
+                      <option key={item} value={item}>
+                        {item}
+                      </option>
+                    ))}
+                  </select>
                   <div className="mt-3 flex flex-wrap gap-2">
                     <InlineToggle
                       checked={showCity}
@@ -1627,24 +1778,23 @@ export default function ManagePage({
                       onChange={setShowCity}
                     />
                   </div>
+                  {productType === "key" ? (
+                    <p className="mt-2 text-xs leading-5 text-amber-700">
+                      Anahtar ürünlerinde konum paylaşımı güvenlik riski oluşturabilir. Gerekmedikçe şehir bilgisini kapalı tutun.
+                    </p>
+                  ) : null}
                 </Field>
 
-                <Field label="Adres detayı" optional>
-                  <input
-                    value={addressDetail}
-                    onChange={(e) => setAddressDetail(e.target.value)}
-                    className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
-                    placeholder="İsteğe bağlı"
-                  />
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    <InlineToggle
-                      checked={showAddressDetail}
-                      disabled={!addressDetail.trim()}
-                      label="Adres detayı görünsün"
-                      onChange={setShowAddressDetail}
-                    />
-                  </div>
-                </Field>
+                <div className="rounded-[1.5rem] border border-neutral-200 bg-neutral-50 px-4 py-4">
+                  <p className="text-sm font-medium text-neutral-900">Adres bilgisi gizli tutulur</p>
+                  <p className="mt-2 text-sm leading-6 text-neutral-600">
+                    Adres detayı güvenlik nedeniyle Dokuntag içinde paylaşılmaz ve public profilde gösterilmez.
+                    Adres belirtmek isterseniz bunu not alanına manuel olarak sizin yazmanız gerekir.
+                  </p>
+                  <p className="mt-2 text-xs leading-5 text-neutral-500">
+                    Mevcut eski adres kayıtları sistemde saklı kalabilir ancak yeni ziyaretçilere gösterilmez.
+                  </p>
+                </div>
               </div>
             </div>
           </SectionCard>
@@ -1700,7 +1850,71 @@ export default function ManagePage({
                     className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
                     placeholder="ornek@mail.com"
                   />
+                  <p className="mt-2 text-xs text-neutral-500">
+                    İsterseniz bunu tek dokunuşla iletişim bildirimi için de kullanabilirsiniz.
+                  </p>
                 </Field>
+              </div>
+
+              <div className="rounded-[1.5rem] border border-neutral-200 bg-neutral-50 px-4 py-4">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-neutral-900">
+                      Ürünü başkasına devret
+                    </p>
+                    <p className="mt-1 text-sm leading-6 text-neutral-600">
+                      Devir linki oluşturduğunuzda ürün güvenlik için pasif duruma alınır. Yeni sahip linki kullanınca size özel yönetim erişimi kapanır.
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => void handleCreateTransfer()}
+                    disabled={transferLoading || isDirty}
+                    className="rounded-2xl bg-neutral-900 px-4 py-3 text-sm font-medium text-white transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {transferLoading ? "Oluşturuluyor..." : "Devir linki oluştur"}
+                  </button>
+                </div>
+
+                {isDirty ? (
+                  <div className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                    Devir oluşturmadan önce mevcut değişiklikleri kaydedin.
+                  </div>
+                ) : null}
+
+                {transferError ? (
+                  <div className="mt-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                    {transferError}
+                  </div>
+                ) : null}
+
+                {transferSuccess ? (
+                  <div className="mt-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+                    {transferSuccess}
+                  </div>
+                ) : null}
+
+                {transferLink ? (
+                  <div className="mt-3 rounded-2xl border border-neutral-200 bg-white p-4">
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">
+                      Devir bağlantısı
+                    </p>
+                    <p className="mt-2 break-all text-sm leading-6 text-neutral-800">
+                      {transferLink}
+                    </p>
+
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={() => void copyTransferLink()}
+                        className="rounded-2xl border border-neutral-300 bg-white px-4 py-2 text-sm font-medium transition hover:border-neutral-400 hover:bg-neutral-50"
+                      >
+                        {copiedTransfer ? "Devir linki kopyalandı" : "Devir linkini kopyala"}
+                      </button>
+                    </div>
+                  </div>
+                ) : null}
               </div>
 
               <div className="rounded-[1.5rem] border border-amber-200 bg-amber-50 px-4 py-4">

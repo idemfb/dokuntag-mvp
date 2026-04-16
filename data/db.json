@@ -2,21 +2,19 @@
   "products": [
     {
       "publicCode": "TEST01",
-      "manageToken": "2202f841-5e23-4dc3-90bc-4a824e98c14b",
-      "productType": "person",
-      "name": "telefon",
+      "manageToken": "d61f6d94-c9a1-4528-b562-b574d1daec6a",
+      "productType": "item",
+      "name": "aselin çantası",
       "phone": "05063509722",
       "email": "i.dem@hotmail.com",
-      "note": "bana ulaştır",
-      "alerts": [
-        "Ödül verilecektir"
-      ],
+      "note": "",
+      "alerts": [],
       "allowDirectCall": true,
       "allowDirectWhatsapp": true,
       "status": "active",
-      "petName": "ahmet",
-      "updatedAt": "2026-04-16T06:38:12.667Z",
-      "ownerName": "idem",
+      "petName": "asel",
+      "updatedAt": "2026-04-16T09:54:18.721Z",
+      "ownerName": ",dem",
       "recovery": {
         "phone": "05063509722",
         "email": "i.dem@hotmail.com"
@@ -24,33 +22,33 @@
       "visibility": {
         "showName": true,
         "showPhone": true,
-        "showEmail": false,
+        "showEmail": true,
         "showCity": true,
-        "showAddressDetail": true,
+        "showAddressDetail": false,
         "showPetName": true,
         "showNote": true
       },
       "showName": true,
       "showPhone": true,
-      "showEmail": false,
+      "showEmail": true,
       "showPetName": true,
       "showNote": true,
-      "city": "İstanbul",
-      "addressDetail": "Tahtakale Mahallesi",
+      "city": "istanbul",
+      "addressDetail": "",
       "showCity": true,
-      "showAddressDetail": true,
-      "distinctiveFeature": "mavi tel",
+      "showAddressDetail": false,
+      "distinctiveFeature": "",
       "profile": {
-        "name": "telefon",
-        "ownerName": "idem",
+        "name": "aselin çantası",
+        "ownerName": ",dem",
         "phone": "05063509722",
         "email": "i.dem@hotmail.com",
-        "city": "İstanbul",
-        "addressDetail": "Tahtakale Mahallesi",
-        "distinctiveFeature": "mavi tel",
-        "petName": "ahmet",
-        "note": "bana ulaştır",
-        "tagName": "telefon"
+        "city": "istanbul",
+        "addressDetail": "",
+        "distinctiveFeature": "",
+        "petName": "asel",
+        "note": "",
+        "tagName": "aselin çantası"
       },
       "contactOptions": {
         "allowDirectCall": true,
@@ -116,7 +114,7 @@
     },
     {
       "publicCode": "GSLWY6",
-      "manageToken": "6bc022d9-0204-4ba8-93df-cd8a2b5382e2",
+      "manageToken": "dbc497f9-9a80-4633-b0fa-7f87e85fdd4c",
       "productType": "item",
       "name": "defneasel",
       "phone": "05515551553",
@@ -125,11 +123,11 @@
       "alerts": [],
       "allowDirectCall": false,
       "allowDirectWhatsapp": false,
-      "status": "active",
+      "status": "inactive",
       "createdAt": "2026-04-05T15:23:13.729Z",
       "ownerName": "ibragim",
       "petName": "devir",
-      "updatedAt": "2026-04-15T15:03:28.210Z",
+      "updatedAt": "2026-04-16T10:04:09.448Z",
       "recovery": {
         "phone": "05515551553",
         "email": "adresesaglik@gmail.com"
@@ -139,7 +137,7 @@
         "showPhone": false,
         "showEmail": false,
         "showCity": true,
-        "showAddressDetail": true,
+        "showAddressDetail": false,
         "showPetName": true,
         "showNote": true
       },
@@ -168,7 +166,14 @@
         "allowDirectWhatsapp": false
       },
       "showCity": true,
-      "showAddressDetail": true
+      "showAddressDetail": false,
+      "transfer": {
+        "token": "40b9f9f8-076f-409a-9d24-0bd34e02128a",
+        "status": "pending",
+        "createdAt": "2026-04-16T09:56:07.864Z",
+        "expiresAt": "2026-04-18T09:56:07.864Z",
+        "fromManageToken": "dbc497f9-9a80-4633-b0fa-7f87e85fdd4c"
+      }
     },
     {
       "publicCode": "TKERNB",
@@ -190,7 +195,7 @@
       "addressDetail": "osmaniye mahallesi fabrikalar geçidi sokak no:9/a (Özel Zirve Sağlık Kabini)",
       "distinctiveFeature": "mavi halkalı",
       "petName": "kabin anahtarı",
-      "updatedAt": "2026-04-16T06:38:12.667Z",
+      "updatedAt": "2026-04-16T09:52:28.816Z",
       "recovery": {
         "phone": "05063509722",
         "email": "i.dem@hotmail.com"
@@ -226,7 +231,15 @@
       "showCity": false,
       "showAddressDetail": false,
       "showPetName": false,
-      "showNote": true
+      "showNote": true,
+      "recoverySession": {
+        "token": "2e619daa-ca01-4f87-b196-501cff0c671e",
+        "email": "i.dem@hotmail.com",
+        "entryType": "my",
+        "status": "pending",
+        "createdAt": "2026-04-16T09:52:28.816Z",
+        "expiresAt": "2026-04-16T10:12:28.816Z"
+      }
     },
     {
       "publicCode": "TEST02",
@@ -251,7 +264,7 @@
       "addressDetail": "avcılar",
       "distinctiveFeature": "gözlük",
       "petName": "asel",
-      "updatedAt": "2026-04-16T06:38:12.667Z",
+      "updatedAt": "2026-04-16T09:52:28.816Z",
       "recovery": {
         "phone": "05063509722",
         "email": "i.dem@hotmail.com"
@@ -287,7 +300,15 @@
       "showCity": true,
       "showAddressDetail": true,
       "showPetName": true,
-      "showNote": true
+      "showNote": true,
+      "recoverySession": {
+        "token": "2e619daa-ca01-4f87-b196-501cff0c671e",
+        "email": "i.dem@hotmail.com",
+        "entryType": "my",
+        "status": "pending",
+        "createdAt": "2026-04-16T09:52:28.816Z",
+        "expiresAt": "2026-04-16T10:12:28.816Z"
+      }
     },
     {
       "publicCode": "7FUFPC",
@@ -4256,7 +4277,7 @@
       "allowDirectWhatsapp": false,
       "status": "active",
       "createdAt": "2026-04-14T10:53:12.001Z",
-      "updatedAt": "2026-04-16T06:38:12.667Z",
+      "updatedAt": "2026-04-16T09:52:28.816Z",
       "recovery": {
         "phone": "05063509722",
         "email": "i.dem@hotmail.com"
@@ -4292,7 +4313,15 @@
       "showCity": true,
       "showAddressDetail": false,
       "showPetName": true,
-      "showNote": true
+      "showNote": true,
+      "recoverySession": {
+        "token": "2e619daa-ca01-4f87-b196-501cff0c671e",
+        "email": "i.dem@hotmail.com",
+        "entryType": "my",
+        "status": "pending",
+        "createdAt": "2026-04-16T09:52:28.816Z",
+        "expiresAt": "2026-04-16T10:12:28.816Z"
+      }
     },
     {
       "publicCode": "H3NM8R",
@@ -9240,7 +9269,7 @@
       "allowDirectWhatsapp": true,
       "status": "active",
       "createdAt": "2026-04-14T11:58:25.757Z",
-      "updatedAt": "2026-04-16T06:38:12.667Z",
+      "updatedAt": "2026-04-16T09:52:28.816Z",
       "recovery": {
         "phone": "05063509722",
         "email": "i.dem@hotmail.com"
@@ -9276,7 +9305,15 @@
       "showCity": true,
       "showAddressDetail": false,
       "showPetName": true,
-      "showNote": true
+      "showNote": true,
+      "recoverySession": {
+        "token": "2e619daa-ca01-4f87-b196-501cff0c671e",
+        "email": "i.dem@hotmail.com",
+        "entryType": "my",
+        "status": "pending",
+        "createdAt": "2026-04-16T09:52:28.816Z",
+        "expiresAt": "2026-04-16T10:12:28.816Z"
+      }
     },
     {
       "publicCode": "D25KVU",
@@ -10793,58 +10830,66 @@
     {
       "publicCode": "SJ73DB",
       "manageToken": "58a86a38-0c74-4c7a-ba2f-63e7d503ccdb",
-      "productType": "item",
+      "productType": "key",
       "name": "SJ73DB",
-      "ownerName": "",
-      "phone": "",
-      "email": "",
-      "city": "",
+      "ownerName": "ibrahim",
+      "phone": "05063509722",
+      "email": "i.dem@hotmail.com",
+      "city": "İstanbul",
       "addressDetail": "",
-      "distinctiveFeature": "",
+      "distinctiveFeature": "citroen",
       "petName": "SJ73DB",
-      "note": "",
+      "note": "tahtakale",
       "alerts": [],
-      "allowDirectCall": false,
-      "allowDirectWhatsapp": false,
-      "status": "unclaimed",
+      "allowDirectCall": true,
+      "allowDirectWhatsapp": true,
+      "status": "active",
       "createdAt": "2026-04-14T12:03:11.147Z",
-      "updatedAt": "2026-04-14T12:03:11.147Z",
+      "updatedAt": "2026-04-16T09:52:28.816Z",
       "recovery": {
-        "phone": "",
-        "email": ""
+        "phone": "05063509722",
+        "email": "i.dem@hotmail.com"
       },
       "visibility": {
         "showName": true,
-        "showPhone": false,
+        "showPhone": true,
         "showEmail": false,
-        "showCity": false,
+        "showCity": true,
         "showAddressDetail": false,
         "showPetName": true,
-        "showNote": false
+        "showNote": true
       },
       "profile": {
         "name": "SJ73DB",
-        "ownerName": "",
-        "phone": "",
-        "email": "",
-        "city": "",
+        "ownerName": "ibrahim",
+        "phone": "05063509722",
+        "email": "i.dem@hotmail.com",
+        "city": "İstanbul",
         "addressDetail": "",
-        "distinctiveFeature": "",
+        "distinctiveFeature": "citroen",
         "petName": "SJ73DB",
-        "note": "",
+        "note": "tahtakale",
         "tagName": "SJ73DB"
       },
       "contactOptions": {
-        "allowDirectCall": false,
-        "allowDirectWhatsapp": false
+        "allowDirectCall": true,
+        "allowDirectWhatsapp": true
       },
       "showName": true,
-      "showPhone": false,
+      "showPhone": true,
       "showEmail": false,
-      "showCity": false,
+      "showCity": true,
       "showAddressDetail": false,
       "showPetName": true,
-      "showNote": false
+      "showNote": true,
+      "recoverySession": {
+        "token": "2e619daa-ca01-4f87-b196-501cff0c671e",
+        "email": "i.dem@hotmail.com",
+        "entryType": "my",
+        "status": "pending",
+        "createdAt": "2026-04-16T09:52:28.816Z",
+        "expiresAt": "2026-04-16T10:12:28.816Z"
+      }
     },
     {
       "publicCode": "V6DAE8",
@@ -18765,7 +18810,7 @@
       "allowDirectWhatsapp": true,
       "status": "active",
       "createdAt": "2026-04-14T14:05:02.833Z",
-      "updatedAt": "2026-04-16T06:38:12.667Z",
+      "updatedAt": "2026-04-16T09:52:28.816Z",
       "recovery": {
         "phone": "05063509722",
         "email": "i.dem@hotmail.com"
@@ -18801,7 +18846,15 @@
       "showCity": false,
       "showAddressDetail": false,
       "showPetName": true,
-      "showNote": true
+      "showNote": true,
+      "recoverySession": {
+        "token": "2e619daa-ca01-4f87-b196-501cff0c671e",
+        "email": "i.dem@hotmail.com",
+        "entryType": "my",
+        "status": "pending",
+        "createdAt": "2026-04-16T09:52:28.816Z",
+        "expiresAt": "2026-04-16T10:12:28.816Z"
+      }
     },
     {
       "publicCode": "HC7S2E",

@@ -66,7 +66,7 @@ export async function POST(request: Request, { params }: Params) {
     const phone = getString(body.phone);
     const email = getString(body.email);
     const city = getString(body.city);
-    const addressDetail = getString(body.addressDetail);
+    const addressDetail = "";
     const distinctiveFeature = getString(body.distinctiveFeature);
     const petName = getString(body.petName || body.name || body.tagName);
     const note = getString(body.note);
@@ -78,7 +78,7 @@ export async function POST(request: Request, { params }: Params) {
       showPhone: Boolean(body.visibility?.showPhone),
       showEmail: Boolean(body.visibility?.showEmail),
       showCity: Boolean(body.visibility?.showCity),
-      showAddressDetail: Boolean(body.visibility?.showAddressDetail),
+      showAddressDetail: false,
       showPetName: Boolean(body.visibility?.showPetName),
       showNote: Boolean(body.visibility?.showNote)
     };

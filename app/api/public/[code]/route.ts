@@ -90,7 +90,7 @@ export async function GET(
         ownerName: tag.profile?.ownerName || "",
         phone: tag.profile?.phone || "",
         city: tag.profile?.city || "",
-        addressDetail: tag.profile?.addressDetail || "",
+        addressDetail: "",
         distinctiveFeature: tag.profile?.distinctiveFeature || "",
         petName: tag.profile?.petName || "",
         note: tag.profile?.note || "",
@@ -110,7 +110,7 @@ export async function GET(
           showPhone: Boolean(tag.visibility?.showPhone),
           showEmail: false,
           showCity: Boolean(tag.visibility?.showCity),
-          showAddressDetail: Boolean(tag.visibility?.showAddressDetail),
+          showAddressDetail: false,
           showPetName: Boolean(tag.visibility?.showPetName),
           showNote: Boolean(tag.visibility?.showNote)
         },
@@ -119,7 +119,7 @@ export async function GET(
         showPhone: Boolean(tag.visibility?.showPhone),
         showEmail: false,
         showCity: Boolean(tag.visibility?.showCity),
-        showAddressDetail: Boolean(tag.visibility?.showAddressDetail),
+        showAddressDetail: false,
         showPetName: Boolean(tag.visibility?.showPetName),
         showNote: Boolean(tag.visibility?.showNote),
 
