@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateUniqueCode } from "@/lib/code";
 import { upsertTag } from "@/lib/tags";
+import { upsertTagAsync } from "@/lib/tags";
 
 type BatchItem = {
   code: string;
@@ -75,7 +76,7 @@ export async function POST(request: NextRequest) {
     for (let i = 0; i < count; i += 1) {
       const code = generateUniqueCode();
 
-      await upsertTag({
+      await upsertTagAsync({
         code,
         productType: "item",
         tagName: code,

@@ -230,7 +230,7 @@ export async function PUT(req: NextRequest, context: RouteContext) {
       petName,
       ownerName,
       phone,
-      email: useRecoveryEmailAsContact ? recoveryEmail : "",
+      email: recoveryEmail || "",
       city,
       addressDetail,
       distinctiveFeature,
