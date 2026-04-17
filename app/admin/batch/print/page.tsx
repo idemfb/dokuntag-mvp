@@ -113,7 +113,7 @@ function chunkItems<T>(items: T[], chunkSize: number) {
 }
 
 function padPage<T>(items: T[], size: number): Array<T | null> {
-  const next = [...items];
+  const next: Array<T | null> = [...items];
   while (next.length < size) {
     next.push(null);
   }
