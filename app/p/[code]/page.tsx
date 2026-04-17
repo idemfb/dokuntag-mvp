@@ -3,6 +3,69 @@
 import { use, useEffect, useMemo, useState } from "react";
 
 type ProductType = "pet" | "item" | "key" | "person";
+type ProductSubtype =
+  | "cat"
+  | "dog"
+  | "bird"
+  | "pet_other"
+  | "house_key"
+  | "car_key"
+  | "office_key"
+  | "key_other"
+  | "girl_child"
+  | "boy_child"
+  | "woman"
+  | "man"
+  | "elder"
+  | "person_other"
+  | "bag"
+  | "wallet"
+  | "luggage"
+  | "phone_item"
+  | "tablet"
+  | "headphones"
+  | "item_other";
+
+const PRODUCT_SUBTYPE_OPTIONS: Record<ProductType, Array<{ value: ProductSubtype; label: string }>> = {
+  pet: [
+    { value: "cat", label: "Kedi" },
+    { value: "dog", label: "Köpek" },
+    { value: "bird", label: "Kuş" },
+    { value: "pet_other", label: "Diğer" }
+  ],
+  key: [
+    { value: "house_key", label: "Ev anahtarı" },
+    { value: "car_key", label: "Araba anahtarı" },
+    { value: "office_key", label: "Ofis anahtarı" },
+    { value: "key_other", label: "Diğer" }
+  ],
+  person: [
+    { value: "girl_child", label: "Kız çocuk" },
+    { value: "boy_child", label: "Erkek çocuk" },
+    { value: "woman", label: "Kadın" },
+    { value: "man", label: "Erkek" },
+    { value: "elder", label: "Yaşlı" },
+    { value: "person_other", label: "Diğer" }
+  ],
+  item: [
+    { value: "bag", label: "Çanta" },
+    { value: "wallet", label: "Cüzdan" },
+    { value: "luggage", label: "Valiz" },
+    { value: "phone_item", label: "Telefon" },
+    { value: "tablet", label: "Tablet" },
+    { value: "headphones", label: "Kulaklık" },
+    { value: "item_other", label: "Diğer" }
+  ]
+};
+
+function getProductSubtypeLabel(value?: string) {
+  if (!value) return "";
+  for (const options of Object.values(PRODUCT_SUBTYPE_OPTIONS)) {
+    const matched = options.find((item) => item.value === value);
+    if (matched) return matched.label;
+  }
+  return "";
+}
 type TagStatus = "unclaimed" | "active" | "inactive";
 
 type Visibility = {
@@ -19,6 +82,7 @@ type PublicProfile = {
   publicCode: string;
   oldCode?: string;
   productType?: ProductType;
+  productSubtype?: ProductSubtype | "";
   name: string;
   ownerName: string;
   phone: string;
@@ -75,7 +139,7 @@ function getSubtitle(productType?: ProductType) {
 }
 
 function getBadgeLabel(productType?: ProductType) {
-  if (productType === "pet") return "Evcil Hayvan";
+  if (productType === "pet") return "Evcil hayvan";
   if (productType === "key") return "Anahtar";
   if (productType === "person") return "Birey";
   return "Eşya";
@@ -151,17 +215,40 @@ function getHowItWorksUrl() {
 
 function InfoRow({
   label,
+  value,
+  fullWidth
+}: {
+  label: string;
+  value: string;
+  fullWidth?: boolean;
+}) {
+  return (
+    <div
+      className={`rounded-[22px] border border-neutral-200 bg-white px-4 py-3 ${
+        fullWidth ? "sm:col-span-2" : ""
+      }`}
+    >
+      <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-neutral-500">
+        {label}
+      </p>
+      <p className="mt-1 text-sm leading-6 text-neutral-900">{value}</p>
+    </div>
+  );
+}
+
+function HighlightRow({
+  label,
   value
 }: {
   label: string;
   value: string;
 }) {
   return (
-    <div className="rounded-[22px] border border-neutral-200 bg-white px-4 py-3">
-      <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-neutral-500">
+    <div className="rounded-[22px] border border-neutral-800 bg-neutral-800 px-4 py-4 text-white shadow-sm sm:col-span-2">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-neutral-300">
         {label}
       </p>
-      <p className="mt-1 text-sm leading-6 text-neutral-900">{value}</p>
+      <p className="mt-2 text-sm leading-6">{value}</p>
     </div>
   );
 }
@@ -303,7 +390,7 @@ export default function PublicPage({
     if (!data?.phone) return "";
     const phone = normalizePhoneForLink(data.phone);
     const normalizedForWa = phone.startsWith("0") ? `90${phone.slice(1)}` : phone;
-    const text = "Merhaba, Dokuntag profiliniz üzerinden size ulaşıyorum.";
+    const text = "Merhaba, Dokuntag herkese açık profiliniz üzerinden size ulaşıyorum.";
     return `https://wa.me/${normalizedForWa}?text=${encodeURIComponent(text)}`;
   }, [data]);
 
@@ -377,7 +464,7 @@ export default function PublicPage({
   if (loading) {
     return (
       <main className="min-h-screen bg-neutral-100 px-4 py-8 text-neutral-900 sm:px-5 sm:py-10">
-        <div className="mx-auto max-w-2xl">
+        <div className="mx-auto max-w-3xl">
           <div className="rounded-[30px] border border-neutral-200 bg-white px-6 py-7 shadow-sm sm:px-8">
             <div className="space-y-3">
               <div className="h-3 w-20 animate-pulse rounded-full bg-neutral-200" />
@@ -394,7 +481,7 @@ export default function PublicPage({
   if (error || !data) {
     return (
       <main className="min-h-screen bg-neutral-100 px-4 py-8 text-neutral-900 sm:px-5 sm:py-10">
-        <div className="mx-auto max-w-2xl">
+        <div className="mx-auto max-w-3xl">
           <div className="rounded-[30px] border border-red-200 bg-white px-6 py-7 shadow-sm sm:px-8">
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-red-500">
               Dokuntag
@@ -403,7 +490,7 @@ export default function PublicPage({
               Sayfa açılamadı
             </h1>
             <p className="mt-3 text-sm leading-6 text-red-700">
-              {error || "Bu ürün için profil bulunamadı."}
+              {error || "Bu ürün için herkese açık profil bulunamadı."}
             </p>
           </div>
         </div>
@@ -414,7 +501,7 @@ export default function PublicPage({
   if (data.status === "inactive") {
     return (
       <main className="min-h-screen bg-neutral-100 px-4 py-8 text-neutral-900 sm:px-5 sm:py-10">
-        <div className="mx-auto max-w-2xl space-y-5 sm:space-y-6">
+        <div className="mx-auto max-w-3xl space-y-5 sm:space-y-6">
           <section className="overflow-hidden rounded-[32px] border border-neutral-200 bg-white shadow-sm">
             <div className="border-b border-neutral-200 bg-gradient-to-br from-white via-neutral-50 to-neutral-100/80 px-6 py-7 sm:px-8 sm:py-9">
               <div className="flex flex-wrap items-center justify-between gap-3">
@@ -443,7 +530,7 @@ export default function PublicPage({
                     Bu ürün şu an aktif değil
                   </h1>
                   <p className="mt-2 max-w-xl text-sm leading-6 text-neutral-600 sm:text-[15px]">
-                    Bu ürüne ait public profil ve iletişim seçenekleri geçici olarak kapatılmıştır.
+                    Bu ürüne ait herkese açık profil ve iletişim seçenekleri geçici olarak kapatılmıştır.
                   </p>
                 </div>
               </div>
@@ -471,7 +558,7 @@ export default function PublicPage({
                     Kayıp olanı sahibine ulaştıran güvenli köprü
                   </h2>
                   <p className="mt-2 max-w-xl text-sm leading-6 text-neutral-600">
-                    Dokuntag, fiziksel ürün ile dijital profil arasında bağlantı kurar. Profil sahibi ürünü aktif ettiğinde public bilgiler ve iletişim seçenekleri yeniden açılabilir.
+                    Dokuntag, fiziksel ürün ile dijital profil arasında bağlantı kurar. Profil sahibi ürünü yeniden aktif ettiğinde herkese açık bilgiler ve iletişim seçenekleri geri gelir.
                   </p>
                 </div>
 
@@ -490,13 +577,13 @@ export default function PublicPage({
                 />
                 <StepCard
                   step="2. Adım"
-                  title="Public durum kontrol edilir"
+                  title="Durum kontrol edilir"
                   text="Ürün pasifse yalnızca kısıtlı bilgilendirme ekranı gösterilir."
                 />
                 <StepCard
                   step="3. Adım"
                   title="Aktif olduğunda iletişim açılır"
-                  text="Profil sahibi ürünü yeniden aktive ettiğinde iletişim ve paylaşılan bilgiler geri gelir."
+                  text="Profil sahibi ürünü yeniden aktif ettiğinde iletişim ve paylaşılan bilgiler geri gelir."
                 />
               </div>
 
@@ -507,7 +594,7 @@ export default function PublicPage({
                 />
                 <FeatureCard
                   title="Ne işe yarar?"
-                  text="Kullanılmayan, kaybolmayan ya da geçici olarak kapatılmak istenen ürünlerde public erişimi durdurur."
+                  text="Kullanılmayan, kaybolmayan ya da geçici olarak kapatılmak istenen ürünlerde herkese açık erişimi durdurur."
                 />
               </div>
 
@@ -545,7 +632,6 @@ export default function PublicPage({
   const showName = getVisibleFlag(data, "showName");
   const showPhone = getVisibleFlag(data, "showPhone");
   const showCity = getVisibleFlag(data, "showCity");
-  const showAddressDetail = getVisibleFlag(data, "showAddressDetail");
   const showPetName = getVisibleFlag(data, "showPetName");
   const showNote = getVisibleFlag(data, "showNote");
 
@@ -553,10 +639,10 @@ export default function PublicPage({
   const secondaryName = data.name?.trim() || "";
 
   const showSecondaryNameSeparately =
-   Boolean(secondaryName) &&
+    Boolean(secondaryName) &&
     Boolean(primaryPetName) &&
     secondaryName.toLocaleLowerCase("tr-TR") !==
-    primaryPetName.toLocaleLowerCase("tr-TR");
+      primaryPetName.toLocaleLowerCase("tr-TR");
 
   const hasVisibleProfileInfo =
     (showPetName && Boolean(data.petName)) ||
@@ -564,7 +650,6 @@ export default function PublicPage({
     showSecondaryNameSeparately ||
     (showPhone && Boolean(data.phone)) ||
     (showCity && Boolean(data.city)) ||
-    (showAddressDetail && Boolean(data.addressDetail)) ||
     Boolean(data.distinctiveFeature) ||
     (showNote && Boolean(data.note));
 
@@ -574,7 +659,7 @@ export default function PublicPage({
 
   return (
     <main className="min-h-screen bg-neutral-100 px-4 py-8 text-neutral-900 sm:px-5 sm:py-10">
-      <div className="mx-auto max-w-2xl space-y-5 sm:space-y-6">
+      <div className="mx-auto max-w-3xl space-y-5 sm:space-y-6">
         <section className="overflow-hidden rounded-[32px] border border-neutral-200 bg-white shadow-sm">
           <div className="border-b border-neutral-200 bg-gradient-to-br from-white via-neutral-50 to-neutral-100/80 px-6 py-7 sm:px-8 sm:py-9">
             <div className="flex flex-wrap items-center justify-between gap-3">
@@ -615,7 +700,7 @@ export default function PublicPage({
             </div>
 
             <div className="mt-4 rounded-[22px] border border-emerald-200 bg-emerald-50 px-4 py-4 text-sm leading-6 text-emerald-900">
-              Bu bilgiler profil sahibi tarafından paylaşılmıştır. Yalnızca gerçekten yardımcı olabiliyorsanız iletişime geçin.
+              Bu bilgiler profil sahibi tarafından herkese açık olarak paylaşılmıştır. Yalnızca gerçekten yardımcı olabiliyorsanız iletişime geçin.
             </div>
           </div>
         </section>
@@ -648,14 +733,17 @@ export default function PublicPage({
           <section className="rounded-[30px] border border-neutral-200 bg-white p-6 shadow-sm sm:p-7">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">
-                Profil bilgileri
+                Herkese açık bilgiler
               </p>
               <h2 className="mt-2 text-lg font-semibold text-neutral-900">
-                Paylaşılan bilgiler
+                Paylaşılan profil bilgileri
               </h2>
+              <p className="mt-2 text-sm leading-6 text-neutral-600">
+                Yalnızca profil sahibi tarafından görünür yapılmış bilgiler aşağıda yer alır.
+              </p>
             </div>
 
-            <div className="mt-5 space-y-3">
+            <div className="mt-5 grid gap-3 sm:grid-cols-2">
               {showPetName && data.petName ? (
                 <InfoRow
                   label={getPrimaryNameLabel(data.productType)}
@@ -663,15 +751,19 @@ export default function PublicPage({
                 />
               ) : null}
 
-              {showSecondaryNameSeparately ? (
-                <InfoRow label="Etiket başlığı" value={data.name} />
-              ) : null}
-
               {showName && data.ownerName ? (
                 <InfoRow
                   label={getOwnerLabel(data.productType)}
                   value={data.ownerName}
                 />
+              ) : null}
+
+              {data.productSubtype ? (
+                <InfoRow label="Kategori" value={getProductSubtypeLabel(data.productSubtype)} />
+              ) : null}
+
+              {showSecondaryNameSeparately ? (
+                <InfoRow label="Etiket başlığı" value={data.name} />
               ) : null}
 
               {showPhone && data.phone ? (
@@ -682,21 +774,12 @@ export default function PublicPage({
                 <InfoRow label="Şehir" value={data.city} />
               ) : null}
 
-              {showAddressDetail && data.addressDetail ? (
-                <InfoRow label="Konum detayı" value={data.addressDetail} />
-              ) : null}
-
               {data.distinctiveFeature ? (
-                <div className="rounded-[22px] border border-neutral-800 bg-neutral-800 px-4 py-4 text-white shadow-sm">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-neutral-300">
-                    Ayırt edici özellik
-                  </p>
-                  <p className="mt-2 text-sm leading-6">{data.distinctiveFeature}</p>
-                </div>
+                <HighlightRow label="Ayırt edici özellik" value={data.distinctiveFeature} />
               ) : null}
 
               {showNote && data.note ? (
-                <InfoRow label="Not" value={data.note} />
+                <InfoRow label="Not" value={data.note} fullWidth />
               ) : null}
             </div>
           </section>
@@ -743,13 +826,13 @@ export default function PublicPage({
         <section className="rounded-[30px] border border-neutral-200 bg-white p-6 shadow-sm sm:p-7">
           <div className="max-w-lg">
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">
-              İletişim formu
+              Mesaj gönderin
             </p>
             <h2 className="mt-2 text-lg font-semibold text-neutral-900">
-              Profil sahibine mesaj gönderin
+              Profil sahibine ulaşın
             </h2>
             <p className="mt-2 text-sm leading-6 text-neutral-600">
-              Uygun görülürse profil sahibi sizinle iletişime geçer.
+              Mesajınız uygun görülürse profil sahibi sizinle iletişime geçer.
             </p>
           </div>
 

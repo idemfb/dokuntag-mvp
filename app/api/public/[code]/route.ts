@@ -36,6 +36,7 @@ export async function GET(
           publicCode: tag.code,
           oldCode: tag.oldCode || "",
           productType: tag.productType || "item",
+          productSubtype: tag.productSubtype || "",
 
           name: "",
           ownerName: "",
@@ -85,12 +86,13 @@ export async function GET(
         publicCode: tag.code,
         oldCode: tag.oldCode || "",
         productType: tag.productType || "item",
+        productSubtype: tag.productSubtype || "",
 
         name: tag.profile?.name || "",
         ownerName: tag.profile?.ownerName || "",
         phone: tag.profile?.phone || "",
         city: tag.profile?.city || "",
-        addressDetail: "",
+        addressDetail: tag.profile?.addressDetail || "",
         distinctiveFeature: tag.profile?.distinctiveFeature || "",
         petName: tag.profile?.petName || "",
         note: tag.profile?.note || "",
@@ -110,7 +112,7 @@ export async function GET(
           showPhone: Boolean(tag.visibility?.showPhone),
           showEmail: false,
           showCity: Boolean(tag.visibility?.showCity),
-          showAddressDetail: false,
+          showAddressDetail: Boolean(tag.visibility?.showAddressDetail),
           showPetName: Boolean(tag.visibility?.showPetName),
           showNote: Boolean(tag.visibility?.showNote)
         },
@@ -119,7 +121,7 @@ export async function GET(
         showPhone: Boolean(tag.visibility?.showPhone),
         showEmail: false,
         showCity: Boolean(tag.visibility?.showCity),
-        showAddressDetail: false,
+        showAddressDetail: Boolean(tag.visibility?.showAddressDetail),
         showPetName: Boolean(tag.visibility?.showPetName),
         showNote: Boolean(tag.visibility?.showNote),
 

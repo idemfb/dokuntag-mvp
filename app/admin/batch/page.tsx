@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useMemo, useState } from "react";
@@ -8,6 +9,43 @@ type BatchItem = {
   setupLink: string;
   qrPageLink: string;
   qrDownloadLink: string;
+};
+
+type PdfPageSize = "A4" | "A3" | "custom";
+type PdfOrientation = "portrait" | "landscape";
+type ShapeOption = "round" | "square";
+
+type DesignState = {
+  size: "2.5cm" | "3cm" | "4cm";
+  shape: ShapeOption;
+  brandText: string;
+  sloganText: string;
+  codeText: string;
+  brandScale: number;
+  sloganScale: number;
+  codeScale: number;
+  qrScale: number;
+  verticalBalance: number;
+  horizontalBalance: number;
+  brandGap: number;
+  sloganGap: number;
+  codeInset: number;
+  innerSafe: number;
+  outerSafe: number;
+  brandWeight: "500" | "600" | "700" | "800";
+  sloganWeight: "500" | "600" | "700" | "800";
+  brandStyle: "normal" | "italic";
+  sloganStyle: "normal" | "italic";
+  codeStyle: "normal" | "italic";
+  brandColor: string;
+  sloganColor: string;
+  codeColor: string;
+  brandAlign: "left" | "center" | "right";
+  sloganAlign: "left" | "center" | "right";
+  badgeScale: number;
+  badgeOffsetX: number;
+  badgeOffsetY: number;
+  lockTextAdjustments?: boolean;
 };
 
 function getMainSiteUrl() {
@@ -43,9 +81,49 @@ function buildFullText(items: BatchItem[]) {
     .join("\n");
 }
 
-function buildPrintPageUrl(items: BatchItem[]) {
-  const payload = encodeURIComponent(JSON.stringify(items));
-  return `/admin/batch/print?data=${payload}`;
+function getDefaultDesign(): DesignState {
+  return {
+    size: "3cm",
+    shape: "round",
+    brandText: "DOKUNTAG",
+    sloganText: "Bul • Buluştur",
+    codeText: "",
+    brandScale: 100,
+    sloganScale: 100,
+    codeScale: 100,
+    qrScale: 100,
+    verticalBalance: 100,
+    horizontalBalance: 100,
+    brandGap: 100,
+    sloganGap: 100,
+    codeInset: 100,
+    innerSafe: 100,
+    outerSafe: 100,
+    brandWeight: "800",
+    sloganWeight: "700",
+    brandStyle: "normal",
+    sloganStyle: "italic",
+    codeStyle: "normal",
+    brandColor: "#111111",
+    sloganColor: "#111111",
+    codeColor: "#111111",
+    brandAlign: "center",
+    sloganAlign: "center",
+    badgeScale: 140,
+    badgeOffsetX: 130,
+    badgeOffsetY: 100,
+    lockTextAdjustments: false
+  };
+}
+
+function tryGetSavedDesign(): DesignState {
+  try {
+    const raw = window.localStorage.getItem("dokuntag_qr_design");
+    if (!raw) return getDefaultDesign();
+    return { ...getDefaultDesign(), ...(JSON.parse(raw) as Partial<DesignState>) };
+  } catch {
+    return getDefaultDesign();
+  }
 }
 
 export default function AdminBatchPage() {
@@ -55,13 +133,21 @@ export default function AdminBatchPage() {
   const [labelTemplate, setLabelTemplate] = useState("Dokuntag");
   const [loading, setLoading] = useState(false);
   const [zipLoading, setZipLoading] = useState(false);
+  const [printLoading, setPrintLoading] = useState(false);
+  const [pdfLoading, setPdfLoading] = useState(false);
   const [error, setError] = useState("");
   const [items, setItems] = useState<BatchItem[]>([]);
+  const [pdfPageSize, setPdfPageSize] = useState<PdfPageSize>("A3");
+  const [pdfOrientation, setPdfOrientation] = useState<PdfOrientation>("landscape");
+  const [pdfGapMm, setPdfGapMm] = useState("4");
+  const [pdfMarginMm, setPdfMarginMm] = useState("8");
+  const [pdfCutMarks, setPdfCutMarks] = useState(true);
+  const [pdfCustomWidth, setPdfCustomWidth] = useState("420");
+  const [pdfCustomHeight, setPdfCustomHeight] = useState("297");
 
   const printText = useMemo(() => buildPrintText(items), [items]);
   const opsText = useMemo(() => buildOpsText(items), [items]);
   const fullText = useMemo(() => buildFullText(items), [items]);
-  const printPageUrl = useMemo(() => buildPrintPageUrl(items), [items]);
 
   async function handleGenerate(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -92,7 +178,12 @@ export default function AdminBatchPage() {
         throw new Error(data?.error || "Toplu üretim başarısız.");
       }
 
-      setItems(Array.isArray(data.items) ? data.items : []);
+      const nextItems = Array.isArray(data.items) ? data.items : [];
+      setItems(nextItems);
+
+      try {
+        window.localStorage.setItem("dokuntag_batch_items", JSON.stringify(nextItems));
+      } catch {}
     } catch (err) {
       setError(err instanceof Error ? err.message : "Bir hata oluştu.");
       setItems([]);
@@ -150,6 +241,85 @@ export default function AdminBatchPage() {
     }
   }
 
+  function openPrintView() {
+    if (!items.length) return;
+
+    try {
+      setPrintLoading(true);
+      setError("");
+
+      const storageKey = `dokuntag_batch_${Date.now()}`;
+      window.sessionStorage.setItem(storageKey, JSON.stringify(items));
+      window.localStorage.setItem("dokuntag_batch_items", JSON.stringify(items));
+
+      window.open(
+        `/admin/batch/print?storageKey=${encodeURIComponent(storageKey)}`,
+        "_blank",
+        "noopener,noreferrer"
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Baskı görünümü açılamadı.");
+    } finally {
+      setPrintLoading(false);
+    }
+  }
+
+  async function downloadPdf() {
+    if (!items.length) return;
+
+    try {
+      setPdfLoading(true);
+      setError("");
+
+      const design = tryGetSavedDesign();
+
+      const res = await fetch("/api/admin/download-batch-pdf", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          items: items.map((item) => ({
+            code: item.code,
+            label: item.label
+          })),
+          design,
+          options: {
+            pageSize: pdfPageSize,
+            orientation: pdfOrientation,
+            gapMm: Number(pdfGapMm) || 4,
+            marginMm: Number(pdfMarginMm) || 8,
+            showCutMarks: pdfCutMarks,
+            customWidth: Number(pdfCustomWidth) || 420,
+            customHeight: Number(pdfCustomHeight) || 297,
+            fileName: `dokuntag-batch-${items.length}-${pdfPageSize}`
+          }
+        })
+      });
+
+      if (!res.ok) {
+        const data = (await res.json()) as { error?: string };
+        throw new Error(data?.error || "PDF indirilemedi.");
+      }
+
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+
+      anchor.href = url;
+      anchor.download = `dokuntag-batch-${items.length}.pdf`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "PDF indirilemedi.");
+    } finally {
+      setPdfLoading(false);
+    }
+  }
+
   return (
     <main className="min-h-screen bg-neutral-50 px-4 py-8 text-neutral-900">
       <div className="mx-auto max-w-6xl space-y-6">
@@ -183,7 +353,7 @@ export default function AdminBatchPage() {
 
             <p className="mt-3 max-w-3xl text-sm leading-6 text-neutral-600">
               Üretilen tüm kodlar veritabanına <strong>unclaimed</strong> olarak eklenir.
-              Baskı için sade çıktı, operasyon için linkli çıktı ve tam teknik çıktı ayrı ayrı alınabilir.
+              ZIP ve gerçek PDF çıktısı tek yerden alınır.
             </p>
           </div>
 
@@ -259,16 +429,14 @@ export default function AdminBatchPage() {
                   {zipLoading ? "ZIP hazırlanıyor..." : "Tüm QR'ları ZIP indir"}
                 </button>
 
-                <a
-                  href={items.length ? printPageUrl : "#"}
-                  target="_blank"
-                  rel="noreferrer"
-                  className={`rounded-2xl border border-neutral-300 bg-white px-5 py-3 text-sm font-medium transition hover:border-neutral-400 hover:bg-neutral-50 ${
-                    !items.length ? "pointer-events-none opacity-60" : ""
-                  }`}
+                <button
+                  type="button"
+                  onClick={openPrintView}
+                  disabled={!items.length || printLoading}
+                  className="rounded-2xl border border-neutral-300 bg-white px-5 py-3 text-sm font-medium transition hover:border-neutral-400 hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  Baskı görünümünü aç
-                </a>
+                  {printLoading ? "Açılıyor..." : "Baskı görünümünü aç"}
+                </button>
               </div>
             </form>
 
@@ -277,6 +445,102 @@ export default function AdminBatchPage() {
                 {error}
               </div>
             ) : null}
+          </div>
+        </section>
+
+        <section className="overflow-hidden rounded-[2rem] border border-neutral-200 bg-white shadow-sm">
+          <div className="border-b border-neutral-200 px-6 py-5">
+            <h2 className="text-lg font-semibold">Gerçek PDF üretimi</h2>
+            <p className="mt-1 text-sm text-neutral-600">
+              Tarayıcı print yerine doğrudan server-side PDF üretir. Matbaa için daha tutarlı sonuç verir.
+            </p>
+          </div>
+
+          <div className="grid gap-4 px-6 py-6 md:grid-cols-3">
+            <label className="block">
+              <span className="mb-2 block text-sm font-medium text-neutral-700">PDF sayfa tipi</span>
+              <select
+                value={pdfPageSize}
+                onChange={(e) => setPdfPageSize(e.target.value as PdfPageSize)}
+                className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-neutral-500"
+              >
+                <option value="A4">A4</option>
+                <option value="A3">A3</option>
+                <option value="custom">Özel</option>
+              </select>
+            </label>
+
+            <label className="block">
+              <span className="mb-2 block text-sm font-medium text-neutral-700">Yön</span>
+              <select
+                value={pdfOrientation}
+                onChange={(e) => setPdfOrientation(e.target.value as PdfOrientation)}
+                className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-neutral-500"
+              >
+                <option value="landscape">Yatay</option>
+                <option value="portrait">Dikey</option>
+              </select>
+            </label>
+
+            <label className="block">
+              <span className="mb-2 block text-sm font-medium text-neutral-700">QR aralığı (mm)</span>
+              <input
+                value={pdfGapMm}
+                onChange={(e) => setPdfGapMm(e.target.value)}
+                className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-neutral-500"
+              />
+            </label>
+
+            <label className="block">
+              <span className="mb-2 block text-sm font-medium text-neutral-700">Kenar boşluğu (mm)</span>
+              <input
+                value={pdfMarginMm}
+                onChange={(e) => setPdfMarginMm(e.target.value)}
+                className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-neutral-500"
+              />
+            </label>
+
+            {pdfPageSize === "custom" ? (
+              <>
+                <label className="block">
+                  <span className="mb-2 block text-sm font-medium text-neutral-700">Özel genişlik (mm)</span>
+                  <input
+                    value={pdfCustomWidth}
+                    onChange={(e) => setPdfCustomWidth(e.target.value)}
+                    className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-neutral-500"
+                  />
+                </label>
+
+                <label className="block">
+                  <span className="mb-2 block text-sm font-medium text-neutral-700">Özel yükseklik (mm)</span>
+                  <input
+                    value={pdfCustomHeight}
+                    onChange={(e) => setPdfCustomHeight(e.target.value)}
+                    className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-neutral-500"
+                  />
+                </label>
+              </>
+            ) : null}
+
+            <label className="flex items-center gap-2 rounded-2xl border border-neutral-300 bg-neutral-50 px-4 py-3 text-sm">
+              <input
+                type="checkbox"
+                checked={pdfCutMarks}
+                onChange={(e) => setPdfCutMarks(e.target.checked)}
+              />
+              Kesim çizgileri
+            </label>
+
+            <div className="md:col-span-3">
+              <button
+                type="button"
+                onClick={downloadPdf}
+                disabled={!items.length || pdfLoading}
+                className="rounded-2xl bg-black px-5 py-3 text-sm font-medium text-white transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {pdfLoading ? "PDF hazırlanıyor..." : "Gerçek PDF indir"}
+              </button>
+            </div>
           </div>
         </section>
 

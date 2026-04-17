@@ -1,6 +1,6 @@
+
 import { NextRequest, NextResponse } from "next/server";
 import { generateUniqueCode } from "@/lib/code";
-import { upsertTag } from "@/lib/tags";
 import { upsertTagAsync } from "@/lib/tags";
 
 type BatchItem = {
@@ -10,6 +10,8 @@ type BatchItem = {
   qrPageLink: string;
   qrDownloadLink: string;
 };
+
+type DesignState = Record<string, string | number | boolean>;
 
 function getBaseUrl(request: NextRequest) {
   const envBaseUrl =
@@ -42,11 +44,22 @@ function buildLabel(labelTemplate: string, code: string, index: number) {
   return `${safeTemplate}-${nextNumber}`.slice(0, 32);
 }
 
+function buildDesignQuery(design?: DesignState) {
+  const params = new URLSearchParams();
+  if (!design) return "";
+  Object.entries(design).forEach(([key, value]) => {
+    if (value === undefined || value === null || value === "") return;
+    params.set(key, String(value));
+  });
+  return params.toString();
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = (await request.json()) as {
       count?: number;
       labelTemplate?: string;
+      design?: DesignState;
     };
 
     const count =
@@ -57,21 +70,16 @@ export async function POST(request: NextRequest) {
     const labelTemplate = getString(body?.labelTemplate);
 
     if (!count || count < 1) {
-      return NextResponse.json(
-        { error: "Adet en az 1 olmalıdır." },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Adet en az 1 olmalıdır." }, { status: 400 });
     }
 
     if (count > 500) {
-      return NextResponse.json(
-        { error: "Tek seferde en fazla 500 kod üretilebilir." },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Tek seferde en fazla 500 kod üretilebilir." }, { status: 400 });
     }
 
     const baseUrl = getBaseUrl(request);
     const items: BatchItem[] = [];
+    const designQuery = buildDesignQuery(body.design);
 
     for (let i = 0; i < count; i += 1) {
       const code = generateUniqueCode();
@@ -94,13 +102,14 @@ export async function POST(request: NextRequest) {
       });
 
       const label = buildLabel(labelTemplate, code, i);
+      const query = designQuery ? `?${designQuery}` : "";
 
       items.push({
         code,
         label,
         setupLink: `${baseUrl}/setup/${code}`,
-        qrPageLink: `${baseUrl}/qr/${code}?label=${encodeURIComponent(label)}`,
-        qrDownloadLink: `${baseUrl}/api/qr-download/${code}?label=${encodeURIComponent(label)}`
+        qrPageLink: `${baseUrl}/qr/${code}${query}`,
+        qrDownloadLink: `${baseUrl}/api/qr-download/${code}${query}`
       });
     }
 
@@ -111,10 +120,6 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error("GENERATE_BATCH_ERROR", error);
-
-    return NextResponse.json(
-      { error: "Toplu üretim sırasında hata oluştu." },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Toplu üretim sırasında hata oluştu." }, { status: 500 });
   }
 }

@@ -134,5 +134,37 @@
     "fingerprint": "40ce786ce64250b03e8ebdf55d03a1e1ab07e507c43879487c007932bad40d25",
     "ip": "::1",
     "createdAt": "2026-04-16T09:55:11.256Z"
+  },
+  {
+    "id": "79f097ce-cb7c-4963-a6b0-3ab5e9644126",
+    "email": "i.dem@hotmail.com",
+    "entryType": "my",
+    "fingerprint": "10f34b1244566bb397b6ce86323723b3701c6698a1f2a21e8b4e39bd76d13e12",
+    "ip": "::1",
+    "createdAt": "2026-04-16T10:45:23.137Z"
+  },
+  {
+    "id": "f3cacd1a-1f3f-4575-8807-66f9f4182183",
+    "email": "i.dem@hotmail.com",
+    "entryType": "my",
+    "fingerprint": "10f34b1244566bb397b6ce86323723b3701c6698a1f2a21e8b4e39bd76d13e12",
+    "ip": "::1",
+    "createdAt": "2026-04-16T10:56:04.580Z"
+  },
+  {
+    "id": "12dd0e4d-8441-45d7-bbb0-3eb79e2df88f",
+    "email": "i.dem@hotmail.com",
+    "entryType": "recover",
+    "fingerprint": "10f34b1244566bb397b6ce86323723b3701c6698a1f2a21e8b4e39bd76d13e12",
+    "ip": "::1",
+    "createdAt": "2026-04-16T11:38:10.557Z"
+  },
+  {
+    "id": "b9f4f517-b420-4abb-8f62-5ccd5d5281a2",
+    "email": "i.dem@hotmail.com",
+    "entryType": "recover",
+    "fingerprint": "10f34b1244566bb397b6ce86323723b3701c6698a1f2a21e8b4e39bd76d13e12",
+    "ip": "::1",
+    "createdAt": "2026-04-16T11:39:50.016Z"
   }
 ]

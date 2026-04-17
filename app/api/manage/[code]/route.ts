@@ -11,7 +11,36 @@ type Params = {
 };
 
 type ProductType = "pet" | "item" | "key" | "person";
+type ProductSubtype =
+  | "cat"
+  | "dog"
+  | "bird"
+  | "pet_other"
+  | "house_key"
+  | "car_key"
+  | "office_key"
+  | "key_other"
+  | "girl_child"
+  | "boy_child"
+  | "woman"
+  | "man"
+  | "elder"
+  | "person_other"
+  | "bag"
+  | "wallet"
+  | "luggage"
+  | "phone_item"
+  | "tablet"
+  | "headphones"
+  | "item_other";
 type TagStatus = "active" | "inactive";
+
+const PRODUCT_SUBTYPE_OPTIONS: Record<ProductType, ProductSubtype[]> = {
+  pet: ["cat", "dog", "bird", "pet_other"],
+  key: ["house_key", "car_key", "office_key", "key_other"],
+  person: ["girl_child", "boy_child", "woman", "man", "elder", "person_other"],
+  item: ["bag", "wallet", "luggage", "phone_item", "tablet", "headphones", "item_other"]
+};
 
 const ALERT_OPTIONS_BY_TYPE: Record<ProductType, string[]> = {
   pet: [
@@ -40,6 +69,13 @@ const ALERT_OPTIONS_BY_TYPE: Record<ProductType, string[]> = {
     "Ödül verilecektir"
   ]
 };
+
+
+function normalizeProductSubtype(productType: ProductType, value: unknown): ProductSubtype | "" {
+  if (typeof value !== "string" || !value.trim()) return "";
+  const normalized = value.trim() as ProductSubtype;
+  return PRODUCT_SUBTYPE_OPTIONS[productType].includes(normalized) ? normalized : "";
+}
 
 function getString(value: unknown) {
   return typeof value === "string" ? value.trim() : "";
@@ -97,6 +133,7 @@ export async function GET(request: Request, { params }: Params) {
     return NextResponse.json({
       code: updated.code,
       productType: updated.productType || "item",
+      productSubtype: updated.productSubtype || "",
       profile: updated.profile,
       alerts: updated.alerts,
       alertOptions: ALERT_OPTIONS_BY_TYPE[updated.productType || "item"],
@@ -106,6 +143,18 @@ export async function GET(request: Request, { params }: Params) {
         allowDirectWhatsapp: Boolean(updated.contactOptions?.allowDirectWhatsapp)
       },
       recovery: updated.recovery,
+      transfer: updated.transfer?.token
+        ? {
+            token: updated.transfer.token,
+            status: updated.transfer.status,
+            createdAt: updated.transfer.createdAt || "",
+            expiresAt: updated.transfer.expiresAt || "",
+            usedAt: updated.transfer.usedAt || "",
+            cancelledAt: updated.transfer.cancelledAt || "",
+            transferPath: `/transfer/${updated.transfer.token}`,
+            transferLink: `${origin}/transfer/${updated.transfer.token}`
+          }
+        : undefined,
       status: updated.status === "inactive" ? "inactive" : "active",
       managePath,
       manageLink: `${origin}${managePath}`,
@@ -151,6 +200,7 @@ export async function POST(request: Request, { params }: Params) {
     const body = await request.json();
 
     const productType = normalizeProductType(body.productType);
+    const productSubtype = normalizeProductSubtype(productType, body.productSubtype);
     const allowedAlerts = ALERT_OPTIONS_BY_TYPE[productType];
 
     const name = getString(body.name || body.tagName);
@@ -219,6 +269,7 @@ export async function POST(request: Request, { params }: Params) {
     const updated = await updateTagByManageTokenAsync({
       manageToken: token,
       productType,
+      productSubtype,
       tagName: name,
       ownerName,
       phone,
@@ -248,8 +299,28 @@ export async function POST(request: Request, { params }: Params) {
 
     return NextResponse.json({
       success: true,
+      code: updated.code,
+      message: "Değişiklikler kaydedildi.",
+      publicLink: `${origin}/p/${updated.code}`,
       managePath,
-      manageLink: `${origin}${managePath}`
+      manageLink: `${origin}${managePath}`,
+      status: updated.status === "inactive" ? "inactive" : "active",
+      transfer: updated.transfer?.token
+        ? {
+            token: updated.transfer.token,
+            status: updated.transfer.status,
+            createdAt: updated.transfer.createdAt || "",
+            expiresAt: updated.transfer.expiresAt || "",
+            usedAt: updated.transfer.usedAt || "",
+            cancelledAt: updated.transfer.cancelledAt || "",
+            transferPath: `/transfer/${updated.transfer.token}`,
+            transferLink: `${origin}/transfer/${updated.transfer.token}`
+          }
+        : undefined,
+      warning:
+        updated.status === "inactive"
+          ? "Ürün şu anda pasif durumda. Herkese açık profil ve iletişim geçici olarak kapalı."
+          : undefined
     });
   } catch (error) {
     console.error("MANAGE_POST_ERROR", error);

@@ -3,6 +3,69 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
 type ProductType = "pet" | "item" | "key" | "person";
+type ProductSubtype =
+  | "cat"
+  | "dog"
+  | "bird"
+  | "pet_other"
+  | "house_key"
+  | "car_key"
+  | "office_key"
+  | "key_other"
+  | "girl_child"
+  | "boy_child"
+  | "woman"
+  | "man"
+  | "elder"
+  | "person_other"
+  | "bag"
+  | "wallet"
+  | "luggage"
+  | "phone_item"
+  | "tablet"
+  | "headphones"
+  | "item_other";
+
+const PRODUCT_SUBTYPE_OPTIONS: Record<ProductType, Array<{ value: ProductSubtype; label: string }>> = {
+  pet: [
+    { value: "cat", label: "Kedi" },
+    { value: "dog", label: "Köpek" },
+    { value: "bird", label: "Kuş" },
+    { value: "pet_other", label: "Diğer" }
+  ],
+  key: [
+    { value: "house_key", label: "Ev anahtarı" },
+    { value: "car_key", label: "Araba anahtarı" },
+    { value: "office_key", label: "Ofis anahtarı" },
+    { value: "key_other", label: "Diğer" }
+  ],
+  person: [
+    { value: "girl_child", label: "Kız çocuk" },
+    { value: "boy_child", label: "Erkek çocuk" },
+    { value: "woman", label: "Kadın" },
+    { value: "man", label: "Erkek" },
+    { value: "elder", label: "Yaşlı" },
+    { value: "person_other", label: "Diğer" }
+  ],
+  item: [
+    { value: "bag", label: "Çanta" },
+    { value: "wallet", label: "Cüzdan" },
+    { value: "luggage", label: "Valiz" },
+    { value: "phone_item", label: "Telefon" },
+    { value: "tablet", label: "Tablet" },
+    { value: "headphones", label: "Kulaklık" },
+    { value: "item_other", label: "Diğer" }
+  ]
+};
+
+function getProductSubtypeLabel(value?: string) {
+  if (!value) return "";
+  for (const options of Object.values(PRODUCT_SUBTYPE_OPTIONS)) {
+    const matched = options.find((item) => item.value === value);
+    if (matched) return matched.label;
+  }
+  return "";
+}
 type ContactMethod = "phone" | "whatsapp" | "email";
 type MessageFilter = "all" | "unread" | "read" | "pinned" | "archived";
 type MessageSort = "newest" | "oldest" | "unread-first";
@@ -59,6 +122,7 @@ const DISTINCTIVE_FEATURE_PLACEHOLDERS: Record<ProductType, string> = {
 type ManageResponse = {
   code: string;
   productType?: ProductType;
+  productSubtype?: ProductSubtype | "";
   profile: {
     name: string;
     ownerName?: string;
@@ -88,6 +152,16 @@ type ManageResponse = {
     phone: string;
     email: string;
   };
+  transfer?: {
+    token?: string;
+    status?: "pending" | "used" | "expired" | "cancelled";
+    createdAt?: string;
+    expiresAt?: string;
+    usedAt?: string;
+    cancelledAt?: string;
+    transferPath?: string;
+    transferLink?: string;
+  };
   status?: TagStatus;
   managePath: string;
   manageLink: string;
@@ -102,6 +176,16 @@ type ManageSubmitResponse = {
   manageLink: string;
   status?: TagStatus;
   warning?: string;
+  transfer?: {
+    token?: string;
+    status?: "pending" | "used" | "expired" | "cancelled";
+    createdAt?: string;
+    expiresAt?: string;
+    usedAt?: string;
+    cancelledAt?: string;
+    transferPath?: string;
+    transferLink?: string;
+  };
 };
 
 type NotifyLogItem = {
@@ -125,6 +209,12 @@ type NotifyLogsResponse = {
   items: NotifyLogItem[];
   unreadCount?: number;
 };
+
+function getSubtypeLabel(productType: ProductType, value: ProductSubtype | "") {
+  if (!value) return "";
+  const match = PRODUCT_SUBTYPE_OPTIONS[productType].find((item) => item.value === value);
+  return match?.label || "";
+}
 
 function getProductTypeLabel(productType: ProductType) {
   if (productType === "pet") return "Evcil hayvan";
@@ -173,6 +263,7 @@ function buildSearchText(log: NotifyLogItem) {
 
 function buildFormSnapshot(input: {
   productType: ProductType;
+  productSubtype: ProductSubtype | "";
   status: TagStatus;
   name: string;
   ownerName: string;
@@ -195,10 +286,12 @@ function buildFormSnapshot(input: {
   allowDirectWhatsapp: boolean;
   recoveryPhone: string;
   recoveryEmail: string;
+  useRecoveryPhoneAsContact: boolean;
   useRecoveryEmailAsContact: boolean;
 }) {
   return JSON.stringify({
     productType: input.productType,
+    productSubtype: input.productSubtype,
     status: input.status,
     name: input.name.trim(),
     ownerName: input.ownerName.trim(),
@@ -221,6 +314,7 @@ function buildFormSnapshot(input: {
     allowDirectWhatsapp: input.allowDirectWhatsapp,
     recoveryPhone: input.recoveryPhone.trim(),
     recoveryEmail: input.recoveryEmail.trim(),
+    useRecoveryPhoneAsContact: input.useRecoveryPhoneAsContact,
     useRecoveryEmailAsContact: input.useRecoveryEmailAsContact
   });
 }
@@ -457,6 +551,7 @@ export default function ManagePage({
   const [openSection, setOpenSection] = useState<OpenSection>("basic");
 
   const [productType, setProductType] = useState<ProductType>("item");
+  const [productSubtype, setProductSubtype] = useState<ProductSubtype | "">("");
   const [status, setStatus] = useState<TagStatus>("active");
   const [name, setName] = useState("");
   const [ownerName, setOwnerName] = useState("");
@@ -479,6 +574,7 @@ export default function ManagePage({
   const [allowDirectWhatsapp, setAllowDirectWhatsapp] = useState(false);
   const [recoveryPhone, setRecoveryPhone] = useState("");
   const [recoveryEmail, setRecoveryEmail] = useState("");
+  const [useRecoveryPhoneAsContact, setUseRecoveryPhoneAsContact] = useState(false);
   const [useRecoveryEmailAsContact, setUseRecoveryEmailAsContact] = useState(false);
   const [copiedManage, setCopiedManage] = useState(false);
   const [copiedPublic, setCopiedPublic] = useState(false);
@@ -486,7 +582,9 @@ export default function ManagePage({
   const [transferLink, setTransferLink] = useState("");
   const [transferError, setTransferError] = useState("");
   const [transferSuccess, setTransferSuccess] = useState("");
+  const [transferExpiresAt, setTransferExpiresAt] = useState("");
   const [copiedTransfer, setCopiedTransfer] = useState(false);
+  const [transferCancelLoading, setTransferCancelLoading] = useState(false);
 
   const [logs, setLogs] = useState<NotifyLogItem[]>([]);
   const [logsLoading, setLogsLoading] = useState(false);
@@ -593,6 +691,7 @@ export default function ManagePage({
         const manageData = data as ManageResponse;
 
         const nextProductType = manageData.productType || "item";
+        const nextProductSubtype = (manageData.productSubtype || "") as ProductSubtype | "";
         const nextStatus = manageData.status === "inactive" ? "inactive" : "active";
         const nextName = manageData.profile.name || "";
         const nextOwnerName = manageData.profile.ownerName || "";
@@ -623,12 +722,16 @@ export default function ManagePage({
         );
         const nextRecoveryPhone = manageData.recovery?.phone || "";
         const nextRecoveryEmail = manageData.recovery?.email || "";
+        const nextUseRecoveryPhoneAsContact =
+          Boolean(nextRecoveryPhone) &&
+          nextPhone.trim() === nextRecoveryPhone.trim();
         const nextUseRecoveryEmailAsContact =
           Boolean(nextRecoveryEmail) &&
           nextEmail.trim().toLocaleLowerCase("tr-TR") ===
             nextRecoveryEmail.trim().toLocaleLowerCase("tr-TR");
 
         setProductType(nextProductType);
+        setProductSubtype(nextProductSubtype);
         setStatus(nextStatus);
         setName(nextName);
         setOwnerName(nextOwnerName);
@@ -650,13 +753,23 @@ export default function ManagePage({
         setAllowDirectWhatsapp(nextAllowDirectWhatsapp);
         setRecoveryPhone(nextRecoveryPhone);
         setRecoveryEmail(nextRecoveryEmail);
+        setUseRecoveryPhoneAsContact(nextUseRecoveryPhoneAsContact);
         setUseRecoveryEmailAsContact(nextUseRecoveryEmailAsContact);
         setManageLink(manageData.manageLink || "");
+        const activeTransfer =
+          manageData.transfer?.status === "pending" && manageData.transfer?.transferLink
+            ? manageData.transfer
+            : null;
+        setTransferLink(activeTransfer?.transferLink || "");
+        setTransferExpiresAt(activeTransfer?.expiresAt || "");
+        setTransferError("");
+        setTransferSuccess("");
         setConfirmDeactivate(false);
 
         setInitialSnapshot(
           buildFormSnapshot({
             productType: nextProductType,
+            productSubtype: nextProductSubtype,
             status: nextStatus,
             name: nextName,
             ownerName: nextOwnerName,
@@ -679,6 +792,7 @@ export default function ManagePage({
             allowDirectWhatsapp: nextAllowDirectWhatsapp,
             recoveryPhone: nextRecoveryPhone,
             recoveryEmail: nextRecoveryEmail,
+            useRecoveryPhoneAsContact: nextUseRecoveryPhoneAsContact,
             useRecoveryEmailAsContact: nextUseRecoveryEmailAsContact
           })
         );
@@ -705,6 +819,11 @@ export default function ManagePage({
       setAllowDirectWhatsapp(false);
     }
   }, [allowDirectCall, allowDirectWhatsapp]);
+  useEffect(() => {
+    if (!useRecoveryPhoneAsContact) return;
+    setPhone(recoveryPhone.trim());
+  }, [useRecoveryPhoneAsContact, recoveryPhone]);
+
   useEffect(() => {
     if (!useRecoveryEmailAsContact) return;
     setEmail(recoveryEmail.trim());
@@ -739,6 +858,70 @@ export default function ManagePage({
     return ALERT_OPTIONS_BY_TYPE[productType];
   }, [productType]);
 
+  const allowedSubtypeOptions = useMemo(() => {
+    return PRODUCT_SUBTYPE_OPTIONS[productType];
+  }, [productType]);
+
+  const publicPreviewItems = useMemo(() => {
+    const items: Array<{ label: string; value: string }> = [];
+
+    if (showPetName && petName.trim()) {
+      items.push({
+        label: getPrimaryNameLabel(productType),
+        value: petName.trim()
+      });
+    }
+
+    if (showName && ownerName.trim()) {
+      items.push({
+        label: getOwnerNameLabel(productType),
+        value: ownerName.trim()
+      });
+    }
+
+    const subtypeLabel = getSubtypeLabel(productType, productSubtype);
+    if (subtypeLabel) {
+      items.push({ label: "Kategori", value: subtypeLabel });
+    }
+
+    if (showPhone && allowDirectCall && phone.trim()) {
+      items.push({ label: "Telefon", value: phone.trim() });
+    }
+
+    if (showCity && city.trim()) {
+      items.push({ label: "Şehir", value: city.trim() });
+    }
+
+    return items;
+  }, [
+    productType,
+    productSubtype,
+    petName,
+    ownerName,
+    phone,
+    city,
+    showPetName,
+    showName,
+    showPhone,
+    showCity,
+    allowDirectCall
+  ]);
+
+  const publicPreviewNote = useMemo(() => {
+    if (!showNote || !note.trim()) return "";
+    return note.trim();
+  }, [note, showNote]);
+
+  useEffect(() => {
+    if (!productSubtype) return;
+    const isValid = PRODUCT_SUBTYPE_OPTIONS[productType].some(
+      (item) => item.value === productSubtype
+    );
+    if (!isValid) {
+      setProductSubtype("");
+    }
+  }, [productType, productSubtype]);
+
   useEffect(() => {
     setAlerts((prev) => prev.filter((item) => allowedAlerts.includes(item)));
   }, [allowedAlerts]);
@@ -748,6 +931,39 @@ export default function ManagePage({
     if (typeof window === "undefined") return `/p/${code}`;
     return `${window.location.origin}/p/${code}`;
   }, [code]);
+
+  const formattedTransferExpiry = useMemo(() => {
+    if (!transferExpiresAt) return "";
+    const parsed = new Date(transferExpiresAt);
+    if (Number.isNaN(parsed.getTime())) return "";
+    return parsed.toLocaleString("tr-TR");
+  }, [transferExpiresAt]);
+
+  const transferShareText = useMemo(() => {
+    if (!transferLink) return "";
+    const expiryText = formattedTransferExpiry
+      ? `Bu bağlantı ${formattedTransferExpiry} tarihine kadar geçerlidir.`
+      : "Bu bağlantı sınırlı süreyle geçerlidir.";
+
+    return [
+      "Dokuntag ürün devri bağlantısı",
+      "",
+      transferLink,
+      "",
+      expiryText,
+      "Bağlantıyı açan kişi ürünü kendi hesabına aktarabilir."
+    ].join("\n");
+  }, [formattedTransferExpiry, transferLink]);
+
+  const transferWhatsappHref = useMemo(() => {
+    if (!transferShareText) return "";
+    return `https://wa.me/?text=${encodeURIComponent(transferShareText)}`;
+  }, [transferShareText]);
+
+  const transferEmailHref = useMemo(() => {
+    if (!transferShareText) return "";
+    return `mailto:?subject=${encodeURIComponent("Dokuntag ürün devri")}&body=${encodeURIComponent(transferShareText)}`;
+  }, [transferShareText]);
 
   const visibleFieldCount = useMemo(() => {
     return [
@@ -774,6 +990,7 @@ export default function ManagePage({
   const currentSnapshot = useMemo(() => {
     return buildFormSnapshot({
       productType,
+      productSubtype,
       status,
       name,
       ownerName,
@@ -796,10 +1013,12 @@ export default function ManagePage({
       allowDirectWhatsapp,
       recoveryPhone,
       recoveryEmail,
+      useRecoveryPhoneAsContact,
       useRecoveryEmailAsContact
     });
   }, [
     productType,
+    productSubtype,
     status,
     name,
     ownerName,
@@ -821,6 +1040,7 @@ export default function ManagePage({
     allowDirectWhatsapp,
     recoveryPhone,
     recoveryEmail,
+    useRecoveryPhoneAsContact,
     useRecoveryEmailAsContact
   ]);
 
@@ -955,6 +1175,7 @@ export default function ManagePage({
       setTransferLoading(true);
       setTransferError("");
       setTransferSuccess("");
+      setTransferExpiresAt("");
 
       const res = await fetch(
         `/api/transfer/create/${code}?token=${encodeURIComponent(token)}`,
@@ -974,8 +1195,11 @@ export default function ManagePage({
 
       const nextTransferLink =
         typeof data?.transferLink === "string" ? data.transferLink : "";
+      const nextTransferExpiresAt =
+        typeof data?.expiresAt === "string" ? data.expiresAt : "";
 
       setTransferLink(nextTransferLink);
+      setTransferExpiresAt(nextTransferExpiresAt);
       setTransferSuccess(
         data?.message ||
           "Devir linki oluşturuldu. Ürün güvenlik için pasif duruma alındı."
@@ -986,10 +1210,11 @@ export default function ManagePage({
       setInitialSnapshot(
         buildFormSnapshot({
           productType,
+          productSubtype,
           status: "inactive",
           name,
           ownerName,
-          phone,
+          phone: useRecoveryPhoneAsContact ? recoveryPhone : phone,
           email: useRecoveryEmailAsContact ? recoveryEmail : email,
           city,
           addressDetail,
@@ -1008,6 +1233,7 @@ export default function ManagePage({
           allowDirectWhatsapp,
           recoveryPhone,
           recoveryEmail,
+          useRecoveryPhoneAsContact,
           useRecoveryEmailAsContact
         })
       );
@@ -1021,6 +1247,73 @@ export default function ManagePage({
       );
     } finally {
       setTransferLoading(false);
+    }
+  }
+
+
+  async function handleCancelTransfer() {
+    if (!code || !token || transferCancelLoading || !transferLink) return;
+
+    try {
+      setTransferCancelLoading(true);
+      setTransferError("");
+      setTransferSuccess("");
+
+      const res = await fetch(
+        `/api/transfer/cancel/${code}?token=${encodeURIComponent(token)}`,
+        { method: "POST" }
+      );
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data?.error || "Devir bağlantısı iptal edilemedi.");
+      }
+
+      setTransferLink("");
+      setTransferExpiresAt("");
+      setStatus("active");
+      setConfirmDeactivate(false);
+      setTransferSuccess(
+        data?.message || "Devir bağlantısı iptal edildi. Ürün yeniden aktif duruma alındı."
+      );
+
+      setInitialSnapshot(
+        buildFormSnapshot({
+          productType,
+          productSubtype,
+          status: "active",
+          name,
+          ownerName,
+          phone: useRecoveryPhoneAsContact ? recoveryPhone : phone,
+          email: useRecoveryEmailAsContact ? recoveryEmail : email,
+          city,
+          addressDetail,
+          distinctiveFeature,
+          petName,
+          note,
+          alerts,
+          showName,
+          showPhone,
+          showEmail: false,
+          showCity,
+          showAddressDetail,
+          showPetName,
+          showNote,
+          allowDirectCall,
+          allowDirectWhatsapp,
+          recoveryPhone,
+          recoveryEmail,
+          useRecoveryPhoneAsContact,
+          useRecoveryEmailAsContact
+        })
+      );
+    } catch (err) {
+      setTransferError(
+        err instanceof Error ? err.message : "Devir bağlantısı iptal edilemedi."
+      );
+    } finally {
+      setTransferCancelLoading(false);
     }
   }
 
@@ -1140,9 +1433,10 @@ export default function ManagePage({
           },
           body: JSON.stringify({
             productType,
+            productSubtype,
             name,
             ownerName,
-            phone,
+            phone: useRecoveryPhoneAsContact ? recoveryPhone : phone,
             email: useRecoveryEmailAsContact ? recoveryEmail : email,
             city,
             addressDetail,
@@ -1191,10 +1485,11 @@ export default function ManagePage({
 
       const nextSnapshot = buildFormSnapshot({
         productType,
+        productSubtype,
         status: resolvedStatus,
         name,
         ownerName,
-        phone,
+        phone: useRecoveryPhoneAsContact ? recoveryPhone : phone,
         email: useRecoveryEmailAsContact ? recoveryEmail : email,
         city,
         addressDetail,
@@ -1213,6 +1508,7 @@ export default function ManagePage({
         allowDirectWhatsapp,
         recoveryPhone,
         recoveryEmail,
+        useRecoveryPhoneAsContact,
         useRecoveryEmailAsContact
       });
 
@@ -1246,9 +1542,10 @@ export default function ManagePage({
           },
           body: JSON.stringify({
             productType,
+            productSubtype,
             name,
             ownerName,
-            phone,
+            phone: useRecoveryPhoneAsContact ? recoveryPhone : phone,
             email: useRecoveryEmailAsContact ? recoveryEmail : email,
             city,
             addressDetail,
@@ -1303,11 +1600,12 @@ export default function ManagePage({
       setInitialSnapshot(
         buildFormSnapshot({
           productType,
+          productSubtype,
           status: resolvedStatus,
           name,
           ownerName,
-          phone,
-          email,
+          phone: useRecoveryPhoneAsContact ? recoveryPhone : phone,
+          email: useRecoveryEmailAsContact ? recoveryEmail : email,
           city,
           addressDetail,
           distinctiveFeature,
@@ -1325,6 +1623,7 @@ export default function ManagePage({
           allowDirectWhatsapp,
           recoveryPhone,
           recoveryEmail,
+          useRecoveryPhoneAsContact,
           useRecoveryEmailAsContact
         })
       );
@@ -1568,7 +1867,7 @@ export default function ManagePage({
           <InfoCard
             title="Görünür alan"
             value={visibleFieldCount}
-            subtext="Public sayfada"
+            subtext="Herkese açık sayfada"
           />
           <InfoCard
             title="Hızlı iletişim"
@@ -1592,7 +1891,7 @@ export default function ManagePage({
             sectionRef={basicRef}
           >
             <div className="grid gap-4">
-              <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid gap-4 sm:grid-cols-3">
                 <Field label="Ürün tipi">
                   <select
                     value={productType}
@@ -1604,6 +1903,24 @@ export default function ManagePage({
                     <option value="pet">Evcil hayvan</option>
                     <option value="person">Kişi</option>
                   </select>
+                </Field>
+
+                <Field label="Kategori" optional>
+                  <select
+                    value={productSubtype}
+                    onChange={(e) => setProductSubtype(e.target.value as ProductSubtype | "")}
+                    className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
+                  >
+                    <option value="">Seçmek istemiyorum</option>
+                    {allowedSubtypeOptions.map((item) => (
+                      <option key={`${productType}-${item.value}`} value={item.value}>
+                        {item.label}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="mt-2 text-xs text-neutral-500">
+                    İsterseniz ürün tipini biraz daha net anlatabilirsiniz.
+                  </p>
                 </Field>
 
                 <Field label={getPrimaryNameLabel(productType)}>
@@ -1697,12 +2014,28 @@ export default function ManagePage({
                     onChange={(e) =>
                       setPhone(e.target.value.replace(/[^0-9]/g, ""))
                     }
+                    disabled={useRecoveryPhoneAsContact}
                     inputMode="numeric"
                     pattern="[0-9]*"
-                    className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
+                    className={`w-full rounded-2xl border px-4 py-3 text-sm outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200 ${
+                      useRecoveryPhoneAsContact
+                        ? "cursor-not-allowed border-neutral-200 bg-neutral-100 text-neutral-500"
+                        : "border-neutral-300 bg-white"
+                    }`}
                     placeholder="05xxxxxxxxx"
                   />
                   <div className="mt-3 flex flex-wrap gap-2">
+                    <InlineToggle
+                      checked={useRecoveryPhoneAsContact}
+                      disabled={!recoveryPhone.trim()}
+                      label="Kurtarma telefonunu iletişim telefonu olarak kullan"
+                      onChange={(checked) => {
+                        setUseRecoveryPhoneAsContact(checked);
+                        if (checked) {
+                          setPhone(recoveryPhone.trim());
+                        }
+                      }}
+                    />
                     <InlineToggle
                       checked={allowDirectCall}
                       disabled={!phone.trim()}
@@ -1751,9 +2084,38 @@ export default function ManagePage({
                     />
                   </div>
                   <p className="mt-2 text-xs text-neutral-500">
-                    Public profilde e-posta görünmez. Bu alan mesaj bildirimleri için kullanılır.
+                    Herkese açık profilde e-posta görünmez. Bu alan mesaj bildirimleri için kullanılır.
                   </p>
                 </Field>
+              </div>
+
+              <div className="rounded-[1.5rem] border border-neutral-200 bg-neutral-50 px-4 py-4">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-sm font-medium text-neutral-900">Herkese açık bilgiler önizlemesi</p>
+                  <span className="rounded-full bg-white px-3 py-1 text-[11px] font-medium text-neutral-500">
+                    Şu an görünecek alanlar
+                  </span>
+                </div>
+                {publicPreviewItems.length > 0 ? (
+                  <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                    {publicPreviewItems.map((item) => (
+                      <div key={`${item.label}-${item.value}`} className="rounded-2xl border border-neutral-200 bg-white px-4 py-3">
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-neutral-500">{item.label}</p>
+                        <p className="mt-1 text-sm text-neutral-900">{item.value}</p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="mt-3 text-sm leading-6 text-neutral-600">
+                    Şu an herkese açık profilde bilgi görünmüyor. İsterseniz görünürlük seçeneklerinden bazı alanları açabilirsiniz.
+                  </p>
+                )}
+                {publicPreviewNote ? (
+                  <div className="mt-3 rounded-2xl border border-neutral-200 bg-white px-4 py-3">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-neutral-500">Not</p>
+                    <p className="mt-1 text-sm leading-6 text-neutral-900">{publicPreviewNote}</p>
+                  </div>
+                ) : null}
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2">
@@ -1788,7 +2150,7 @@ export default function ManagePage({
                 <div className="rounded-[1.5rem] border border-neutral-200 bg-neutral-50 px-4 py-4">
                   <p className="text-sm font-medium text-neutral-900">Adres bilgisi gizli tutulur</p>
                   <p className="mt-2 text-sm leading-6 text-neutral-600">
-                    Adres detayı güvenlik nedeniyle Dokuntag içinde paylaşılmaz ve public profilde gösterilmez.
+                    Adres detayı güvenlik nedeniyle Dokuntag içinde paylaşılmaz ve herkese açık profilde gösterilmez.
                     Adres belirtmek isterseniz bunu not alanına manuel olarak sizin yazmanız gerekir.
                   </p>
                   <p className="mt-2 text-xs leading-5 text-neutral-500">
@@ -1904,6 +2266,20 @@ export default function ManagePage({
                       {transferLink}
                     </p>
 
+                    <div className="mt-3 rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm leading-6 text-blue-900">
+                      <p className="font-medium">
+                        Bu bağlantı güvenlik nedeniyle süreli ve tek kullanımlıktır.
+                      </p>
+                      <p className="mt-1">
+                        {formattedTransferExpiry
+                          ? `Son kullanım: ${formattedTransferExpiry}`
+                          : "Son kullanım tarihi link oluşturulduktan sonra otomatik belirlenir."}
+                      </p>
+                      <p className="mt-1">
+                        Bağlantıyı açan kişi ürünü kendi hesabına aktarabilir.
+                      </p>
+                    </div>
+
                     <div className="mt-3 flex flex-wrap gap-2">
                       <button
                         type="button"
@@ -1912,6 +2288,39 @@ export default function ManagePage({
                       >
                         {copiedTransfer ? "Devir linki kopyalandı" : "Devir linkini kopyala"}
                       </button>
+
+                      <button
+                        type="button"
+                        onClick={() => void handleCancelTransfer()}
+                        disabled={transferCancelLoading}
+                        className="rounded-2xl border border-red-300 bg-red-50 px-4 py-2 text-sm font-medium text-red-700 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        {transferCancelLoading ? "İptal ediliyor..." : "Devir linkini iptal et"}
+                      </button>
+
+                      <a
+                        href={transferWhatsappHref || undefined}
+                        target="_blank"
+                        rel="noreferrer"
+                        className={`rounded-2xl border px-4 py-2 text-sm font-medium transition ${
+                          transferWhatsappHref
+                            ? "border-neutral-300 bg-white hover:border-neutral-400 hover:bg-neutral-50"
+                            : "pointer-events-none cursor-not-allowed border-neutral-200 bg-neutral-100 text-neutral-400"
+                        }`}
+                      >
+                        WhatsApp ile paylaş
+                      </a>
+
+                      <a
+                        href={transferEmailHref || undefined}
+                        className={`rounded-2xl border px-4 py-2 text-sm font-medium transition ${
+                          transferEmailHref
+                            ? "border-neutral-300 bg-white hover:border-neutral-400 hover:bg-neutral-50"
+                            : "pointer-events-none cursor-not-allowed border-neutral-200 bg-neutral-100 text-neutral-400"
+                        }`}
+                      >
+                        E-posta ile paylaş
+                      </a>
                     </div>
                   </div>
                 ) : null}
@@ -1938,7 +2347,7 @@ export default function ManagePage({
                   onClick={() => void copyShareLink()}
                   className="rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm font-medium transition hover:border-neutral-400 hover:bg-neutral-50"
                 >
-                  {copiedPublic ? "Public link kopyalandı" : "Public linki kopyala"}
+                  {copiedPublic ? "Herkese açık bağlantı kopyalandı" : "Herkese açık bağlantıyı kopyala"}
                 </button>
               </div>
             </div>

@@ -9,6 +9,25 @@ type Params = {
 };
 
 type ProductType = "pet" | "item" | "key" | "person";
+type ProductSubtype =
+  | "cat"
+  | "dog"
+  | "bird"
+  | "house-key"
+  | "car-key"
+  | "office-key"
+  | "girl"
+  | "boy"
+  | "woman"
+  | "man"
+  | "elder"
+  | "bag"
+  | "wallet"
+  | "luggage"
+  | "phone"
+  | "tablet"
+  | "headphones"
+  | "other";
 
 function getString(value: unknown) {
   return typeof value === "string" ? value.trim() : "";
@@ -19,6 +38,19 @@ function normalizeProductType(value: unknown): ProductType {
     return value;
   }
   return "item";
+}
+
+const PRODUCT_SUBTYPE_OPTIONS: Record<ProductType, ProductSubtype[]> = {
+  pet: ["cat", "dog", "bird", "other"],
+  key: ["house-key", "car-key", "office-key", "other"],
+  person: ["girl", "boy", "woman", "man", "elder", "other"],
+  item: ["bag", "wallet", "luggage", "phone", "tablet", "headphones", "other"]
+};
+
+function normalizeProductSubtype(value: unknown, productType: ProductType): ProductSubtype | "" {
+  if (typeof value !== "string") return "";
+  const normalized = value.trim() as ProductSubtype;
+  return PRODUCT_SUBTYPE_OPTIONS[productType].includes(normalized) ? normalized : "";
 }
 
 export async function GET(request: Request, { params }: Params) {
@@ -61,12 +93,13 @@ export async function POST(request: Request, { params }: Params) {
     const body = await request.json();
 
     const productType = normalizeProductType(body.productType);
+    const productSubtype = normalizeProductSubtype(body.productSubtype, productType);
     const tagName = getString(body.name || body.tagName);
     const ownerName = getString(body.ownerName);
     const phone = getString(body.phone);
     const email = getString(body.email);
     const city = getString(body.city);
-    const addressDetail = "";
+    const addressDetail = getString(body.addressDetail);
     const distinctiveFeature = getString(body.distinctiveFeature);
     const petName = getString(body.petName || body.name || body.tagName);
     const note = getString(body.note);
@@ -124,6 +157,7 @@ export async function POST(request: Request, { params }: Params) {
     const claimed = await claimTransferAsync({
       transferToken: token,
       productType,
+      productSubtype,
       tagName,
       ownerName,
       phone,

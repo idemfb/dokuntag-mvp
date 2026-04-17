@@ -4,10 +4,81 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
 type ProductType = "pet" | "item" | "key" | "person";
+type ProductSubtype =
+  | "cat"
+  | "dog"
+  | "bird"
+  | "pet_other"
+  | "house_key"
+  | "car_key"
+  | "office_key"
+  | "key_other"
+  | "girl_child"
+  | "boy_child"
+  | "woman"
+  | "man"
+  | "elder"
+  | "person_other"
+  | "bag"
+  | "wallet"
+  | "luggage"
+  | "phone_item"
+  | "tablet"
+  | "headphones"
+  | "item_other";
+
+const PRODUCT_SUBTYPE_OPTIONS: Record<ProductType, Array<{ value: ProductSubtype; label: string }>> = {
+  pet: [
+    { value: "cat", label: "Kedi" },
+    { value: "dog", label: "Köpek" },
+    { value: "bird", label: "Kuş" },
+    { value: "pet_other", label: "Diğer" }
+  ],
+  key: [
+    { value: "house_key", label: "Ev anahtarı" },
+    { value: "car_key", label: "Araba anahtarı" },
+    { value: "office_key", label: "Ofis anahtarı" },
+    { value: "key_other", label: "Diğer" }
+  ],
+  person: [
+    { value: "girl_child", label: "Kız çocuk" },
+    { value: "boy_child", label: "Erkek çocuk" },
+    { value: "woman", label: "Kadın" },
+    { value: "man", label: "Erkek" },
+    { value: "elder", label: "Yaşlı" },
+    { value: "person_other", label: "Diğer" }
+  ],
+  item: [
+    { value: "bag", label: "Çanta" },
+    { value: "wallet", label: "Cüzdan" },
+    { value: "luggage", label: "Valiz" },
+    { value: "phone_item", label: "Telefon" },
+    { value: "tablet", label: "Tablet" },
+    { value: "headphones", label: "Kulaklık" },
+    { value: "item_other", label: "Diğer" }
+  ]
+};
+
+function getProductSubtypeLabel(value?: string) {
+  if (!value) return "";
+  for (const options of Object.values(PRODUCT_SUBTYPE_OPTIONS)) {
+    const matched = options.find((item) => item.value === value);
+    if (matched) return matched.label;
+  }
+  return "";
+}
+
+function getSubtypeLabel(productType: ProductType, value: ProductSubtype | "") {
+  if (!value) return "";
+  const matched = PRODUCT_SUBTYPE_OPTIONS[productType].find((item) => item.value === value);
+  return matched?.label || "";
+}
+
 type OpenSection = "basic" | "contact" | "recovery" | "alerts" | null;
 
 type SetupForm = {
   productType: ProductType;
+  productSubtype: ProductSubtype | "";
   petName: string;
   tagName: string;
   ownerName: string;
@@ -27,6 +98,7 @@ type SetupForm = {
   showNote: boolean;
   recoveryPhone: string;
   recoveryEmail: string;
+  useRecoveryPhoneAsContact: boolean;
   useRecoveryEmailAsContact: boolean;
 };
 
@@ -89,6 +161,7 @@ const ALERT_OPTIONS_BY_TYPE: Record<ProductType, string[]> = {
 
 const initialForm: SetupForm = {
   productType: "item",
+  productSubtype: "",
   petName: "",
   tagName: "",
   ownerName: "",
@@ -108,6 +181,7 @@ const initialForm: SetupForm = {
   showNote: false,
   recoveryPhone: "",
   recoveryEmail: "",
+  useRecoveryPhoneAsContact: false,
   useRecoveryEmailAsContact: false
 };
 
@@ -426,10 +500,12 @@ export default function SetupCodePage({ params }: Props) {
 
         const recoveryPhone = data.tag?.recovery?.phone ?? "";
         const recoveryEmail = data.tag?.recovery?.email ?? "";
+        const contactPhone = data.tag?.profile?.phone ?? "";
         const contactEmail = data.tag?.profile?.email ?? "";
 
         setForm({
           productType: (data.tag?.productType ?? "item") as ProductType,
+          productSubtype: (data.tag?.productSubtype ?? "") as ProductSubtype | "",
           petName: data.tag?.profile?.petName ?? "",
           tagName: data.tag?.profile?.tagName ?? data.tag?.profile?.name ?? "",
           ownerName: data.tag?.profile?.ownerName ?? "",
@@ -449,6 +525,11 @@ export default function SetupCodePage({ params }: Props) {
           showNote: Boolean(data.tag?.visibility?.showNote),
           recoveryPhone,
           recoveryEmail,
+          useRecoveryPhoneAsContact: Boolean(
+            recoveryPhone &&
+              contactPhone &&
+              recoveryPhone.trim() === contactPhone.trim()
+          ),
           useRecoveryEmailAsContact: Boolean(
             recoveryEmail &&
               contactEmail &&
@@ -471,12 +552,9 @@ export default function SetupCodePage({ params }: Props) {
   }, [params]);
 
   const hasPhone = useMemo(() => Boolean(form.phone.trim()), [form.phone]);
+  const hasRecoveryPhone = useMemo(() => Boolean(form.recoveryPhone.trim()), [form.recoveryPhone]);
   const hasCity = useMemo(() => Boolean(form.city.trim()), [form.city]);
   const hasNote = useMemo(() => Boolean(form.note.trim()), [form.note]);
-  const hasRecoveryPhone = useMemo(
-    () => Boolean(form.recoveryPhone.trim()),
-    [form.recoveryPhone]
-  );
   const hasRecoveryEmail = useMemo(
     () => Boolean(form.recoveryEmail.trim()),
     [form.recoveryEmail]
@@ -487,13 +565,76 @@ export default function SetupCodePage({ params }: Props) {
     [form.productType]
   );
 
+  const allowedSubtypeOptions = useMemo(
+    () => PRODUCT_SUBTYPE_OPTIONS[form.productType],
+    [form.productType]
+  );
+
+  const publicPreviewItems = useMemo(() => {
+    const items: Array<{ label: string; value: string }> = [];
+
+    if (form.showPetName && form.petName.trim()) {
+      items.push({
+        label: getPrimaryNameLabel(form.productType),
+        value: form.petName.trim()
+      });
+    }
+
+    if (form.showName && form.ownerName.trim()) {
+      items.push({
+        label: getOwnerNameLabel(form.productType),
+        value: form.ownerName.trim()
+      });
+    }
+
+    const subtypeLabel = getSubtypeLabel(form.productType, form.productSubtype);
+    if (subtypeLabel) {
+      items.push({ label: "Kategori", value: subtypeLabel });
+    }
+
+    if (form.showPhone && form.allowPhone && form.phone.trim()) {
+      items.push({ label: "Telefon", value: form.phone.trim() });
+    }
+
+    if (form.showCity && form.city.trim()) {
+      items.push({ label: "Şehir", value: form.city.trim() });
+    }
+
+    return items;
+  }, [
+    form.productType,
+    form.productSubtype,
+    form.petName,
+    form.ownerName,
+    form.phone,
+    form.city,
+    form.showPetName,
+    form.showName,
+    form.showPhone,
+    form.showCity,
+    form.allowPhone
+  ]);
+
+  const publicPreviewNote = useMemo(() => {
+    if (!form.showNote || !form.note.trim()) return "";
+    return form.note.trim();
+  }, [form.note, form.showNote]);
+
   useEffect(() => {
-    setForm((prev) => ({
-      ...prev,
-      alerts: prev.alerts.filter((item) =>
-        ALERT_OPTIONS_BY_TYPE[prev.productType].includes(item)
-      )
-    }));
+    setForm((prev) => {
+      const nextSubtypeOptions = PRODUCT_SUBTYPE_OPTIONS[prev.productType];
+      const hasValidSubtype = prev.productSubtype
+        ? nextSubtypeOptions.some((item) => item.value === prev.productSubtype)
+        : true;
+
+      return {
+        ...prev,
+        productSubtype: hasValidSubtype ? prev.productSubtype : "",
+        alerts: prev.alerts.filter((item) =>
+          ALERT_OPTIONS_BY_TYPE[prev.productType].includes(item)
+        )
+      };
+    });
   }, [form.productType]);
 
   useEffect(() => {
@@ -533,10 +674,25 @@ export default function SetupCodePage({ params }: Props) {
   }, [hasNote, form.showNote]);
 
   useEffect(() => {
+    if (!hasRecoveryPhone && form.useRecoveryPhoneAsContact) {
+      updateField("useRecoveryPhoneAsContact", false);
+    }
+  }, [hasRecoveryPhone, form.useRecoveryPhoneAsContact]);
+
+  useEffect(() => {
     if (!hasRecoveryEmail && form.useRecoveryEmailAsContact) {
       updateField("useRecoveryEmailAsContact", false);
     }
   }, [hasRecoveryEmail, form.useRecoveryEmailAsContact]);
+
+  useEffect(() => {
+    if (form.useRecoveryPhoneAsContact) {
+      const normalizedRecoveryPhone = normalizePhone(form.recoveryPhone);
+      if (form.phone !== normalizedRecoveryPhone) {
+        updateField("phone", normalizedRecoveryPhone);
+      }
+    }
+  }, [form.recoveryPhone, form.phone, form.useRecoveryPhoneAsContact]);
 
   useEffect(() => {
     const phone = normalizePhone(form.phone);
@@ -607,6 +763,12 @@ export default function SetupCodePage({ params }: Props) {
     setError("");
 
     try {
+      if (form.useRecoveryPhoneAsContact && !form.recoveryPhone.trim()) {
+        throw new Error(
+          "İletişim telefonu olarak kullanmak için kurtarma telefonu girilmelidir."
+        );
+      }
+
       if (!form.phone.trim()) {
         throw new Error("İletişim telefonu zorunludur.");
       }
@@ -979,8 +1141,28 @@ export default function SetupCodePage({ params }: Props) {
                     <option value="item">Eşya</option>
                     <option value="key">Anahtar</option>
                     <option value="pet">Evcil hayvan</option>
-                    <option value="person">Kişi</option>
+                    <option value="person">Birey</option>
                   </select>
+                </Field>
+
+                <Field label="Kategori" optional>
+                  <select
+                    value={form.productSubtype}
+                    onChange={(e) =>
+                      updateField("productSubtype", e.target.value as ProductSubtype | "")
+                    }
+                    className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
+                  >
+                    <option value="">Seçmek istemiyorum</option>
+                    {allowedSubtypeOptions.map((item) => (
+                      <option key={`${form.productType}-${item.value}`} value={item.value}>
+                        {item.label}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="mt-2 text-xs text-neutral-500">
+                    İsterseniz ürün tipini biraz daha net anlatabilirsiniz.
+                  </p>
                 </Field>
 
                 <Field label={getPrimaryNameLabel(form.productType)}>
@@ -1075,11 +1257,18 @@ export default function SetupCodePage({ params }: Props) {
                   }
                   inputMode="numeric"
                   pattern="[0-9]*"
-                  className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
+                  disabled={form.useRecoveryPhoneAsContact}
+                  className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200 disabled:cursor-not-allowed disabled:bg-neutral-100"
                   placeholder="05xxxxxxxxx"
                   required
                 />
                 <div className="mt-3 flex flex-wrap gap-2">
+                  <InlineToggle
+                    checked={form.useRecoveryPhoneAsContact}
+                    disabled={!hasRecoveryPhone}
+                    label="Kurtarma telefonu iletişim telefonu olarak da kullanılsın"
+                    onChange={(value) => updateField("useRecoveryPhoneAsContact", value)}
+                  />
                   <InlineToggle
                     checked={form.allowPhone}
                     disabled={!hasPhone}
@@ -1100,6 +1289,35 @@ export default function SetupCodePage({ params }: Props) {
                   />
                 </div>
               </Field>
+
+              <div className="rounded-[1.5rem] border border-neutral-200 bg-neutral-50 px-4 py-4">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-sm font-medium text-neutral-900">Herkese açık bilgiler önizlemesi</p>
+                  <span className="rounded-full bg-white px-3 py-1 text-[11px] font-medium text-neutral-500">
+                    Şu an görünecek alanlar
+                  </span>
+                </div>
+                {publicPreviewItems.length > 0 ? (
+                  <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                    {publicPreviewItems.map((item) => (
+                      <div key={`${item.label}-${item.value}`} className="rounded-2xl border border-neutral-200 bg-white px-4 py-3">
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-neutral-500">{item.label}</p>
+                        <p className="mt-1 text-sm text-neutral-900">{item.value}</p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="mt-3 text-sm leading-6 text-neutral-600">
+                    Şu an herkese açık profilde bilgi görünmüyor. İsterseniz görünürlük seçeneklerinden bazı alanları açabilirsiniz.
+                  </p>
+                )}
+                {publicPreviewNote ? (
+                  <div className="mt-3 rounded-2xl border border-neutral-200 bg-white px-4 py-3">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-neutral-500">Not</p>
+                    <p className="mt-1 text-sm leading-6 text-neutral-900">{publicPreviewNote}</p>
+                  </div>
+                ) : null}
+              </div>
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <Field label="Şehir" optional>
@@ -1185,7 +1403,7 @@ export default function SetupCodePage({ params }: Props) {
                 <InlineToggle
                   checked={form.useRecoveryEmailAsContact}
                   disabled={!hasRecoveryEmail}
-                  label="Bu e-posta iletişim maili olarak da kullanılsın"
+                  label="Kurtarma e-postası iletişim maili olarak da kullanılsın"
                   onChange={(value) =>
                     updateField("useRecoveryEmailAsContact", value)
                   }

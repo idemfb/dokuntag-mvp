@@ -2,9 +2,32 @@ import { NextRequest, NextResponse } from "next/server";
 import { findTagByCodeAsync, upsertTagAsync } from "@/lib/tags";
 
 type ProductType = "pet" | "item" | "key" | "person";
+type ProductSubtype =
+  | "cat"
+  | "dog"
+  | "bird"
+  | "pet_other"
+  | "house_key"
+  | "car_key"
+  | "office_key"
+  | "key_other"
+  | "girl_child"
+  | "boy_child"
+  | "woman"
+  | "man"
+  | "elder"
+  | "person_other"
+  | "bag"
+  | "wallet"
+  | "luggage"
+  | "phone_item"
+  | "tablet"
+  | "headphones"
+  | "item_other";
 
 type SetupBody = {
   productType?: ProductType;
+  productSubtype?: ProductSubtype | "";
   petName?: string;
   tagName?: string;
   ownerName?: string;
@@ -24,6 +47,7 @@ type SetupBody = {
   showNote?: boolean;
   recoveryPhone?: string;
   recoveryEmail?: string;
+  useRecoveryPhoneAsContact?: boolean;
   useRecoveryEmailAsContact?: boolean;
 };
 
@@ -31,6 +55,13 @@ type RouteContext = {
   params: Promise<{
     code: string;
   }>;
+};
+
+const PRODUCT_SUBTYPE_OPTIONS: Record<ProductType, ProductSubtype[]> = {
+  pet: ["cat", "dog", "bird", "pet_other"],
+  key: ["house_key", "car_key", "office_key", "key_other"],
+  person: ["girl_child", "boy_child", "woman", "man", "elder", "person_other"],
+  item: ["bag", "wallet", "luggage", "phone_item", "tablet", "headphones", "item_other"]
 };
 
 const ALERT_OPTIONS_BY_TYPE: Record<ProductType, string[]> = {
@@ -67,6 +98,15 @@ function normalizeProductType(value: unknown): ProductType {
   }
 
   return "item";
+}
+
+function normalizeProductSubtype(
+  productType: ProductType,
+  value: unknown
+): ProductSubtype | "" {
+  if (typeof value !== "string" || !value.trim()) return "";
+  const normalized = value.trim() as ProductSubtype;
+  return PRODUCT_SUBTYPE_OPTIONS[productType].includes(normalized) ? normalized : "";
 }
 
 function normalizeString(value: unknown) {
@@ -112,6 +152,7 @@ export async function GET(_req: NextRequest, context: RouteContext) {
         code: tag.code,
         status: tag.status,
         productType: tag.productType,
+        productSubtype: tag.productSubtype || "",
         profile: tag.profile,
         alerts: tag.alerts,
         visibility: tag.visibility,
@@ -158,22 +199,36 @@ export async function PUT(req: NextRequest, context: RouteContext) {
     const body = (await req.json()) as SetupBody;
 
     const productType = normalizeProductType(body.productType);
+    const productSubtype = normalizeProductSubtype(productType, body.productSubtype);
     const petName = normalizeString(body.petName);
     const tagName = normalizeString(body.tagName);
     const ownerName = normalizeString(body.ownerName);
-    const phone = normalizePhone(body.phone);
-    const city = normalizeString(body.city);
-    const addressDetail = "";
-    const distinctiveFeature = normalizeString(body.distinctiveFeature);
-    const note = normalizeString(body.note);
 
     const recoveryPhone = normalizePhone(body.recoveryPhone);
     const recoveryEmail = normalizeEmail(body.recoveryEmail);
+    const useRecoveryPhoneAsContact = Boolean(body.useRecoveryPhoneAsContact);
     const useRecoveryEmailAsContact = Boolean(body.useRecoveryEmailAsContact);
+
+    const phone = normalizePhone(
+      useRecoveryPhoneAsContact ? recoveryPhone : body.phone
+    );
+    const city = normalizeString(body.city);
+    const distinctiveFeature = normalizeString(body.distinctiveFeature);
+    const note = normalizeString(body.note);
 
     if (!petName) {
       return NextResponse.json(
         { ok: false, error: "Ana isim zorunludur." },
+        { status: 400 }
+      );
+    }
+
+    if (useRecoveryPhoneAsContact && !recoveryPhone) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: "İletişim telefonu olarak kullanmak için kurtarma telefonu girilmelidir."
+        },
         { status: 400 }
       );
     }
@@ -212,6 +267,7 @@ export async function PUT(req: NextRequest, context: RouteContext) {
       );
     }
 
+    const contactEmail = useRecoveryEmailAsContact ? recoveryEmail : recoveryEmail || "";
     const allowDirectCall = Boolean(body.allowPhone && phone);
     const allowDirectWhatsapp = Boolean(body.allowWhatsapp && allowDirectCall && phone);
 
@@ -226,13 +282,14 @@ export async function PUT(req: NextRequest, context: RouteContext) {
     const saved = await upsertTagAsync({
       code: normalizedCode,
       productType,
+      productSubtype,
       tagName,
       petName,
       ownerName,
       phone,
-      email: recoveryEmail || "",
+      email: contactEmail,
       city,
-      addressDetail,
+      addressDetail: "",
       distinctiveFeature,
       note,
       alerts,

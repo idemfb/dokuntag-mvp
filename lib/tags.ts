@@ -132,6 +132,14 @@ export type TagView = {
     phone: string;
     email: string;
   };
+  transfer?: {
+    token?: string;
+    status?: TransferStatus | null;
+    createdAt?: string;
+    expiresAt?: string;
+    usedAt?: string;
+    cancelledAt?: string;
+  };
 };
 
 export type RecoveryListedItem = {
@@ -521,7 +529,17 @@ function mapProductToTagView(product: TagRecord): TagView {
       allowDirectCall,
       allowDirectWhatsapp
     },
-    recovery: getRecovery(product)
+    recovery: getRecovery(product),
+    transfer: product.transfer?.token
+      ? {
+          token: product.transfer.token,
+          status: getTransferStatus(product),
+          createdAt: product.transfer.createdAt || "",
+          expiresAt: product.transfer.expiresAt || "",
+          usedAt: product.transfer.usedAt || "",
+          cancelledAt: product.transfer.cancelledAt || ""
+        }
+      : undefined
   };
 }
 
