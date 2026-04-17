@@ -31,7 +31,7 @@ export type TagRecord = {
   oldCode?: string;
   manageToken: string;
   productType?: ProductType;
-
+  productSubtype?: string;
   name?: string;
   ownerName?: string;
   phone?: string;
@@ -97,6 +97,7 @@ export type TagView = {
   manageToken: string;
   status: TagStatus;
   productType: ProductType;
+  productSubtype?: string;
   profile: {
     name: string;
     ownerName?: string;
@@ -153,6 +154,7 @@ export type RecoveryListedItem = {
 type UpsertTagInput = {
   code: string;
   productType?: ProductType;
+  productSubtype?: string;
   tagName?: string;
   ownerName?: string;
   phone?: string;
@@ -189,6 +191,7 @@ type UpsertTagInput = {
 type UpdateByManageTokenInput = {
   manageToken: string;
   productType?: ProductType;
+  productSubtype?: string;
   tagName?: string;
   ownerName?: string;
   phone?: string;
@@ -230,6 +233,7 @@ type UpdateByManageTokenInput = {
 type ClaimTransferInput = {
   transferToken: string;
   productType?: ProductType;
+  productSubtype?: string;
   tagName: string;
   ownerName?: string;
   phone?: string;
@@ -504,6 +508,7 @@ function mapProductToTagView(product: TagRecord): TagView {
     manageToken: product.manageToken,
     status: resolveStatus(product),
     productType: product.productType || "item",
+    productSubtype: product.productSubtype || "",
     profile: {
       name: getProfileName(product),
       ownerName: getOwnerName(product),
@@ -880,6 +885,7 @@ export function upsertTag(input: UpsertTagInput) {
       publicCode: normalizedCode,
       manageToken: crypto.randomUUID(),
       productType: input.productType || "item",
+      productSubtype: input.productSubtype || "",
       name: nextProfile.name,
       ownerName: nextProfile.ownerName,
       phone: nextProfile.phone,
@@ -977,6 +983,7 @@ export function upsertTag(input: UpsertTagInput) {
     ...current,
     publicCode: current.publicCode || normalizedCode,
     productType: input.productType ?? current.productType ?? "item",
+    productSubtype: input.productSubtype ?? current.productSubtype ?? "",
     name: mergedProfile.name,
     ownerName: mergedProfile.ownerName,
     phone: mergedProfile.phone,
@@ -1097,6 +1104,7 @@ export async function upsertTagAsync(input: UpsertTagInput) {
       publicCode: normalizedCode,
       manageToken: crypto.randomUUID(),
       productType: input.productType || "item",
+      productSubtype: input.productSubtype || "",
       name: nextProfile.name,
       ownerName: nextProfile.ownerName,
       phone: nextProfile.phone,
@@ -1194,6 +1202,7 @@ export async function upsertTagAsync(input: UpsertTagInput) {
     ...current,
     publicCode: current.publicCode || normalizedCode,
     productType: input.productType ?? current.productType ?? "item",
+    productSubtype: input.productSubtype ?? current.productSubtype ?? "",
     name: mergedProfile.name,
     ownerName: mergedProfile.ownerName,
     phone: mergedProfile.phone,
@@ -1330,6 +1339,7 @@ export function updateTagByManageToken(input: UpdateByManageTokenInput) {
   products[index] = {
     ...current,
     productType: input.productType ?? current.productType ?? "item",
+    productSubtype: input.productSubtype ?? current.productSubtype ?? "",
     name: mergedProfile.name,
     ownerName: mergedProfile.ownerName,
     phone: mergedProfile.phone,
@@ -1454,6 +1464,7 @@ export async function updateTagByManageTokenAsync(input: UpdateByManageTokenInpu
   products[index] = {
     ...current,
     productType: input.productType ?? current.productType ?? "item",
+    productSubtype: input.productSubtype ?? current.productSubtype ?? "",
     name: mergedProfile.name,
     ownerName: mergedProfile.ownerName,
     phone: mergedProfile.phone,
@@ -1683,6 +1694,7 @@ export function claimTransfer(input: ClaimTransferInput) {
     ...current,
     manageToken: newManageToken,
     productType: input.productType ?? current.productType ?? "item",
+    productSubtype: input.productSubtype ?? current.productSubtype ?? "",
     name: nextProfile.name,
     ownerName: nextProfile.ownerName,
     phone: nextProfile.phone,
@@ -1780,6 +1792,7 @@ export async function claimTransferAsync(input: ClaimTransferInput) {
     ...current,
     manageToken: newManageToken,
     productType: input.productType ?? current.productType ?? "item",
+    productSubtype: input.productSubtype ?? current.productSubtype ?? "",
     name: nextProfile.name,
     ownerName: nextProfile.ownerName,
     phone: nextProfile.phone,
