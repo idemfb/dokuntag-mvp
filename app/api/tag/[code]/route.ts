@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { findTagByCode } from "@/lib/tags";
+import { findTagByCodeAsync } from "@/lib/tags";
 
 type RouteContext = {
   params: Promise<{
@@ -19,7 +19,7 @@ export async function GET(_req: Request, context: RouteContext) {
       );
     }
 
-    const tag = findTagByCode(normalizedCode);
+    const tag = await findTagByCodeAsync(normalizedCode);
 
     if (!tag) {
       return NextResponse.json(
@@ -30,7 +30,7 @@ export async function GET(_req: Request, context: RouteContext) {
 
     return NextResponse.json({
       ok: true,
-      tag,
+      tag
     });
   } catch (error) {
     console.error("TAG_GET_ERROR", error);

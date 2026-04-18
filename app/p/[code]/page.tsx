@@ -26,7 +26,60 @@ type ProductSubtype =
   | "headphones"
   | "item_other";
 
-const PRODUCT_SUBTYPE_OPTIONS: Record<ProductType, Array<{ value: ProductSubtype; label: string }>> = {
+type TagStatus = "unclaimed" | "active" | "inactive";
+
+type Visibility = {
+  showName?: boolean;
+  showPhone?: boolean;
+  showEmail?: boolean;
+  showCity?: boolean;
+  showAddressDetail?: boolean;
+  showPetName?: boolean;
+  showNote?: boolean;
+};
+
+type PublicProfile = {
+  publicCode?: string;
+  oldCode?: string;
+  productType?: ProductType;
+  productSubtype?: ProductSubtype | "";
+  name: string;
+  ownerName: string;
+  phone: string;
+  email?: string;
+  city?: string;
+  addressDetail?: string;
+  distinctiveFeature?: string;
+  petName?: string;
+  note: string;
+  alerts: string[];
+  allowDirectCall?: boolean;
+  allowDirectWhatsapp?: boolean;
+  contactOptions?: {
+    allowDirectCall?: boolean;
+    allowDirectWhatsapp?: boolean;
+  };
+  status?: TagStatus;
+  visibility?: Visibility;
+  showName?: boolean;
+  showPhone?: boolean;
+  showEmail?: boolean;
+  showCity?: boolean;
+  showAddressDetail?: boolean;
+  showPetName?: boolean;
+  showNote?: boolean;
+};
+
+type PublicApiResponse = {
+  success: boolean;
+  data: PublicProfile;
+  message?: string;
+};
+
+const PRODUCT_SUBTYPE_OPTIONS: Record<
+  ProductType,
+  Array<{ value: ProductSubtype; label: string }>
+> = {
   pet: [
     { value: "cat", label: "Kedi" },
     { value: "dog", label: "Köpek" },
@@ -60,128 +113,26 @@ const PRODUCT_SUBTYPE_OPTIONS: Record<ProductType, Array<{ value: ProductSubtype
 
 function getProductSubtypeLabel(value?: string) {
   if (!value) return "";
+
   for (const options of Object.values(PRODUCT_SUBTYPE_OPTIONS)) {
     const matched = options.find((item) => item.value === value);
     if (matched) return matched.label;
   }
+
   return "";
 }
-type TagStatus = "unclaimed" | "active" | "inactive";
 
-type Visibility = {
-  showName?: boolean;
-  showPhone?: boolean;
-  showEmail?: boolean;
-  showCity?: boolean;
-  showAddressDetail?: boolean;
-  showPetName?: boolean;
-  showNote?: boolean;
-};
+function getMainSiteUrl() {
+  const value =
+    process.env.NEXT_PUBLIC_MAIN_SITE_URL?.trim() ||
+    process.env.NEXT_PUBLIC_SITE_URL?.trim() ||
+    "https://dokuntag.com";
 
-type PublicProfile = {
-  publicCode: string;
-  oldCode?: string;
-  productType?: ProductType;
-  productSubtype?: ProductSubtype | "";
-  name: string;
-  ownerName: string;
-  phone: string;
-  city?: string;
-  addressDetail?: string;
-  distinctiveFeature?: string;
-  petName?: string;
-  note: string;
-  alerts: string[];
-  allowDirectCall?: boolean;
-  allowDirectWhatsapp?: boolean;
-  contactOptions?: {
-    allowDirectCall?: boolean;
-    allowDirectWhatsapp?: boolean;
-  };
-  status?: TagStatus;
-  visibility?: Visibility;
-  showName?: boolean;
-  showPhone?: boolean;
-  showEmail?: boolean;
-  showCity?: boolean;
-  showAddressDetail?: boolean;
-  showPetName?: boolean;
-  showNote?: boolean;
-};
-
-type PublicApiResponse = {
-  success: boolean;
-  data: PublicProfile;
-  message?: string;
-};
-
-function getTitle(productType?: ProductType) {
-  if (productType === "pet") return "Bu evcil hayvan size ulaşmış olabilir";
-  if (productType === "key") return "Bu anahtar size ulaşmış olabilir";
-  if (productType === "person") return "Bu kişiyle ilgili bilgi paylaşabilirsiniz";
-  return "Bu eşya size ulaşmış olabilir";
-}
-
-function getSubtitle(productType?: ProductType) {
-  if (productType === "pet") {
-    return "Sahibine güvenli şekilde ulaşmasına yardımcı olabilirsiniz.";
-  }
-
-  if (productType === "person") {
-    return "Yakınlarına veya ilgili kişilere güvenli şekilde ulaşılmasına yardımcı olabilirsiniz.";
-  }
-
-  if (productType === "key") {
-    return "Anahtarın sahibine güvenli şekilde ulaşmasına yardımcı olun.";
-  }
-
-  return "Eşyanın sahibine güvenli şekilde ulaşmasına yardımcı olabilirsiniz.";
-}
-
-function getBadgeLabel(productType?: ProductType) {
-  if (productType === "pet") return "Evcil hayvan";
-  if (productType === "key") return "Anahtar";
-  if (productType === "person") return "Birey";
-  return "Eşya";
-}
-
-function getProductIcon(productType?: ProductType) {
-  if (productType === "pet") return "🐾";
-  if (productType === "key") return "🔑";
-  if (productType === "person") return "🧍";
-  return "🎒";
-}
-
-function getHelpText(productType?: ProductType) {
-  if (productType === "pet") {
-    return "Bu sayfa, bu evcil hayvanın sahibine güvenli şekilde ulaşılmasına yardımcı olmak için oluşturulmuştur.";
-  }
-
-  if (productType === "person") {
-    return "Bu sayfa, bu bireyin yakınlarına veya ilgilenen kişilere güvenli şekilde ulaşılmasına yardımcı olmak için oluşturulmuştur.";
-  }
-
-  if (productType === "key") {
-    return "Bu sayfa, bu anahtarın sahibine güvenli şekilde ulaşmasına yardımcı olmak için oluşturulmuştur.";
-  }
-
-  return "Bu sayfa, bu eşyanın sahibine güvenli şekilde ulaşmasına yardımcı olmak için oluşturulmuştur.";
-}
-
-function getPrimaryNameLabel(productType?: ProductType) {
-  if (productType === "pet") return "Evcil hayvan adı";
-  if (productType === "person") return "Kişi adı";
-  if (productType === "key") return "Anahtar adı";
-  return "Ürün adı";
-}
-
-function getOwnerLabel(productType?: ProductType) {
-  if (productType === "person") return "Yakını / sorumlusu";
-  return "Sahibi";
+  return value.replace(/\/+$/, "");
 }
 
 function normalizePhoneForLink(phone: string) {
-  return phone.replace(/\D/g, "");
+  return String(phone || "").replace(/\D/g, "");
 }
 
 function getVisibleFlag(data: PublicProfile, key: keyof Visibility) {
@@ -196,47 +147,103 @@ function getVisibleFlag(data: PublicProfile, key: keyof Visibility) {
   return true;
 }
 
-function getMainSiteUrl() {
-  const value =
-    process.env.NEXT_PUBLIC_MAIN_SITE_URL?.trim() ||
-    process.env.NEXT_PUBLIC_SITE_URL?.trim() ||
-    "https://dokuntag.com";
-
-  return value.replace(/\/+$/, "");
+function getProductTypeLabel(productType?: ProductType) {
+  if (productType === "pet") return "Evcil hayvan";
+  if (productType === "key") return "Anahtar";
+  if (productType === "person") return "Kişi";
+  return "Eşya";
 }
 
-function getHowItWorksUrl() {
-  const value =
-    process.env.NEXT_PUBLIC_HOW_IT_WORKS_URL?.trim() ||
-    `${getMainSiteUrl()}/how-it-works`;
-
-  return value.replace(/\/+$/, "");
+function getProductIcon(productType?: ProductType) {
+  if (productType === "pet") return "🐾";
+  if (productType === "key") return "🔑";
+  if (productType === "person") return "🧍";
+  return "🎒";
 }
 
-function InfoRow({
-  label,
-  value,
-  fullWidth
+function getHeadline(productType?: ProductType) {
+  if (productType === "pet") return "Bu evcil hayvanın sahibine ulaşabilirsiniz";
+  if (productType === "key") return "Bu anahtarın sahibine ulaşabilirsiniz";
+  if (productType === "person") return "Bu kişiyle ilgili bilgi paylaşabilirsiniz";
+  return "Bu eşyanın sahibine ulaşabilirsiniz";
+}
+
+function getDescription(productType?: ProductType) {
+  if (productType === "pet") {
+    return "Hızlı iletişim seçeneklerinden birini kullanarak sahibine güvenli şekilde haber verebilirsiniz.";
+  }
+
+  if (productType === "key") {
+    return "Düşünmeden tek aksiyonla iletişime geçin. Gereksiz bilgi paylaşmadan sahibine ulaşmasına yardımcı olun.";
+  }
+
+  if (productType === "person") {
+    return "Gördüğünüz kişiyle ilgili kısa bilgi paylaşmak veya yakınına ulaşmak için aşağıdaki iletişim seçeneklerini kullanabilirsiniz.";
+  }
+
+  return "Hızlı iletişim seçeneklerinden birini kullanarak sahibine güvenli şekilde haber verebilirsiniz.";
+}
+
+function getPrimaryNameLabel(productType?: ProductType) {
+  if (productType === "pet") return "Evcil hayvan";
+  if (productType === "key") return "Anahtar";
+  if (productType === "person") return "Kişi";
+  return "Ürün";
+}
+
+function getOwnerLabel(productType?: ProductType) {
+  if (productType === "person") return "Yakını / sorumlusu";
+  return "Sahibi";
+}
+
+function getFallbackName(productType?: ProductType) {
+  if (productType === "pet") return "Kayıp evcil hayvan";
+  if (productType === "key") return "Bulunan anahtar";
+  if (productType === "person") return "Bilgi paylaşımı";
+  return "Bulunan eşya";
+}
+
+function buildPrimaryAction(input: {
+  allowDirectCall: boolean;
+  allowDirectWhatsapp: boolean;
+  hasEmail: boolean;
+  callHref: string;
+  whatsappHref: string;
+  emailHref: string;
+}) {
+  if (input.allowDirectCall && input.callHref) {
+    return { href: input.callHref, label: "Hemen Ara" };
+  }
+
+  if (input.allowDirectWhatsapp && input.whatsappHref) {
+    return { href: input.whatsappHref, label: "WhatsApp ile Ulaş" };
+  }
+
+  if (input.hasEmail && input.emailHref) {
+    return { href: input.emailHref, label: "E-posta Gönder" };
+  }
+
+  return null;
+}
+
+function SecondaryAction({
+  href,
+  label
 }: {
+  href: string;
   label: string;
-  value: string;
-  fullWidth?: boolean;
 }) {
   return (
-    <div
-      className={`rounded-[22px] border border-neutral-200 bg-white px-4 py-3 ${
-        fullWidth ? "sm:col-span-2" : ""
-      }`}
+    <a
+      href={href}
+      className="inline-flex min-h-12 items-center justify-center rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm font-medium text-neutral-800 transition hover:border-neutral-400 hover:bg-neutral-50"
     >
-      <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-neutral-500">
-        {label}
-      </p>
-      <p className="mt-1 text-sm leading-6 text-neutral-900">{value}</p>
-    </div>
+      {label}
+    </a>
   );
 }
 
-function HighlightRow({
+function InfoCard({
   label,
   value
 }: {
@@ -244,74 +251,11 @@ function HighlightRow({
   value: string;
 }) {
   return (
-    <div className="rounded-[22px] border border-neutral-800 bg-neutral-800 px-4 py-4 text-white shadow-sm sm:col-span-2">
-      <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-neutral-300">
+    <div className="rounded-[22px] border border-neutral-200 bg-white px-4 py-3">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-neutral-500">
         {label}
       </p>
-      <p className="mt-2 text-sm leading-6">{value}</p>
-    </div>
-  );
-}
-
-function ContactOptionCard({
-  label,
-  checked,
-  onChange
-}: {
-  label: string;
-  checked: boolean;
-  onChange: (checked: boolean) => void;
-}) {
-  return (
-    <label
-      className={`flex cursor-pointer items-center gap-3 rounded-2xl border px-4 py-3 text-sm transition ${
-        checked
-          ? "border-neutral-800 bg-neutral-800 text-white shadow-sm"
-          : "border-neutral-300 bg-white text-neutral-800 hover:border-neutral-400 hover:bg-neutral-50"
-      }`}
-    >
-      <input
-        type="checkbox"
-        checked={checked}
-        onChange={(e) => onChange(e.target.checked)}
-        className="h-4 w-4"
-      />
-      <span>{label}</span>
-    </label>
-  );
-}
-
-function FeatureCard({
-  title,
-  text
-}: {
-  title: string;
-  text: string;
-}) {
-  return (
-    <div className="rounded-[22px] border border-neutral-200 bg-white px-4 py-4">
-      <p className="text-sm font-semibold text-neutral-900">{title}</p>
-      <p className="mt-2 text-sm leading-6 text-neutral-600">{text}</p>
-    </div>
-  );
-}
-
-function StepCard({
-  step,
-  title,
-  text
-}: {
-  step: string;
-  title: string;
-  text: string;
-}) {
-  return (
-    <div className="rounded-[24px] border border-neutral-200 bg-white p-4 shadow-sm">
-      <div className="inline-flex rounded-full border border-neutral-300 bg-neutral-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-neutral-600">
-        {step}
-      </div>
-      <h3 className="mt-3 text-base font-semibold text-neutral-900">{title}</h3>
-      <p className="mt-2 text-sm leading-6 text-neutral-600">{text}</p>
+      <p className="mt-1 text-sm leading-6 text-neutral-900">{value}</p>
     </div>
   );
 }
@@ -340,7 +284,6 @@ export default function PublicPage({
   const [sendSuccess, setSendSuccess] = useState("");
 
   const dokuntagHref = getMainSiteUrl();
-  const howItWorksHref = getHowItWorksUrl();
 
   useEffect(() => {
     let cancelled = false;
@@ -357,7 +300,7 @@ export default function PublicPage({
         const json: PublicApiResponse = await res.json();
 
         if (!res.ok || !json.success || !json.data) {
-          throw new Error(json?.message || "Sayfa yüklenemedi.");
+          throw new Error(json.message || "Sayfa yüklenemedi.");
         }
 
         if (!cancelled) {
@@ -381,19 +324,6 @@ export default function PublicPage({
     };
   }, [code]);
 
-  const callHref = useMemo(() => {
-    if (!data?.phone) return "";
-    return `tel:${normalizePhoneForLink(data.phone)}`;
-  }, [data]);
-
-  const whatsappHref = useMemo(() => {
-    if (!data?.phone) return "";
-    const phone = normalizePhoneForLink(data.phone);
-    const normalizedForWa = phone.startsWith("0") ? `90${phone.slice(1)}` : phone;
-    const text = "Merhaba, Dokuntag herkese açık profiliniz üzerinden size ulaşıyorum.";
-    return `https://wa.me/${normalizedForWa}?text=${encodeURIComponent(text)}`;
-  }, [data]);
-
   const allowDirectCall = Boolean(
     data?.allowDirectCall ?? data?.contactOptions?.allowDirectCall
   );
@@ -401,14 +331,94 @@ export default function PublicPage({
     data?.allowDirectWhatsapp ?? data?.contactOptions?.allowDirectWhatsapp
   );
 
-  async function handleSendMessage(e: React.FormEvent<HTMLFormElement>) {
+  const showName = data ? getVisibleFlag(data, "showName") : false;
+  const showPhone = data ? getVisibleFlag(data, "showPhone") : false;
+  const showEmail = data ? getVisibleFlag(data, "showEmail") : false;
+  const showCity = data ? getVisibleFlag(data, "showCity") : false;
+  const showPetName = data ? getVisibleFlag(data, "showPetName") : false;
+  const showNote = data ? getVisibleFlag(data, "showNote") : false;
+
+  const displayName = useMemo(() => {
+    if (!data) return "";
+
+    const primaryValue = (showName ? data.name : "").trim();
+    const petValue = (showPetName ? data.petName || "" : "").trim();
+
+    return petValue || primaryValue || getFallbackName(data.productType);
+  }, [data, showName, showPetName]);
+
+  const displayOwnerName = useMemo(() => {
+    if (!data || !showName) return "";
+    return String(data.ownerName || "").trim();
+  }, [data, showName]);
+
+  const displayCity = useMemo(() => {
+    if (!data || !showCity) return "";
+    return String(data.city || "").trim();
+  }, [data, showCity]);
+
+  const displayNote = useMemo(() => {
+    if (!data || !showNote) return "";
+    return String(data.note || "").trim();
+  }, [data, showNote]);
+
+  const displaySubtype = useMemo(() => {
+    return getProductSubtypeLabel(data?.productSubtype);
+  }, [data?.productSubtype]);
+
+  const contactPhoneValue = useMemo(() => {
+    if (!data || !showPhone) return "";
+    return String(data.phone || "").trim();
+  }, [data, showPhone]);
+
+  const contactEmailValue = useMemo(() => {
+    if (!data || !showEmail) return "";
+    return String(data.email || "").trim();
+  }, [data, showEmail]);
+
+  const callHref = useMemo(() => {
+    if (!contactPhoneValue) return "";
+    const normalized = normalizePhoneForLink(contactPhoneValue);
+    return normalized ? `tel:${normalized}` : "";
+  }, [contactPhoneValue]);
+
+  const whatsappHref = useMemo(() => {
+    if (!contactPhoneValue) return "";
+
+    const phone = normalizePhoneForLink(contactPhoneValue);
+    if (!phone) return "";
+
+    const normalizedForWhatsapp = phone.startsWith("0")
+      ? `90${phone.slice(1)}`
+      : phone;
+
+    const text = "Merhaba, Dokuntag üzerinden size ulaşıyorum.";
+
+    return `https://wa.me/${normalizedForWhatsapp}?text=${encodeURIComponent(text)}`;
+  }, [contactPhoneValue]);
+
+  const emailHref = useMemo(() => {
+    if (!contactEmailValue) return "";
+    const subject = encodeURIComponent("Dokuntag üzerinden size ulaşıyorum");
+    const body = encodeURIComponent("Merhaba, Dokuntag üzerinden size ulaşıyorum.");
+    return `mailto:${contactEmailValue}?subject=${subject}&body=${body}`;
+  }, [contactEmailValue]);
+
+  const primaryAction = useMemo(() => {
+    return buildPrimaryAction({
+      allowDirectCall,
+      allowDirectWhatsapp,
+      hasEmail: Boolean(contactEmailValue),
+      callHref,
+      whatsappHref,
+      emailHref
+    });
+  }, [allowDirectCall, allowDirectWhatsapp, contactEmailValue, callHref, whatsappHref, emailHref]);
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
 
-    if (data?.status === "inactive") {
-      setSendError("Bu ürün şu an aktif değil. İletişim geçici olarak kapatılmıştır.");
-      setSendSuccess("");
-      return;
-    }
+    if (!data) return;
 
     try {
       setSending(true);
@@ -443,10 +453,7 @@ export default function PublicPage({
         throw new Error(json?.error || "Mesaj gönderilemedi.");
       }
 
-      setSendSuccess(
-        json?.message ||
-          "Mesaj iletildi. Profil sahibi uygun görürse sizinle iletişime geçecektir. Lütfen iletişim bilgilerinizi doğru girdiğinizden emin olun."
-      );
+      setSendSuccess(json?.message || "Mesaj gönderildi.");
       setSenderName("");
       setSenderPhone("");
       setSenderEmail("");
@@ -464,15 +471,8 @@ export default function PublicPage({
   if (loading) {
     return (
       <main className="min-h-screen bg-neutral-100 px-4 py-8 text-neutral-900 sm:px-5 sm:py-10">
-        <div className="mx-auto max-w-3xl">
-          <div className="rounded-[30px] border border-neutral-200 bg-white px-6 py-7 shadow-sm sm:px-8">
-            <div className="space-y-3">
-              <div className="h-3 w-20 animate-pulse rounded-full bg-neutral-200" />
-              <div className="h-8 w-2/3 animate-pulse rounded-full bg-neutral-200" />
-              <div className="h-4 w-full animate-pulse rounded-full bg-neutral-200" />
-              <div className="h-4 w-5/6 animate-pulse rounded-full bg-neutral-200" />
-            </div>
-          </div>
+        <div className="mx-auto max-w-3xl rounded-[2rem] border border-neutral-200 bg-white px-6 py-8 shadow-sm">
+          <p className="text-sm text-neutral-600">Yükleniyor...</p>
         </div>
       </main>
     );
@@ -481,18 +481,10 @@ export default function PublicPage({
   if (error || !data) {
     return (
       <main className="min-h-screen bg-neutral-100 px-4 py-8 text-neutral-900 sm:px-5 sm:py-10">
-        <div className="mx-auto max-w-3xl">
-          <div className="rounded-[30px] border border-red-200 bg-white px-6 py-7 shadow-sm sm:px-8">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-red-500">
-              Dokuntag
-            </p>
-            <h1 className="mt-3 text-xl font-semibold text-red-800">
-              Sayfa açılamadı
-            </h1>
-            <p className="mt-3 text-sm leading-6 text-red-700">
-              {error || "Bu ürün için herkese açık profil bulunamadı."}
-            </p>
-          </div>
+        <div className="mx-auto max-w-3xl rounded-[2rem] border border-red-200 bg-white px-6 py-8 shadow-sm">
+          <p className="text-sm font-medium text-red-700">
+            {error || "Profil yüklenemedi."}
+          </p>
         </div>
       </main>
     );
@@ -501,126 +493,43 @@ export default function PublicPage({
   if (data.status === "inactive") {
     return (
       <main className="min-h-screen bg-neutral-100 px-4 py-8 text-neutral-900 sm:px-5 sm:py-10">
-        <div className="mx-auto max-w-3xl space-y-5 sm:space-y-6">
-          <section className="overflow-hidden rounded-[32px] border border-neutral-200 bg-white shadow-sm">
-            <div className="border-b border-neutral-200 bg-gradient-to-br from-white via-neutral-50 to-neutral-100/80 px-6 py-7 sm:px-8 sm:py-9">
+        <div className="mx-auto max-w-3xl space-y-5">
+          <section className="overflow-hidden rounded-[2rem] border border-neutral-200 bg-white shadow-sm">
+            <div className="border-b border-neutral-200 bg-gradient-to-br from-white via-neutral-50 to-neutral-100/80 px-6 py-7 sm:px-8">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <a
                   href={dokuntagHref}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center rounded-full border border-neutral-200 bg-white px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-neutral-600 transition hover:border-neutral-300 hover:bg-neutral-50"
+                  className="inline-flex items-center rounded-full border border-neutral-200 bg-white px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-neutral-600"
                 >
                   Dokuntag
                 </a>
 
-                <div className="inline-flex items-center gap-2 rounded-full bg-neutral-800 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-white shadow-sm">
+                <div className="inline-flex items-center gap-2 rounded-full bg-neutral-900 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-white">
                   <span aria-hidden="true">{getProductIcon(data.productType)}</span>
-                  <span>{getBadgeLabel(data.productType)}</span>
+                  <span>{getProductTypeLabel(data.productType)}</span>
                 </div>
               </div>
 
               <div className="mt-6 flex items-start gap-4">
-                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-[20px] border border-neutral-200 bg-neutral-50 text-2xl shadow-sm">
+                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-[20px] border border-neutral-200 bg-neutral-50 text-2xl">
                   {getProductIcon(data.productType)}
                 </div>
-
-                <div className="min-w-0">
+                <div>
                   <h1 className="text-2xl font-semibold leading-tight sm:text-[32px]">
                     Bu ürün şu an aktif değil
                   </h1>
                   <p className="mt-2 max-w-xl text-sm leading-6 text-neutral-600 sm:text-[15px]">
-                    Bu ürüne ait herkese açık profil ve iletişim seçenekleri geçici olarak kapatılmıştır.
+                    Profil sahibi herkese açık erişimi geçici olarak kapatmıştır.
                   </p>
                 </div>
               </div>
             </div>
 
-            <div className="px-6 py-5 sm:px-8">
+            <div className="px-6 py-6 sm:px-8">
               <div className="rounded-[22px] border border-amber-200 bg-amber-50 px-4 py-4 text-sm leading-6 text-amber-900">
-                Profil sahibi bu ürünü pasif duruma almıştır. Bu nedenle iletişim formu ve hızlı iletişim seçenekleri şu an kullanılamaz.
-              </div>
-
-              <div className="mt-4 rounded-[22px] border border-neutral-200 bg-neutral-50 px-4 py-4 text-sm leading-6 text-neutral-700">
-                Etiket yanlışlıkla bulunduysa veya ürün artık kullanımda değilse bu ekran normaldir.
-              </div>
-            </div>
-          </section>
-
-          <section className="overflow-hidden rounded-[30px] border border-neutral-200 bg-white shadow-sm">
-            <div className="border-b border-neutral-200 bg-gradient-to-br from-white via-neutral-50 to-neutral-100/80 px-6 py-6 sm:px-7">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">
-                    Dokuntag
-                  </p>
-                  <h2 className="mt-2 text-xl font-semibold text-neutral-900">
-                    Kayıp olanı sahibine ulaştıran güvenli köprü
-                  </h2>
-                  <p className="mt-2 max-w-xl text-sm leading-6 text-neutral-600">
-                    Dokuntag, fiziksel ürün ile dijital profil arasında bağlantı kurar. Profil sahibi ürünü yeniden aktif ettiğinde herkese açık bilgiler ve iletişim seçenekleri geri gelir.
-                  </p>
-                </div>
-
-                <div className="inline-flex items-center rounded-full border border-neutral-200 bg-white px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-neutral-600">
-                  NFC / QR destekli
-                </div>
-              </div>
-            </div>
-
-            <div className="px-6 py-6 sm:px-7">
-              <div className="grid gap-3 sm:grid-cols-3">
-                <StepCard
-                  step="1. Adım"
-                  title="Etikete dokun veya kodu tara"
-                  text="Ürün üzerindeki Dokuntag etiketi okutulur ve güvenli profil sayfası açılır."
-                />
-                <StepCard
-                  step="2. Adım"
-                  title="Durum kontrol edilir"
-                  text="Ürün pasifse yalnızca kısıtlı bilgilendirme ekranı gösterilir."
-                />
-                <StepCard
-                  step="3. Adım"
-                  title="Aktif olduğunda iletişim açılır"
-                  text="Profil sahibi ürünü yeniden aktif ettiğinde iletişim ve paylaşılan bilgiler geri gelir."
-                />
-              </div>
-
-              <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                <FeatureCard
-                  title="Neden bu ekran görünüyor?"
-                  text="Profil sahibi ürünü tamamen silmeden geçici olarak devre dışı bırakmış olabilir."
-                />
-                <FeatureCard
-                  title="Ne işe yarar?"
-                  text="Kullanılmayan, kaybolmayan ya da geçici olarak kapatılmak istenen ürünlerde herkese açık erişimi durdurur."
-                />
-              </div>
-
-              <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div className="text-sm leading-6 text-neutral-600">
-                  Dokuntag hakkında daha fazla bilgi almak veya sistemin nasıl çalıştığını görmek için aşağıdaki bağlantıları kullanabilirsiniz.
-                </div>
-
-                <div className="flex flex-wrap gap-3">
-                  <a
-                    href={dokuntagHref}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="rounded-2xl bg-neutral-800 px-4 py-3 text-sm font-medium text-white transition hover:bg-neutral-700"
-                  >
-                    Dokuntag’ı incele
-                  </a>
-                  <a
-                    href={howItWorksHref}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm font-medium transition hover:border-neutral-400 hover:bg-neutral-50"
-                  >
-                    Nasıl çalışır
-                  </a>
-                </div>
+                Hızlı iletişim ve profil bilgileri şu an görünmüyor. Ürün yeniden aktifleştirildiğinde public profil tekrar açılır.
               </div>
             </div>
           </section>
@@ -629,319 +538,274 @@ export default function PublicPage({
     );
   }
 
-  const showName = getVisibleFlag(data, "showName");
-  const showPhone = getVisibleFlag(data, "showPhone");
-  const showCity = getVisibleFlag(data, "showCity");
-  const showPetName = getVisibleFlag(data, "showPetName");
-  const showNote = getVisibleFlag(data, "showNote");
-
-  const primaryPetName = data.petName?.trim() || "";
-  const secondaryName = data.name?.trim() || "";
-
-  const showSecondaryNameSeparately =
-    Boolean(secondaryName) &&
-    Boolean(primaryPetName) &&
-    secondaryName.toLocaleLowerCase("tr-TR") !==
-      primaryPetName.toLocaleLowerCase("tr-TR");
-
-  const hasVisibleProfileInfo =
-    (showPetName && Boolean(data.petName)) ||
-    (showName && Boolean(data.ownerName)) ||
-    showSecondaryNameSeparately ||
-    (showPhone && Boolean(data.phone)) ||
-    (showCity && Boolean(data.city)) ||
-    Boolean(data.distinctiveFeature) ||
-    (showNote && Boolean(data.note));
-
-  const hasQuickActions =
-    (allowDirectCall && Boolean(data.phone)) ||
-    (allowDirectWhatsapp && Boolean(data.phone));
-
   return (
-    <main className="min-h-screen bg-neutral-100 px-4 py-8 text-neutral-900 sm:px-5 sm:py-10">
+    <main className="min-h-screen bg-neutral-100 px-4 py-8 pb-28 text-neutral-900 sm:px-5 sm:py-10 sm:pb-12">
       <div className="mx-auto max-w-3xl space-y-5 sm:space-y-6">
-        <section className="overflow-hidden rounded-[32px] border border-neutral-200 bg-white shadow-sm">
-          <div className="border-b border-neutral-200 bg-gradient-to-br from-white via-neutral-50 to-neutral-100/80 px-6 py-7 sm:px-8 sm:py-9">
+        <section className="overflow-hidden rounded-[2rem] border border-neutral-200 bg-white shadow-sm">
+          <div className="border-b border-neutral-200 bg-gradient-to-br from-white via-neutral-50 to-neutral-100/80 px-6 py-6 sm:px-8 sm:py-8">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <a
                 href={dokuntagHref}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center rounded-full border border-neutral-200 bg-white px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-neutral-600 transition hover:border-neutral-300 hover:bg-neutral-50"
+                className="inline-flex items-center rounded-full border border-neutral-200 bg-white px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-neutral-600"
               >
                 Dokuntag
               </a>
 
-              <div className="inline-flex items-center gap-2 rounded-full bg-neutral-800 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-white shadow-sm">
+              <div className="inline-flex items-center gap-2 rounded-full bg-neutral-900 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-white">
                 <span aria-hidden="true">{getProductIcon(data.productType)}</span>
-                <span>{getBadgeLabel(data.productType)}</span>
+                <span>{getProductTypeLabel(data.productType)}</span>
               </div>
             </div>
 
-            <div className="mt-6 flex items-start gap-4">
-              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-[20px] border border-neutral-200 bg-neutral-50 text-2xl shadow-sm">
-                {getProductIcon(data.productType)}
-              </div>
-
-              <div className="min-w-0">
+            <div className="mt-6 space-y-4">
+              <div className="space-y-2">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">
+                  Güvenli iletişim profili
+                </p>
                 <h1 className="text-2xl font-semibold leading-tight sm:text-[32px]">
-                  {getTitle(data.productType)}
+                  {getHeadline(data.productType)}
                 </h1>
-                <p className="mt-2 max-w-xl text-sm leading-6 text-neutral-600 sm:text-[15px]">
-                  {getSubtitle(data.productType)}
+                <p className="max-w-2xl text-sm leading-6 text-neutral-600 sm:text-[15px]">
+                  {getDescription(data.productType)}
                 </p>
               </div>
+
+              <div className="rounded-[22px] border border-neutral-200 bg-white px-4 py-4">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-neutral-500">
+                  {getPrimaryNameLabel(data.productType)}
+                </p>
+                <p className="mt-2 text-xl font-semibold text-neutral-900 sm:text-2xl">
+                  {displayName}
+                </p>
+                {displaySubtype ? (
+                  <p className="mt-2 text-sm text-neutral-600">{displaySubtype}</p>
+                ) : null}
+              </div>
             </div>
           </div>
 
-          <div className="px-6 py-5 sm:px-8">
-            <div className="rounded-[22px] border border-neutral-200 bg-neutral-50 px-4 py-4 text-sm leading-6 text-neutral-700">
-              {getHelpText(data.productType)}
-            </div>
+          <div className="px-6 py-6 sm:px-8">
+            {primaryAction ? (
+              <div className="rounded-[24px] border border-neutral-900 bg-neutral-900 p-4 text-white shadow-sm">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-neutral-300">
+                  Ana aksiyon
+                </p>
+                <a
+                  href={primaryAction.href}
+                  className="mt-3 inline-flex min-h-14 w-full items-center justify-center rounded-2xl bg-white px-5 py-3 text-base font-semibold text-neutral-900 transition hover:bg-neutral-100"
+                >
+                  {primaryAction.label}
+                </a>
+                <p className="mt-3 text-sm leading-6 text-neutral-300">
+                  Sahibine en hızlı ulaşım için tek dokunuşla iletişim kurabilirsiniz.
+                </p>
+              </div>
+            ) : (
+              <div className="rounded-[22px] border border-amber-200 bg-amber-50 px-4 py-4 text-sm leading-6 text-amber-900">
+                Bu profil şu an doğrudan iletişim paylaşmıyor. Aşağıdaki formdan kısa mesaj bırakabilirsiniz.
+              </div>
+            )}
 
-            <div className="mt-4 rounded-[22px] border border-emerald-200 bg-emerald-50 px-4 py-4 text-sm leading-6 text-emerald-900">
-              Bu bilgiler profil sahibi tarafından herkese açık olarak paylaşılmıştır. Yalnızca gerçekten yardımcı olabiliyorsanız iletişime geçin.
+            <div className="mt-4 grid gap-3 sm:grid-cols-3">
+              {allowDirectCall && callHref ? (
+                <SecondaryAction href={callHref} label="Ara" />
+              ) : null}
+
+              {allowDirectWhatsapp && whatsappHref ? (
+                <SecondaryAction href={whatsappHref} label="WhatsApp" />
+              ) : null}
+
+              {contactEmailValue && emailHref ? (
+                <SecondaryAction href={emailHref} label="E-posta" />
+              ) : null}
             </div>
           </div>
         </section>
 
-        {data.alerts.length > 0 ? (
-          <section className="rounded-[30px] border border-amber-200 bg-white p-6 shadow-sm sm:p-7">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-amber-600">
-                Dikkat
-              </p>
-              <h2 className="mt-2 text-lg font-semibold text-neutral-900">
-                Önemli uyarılar
-              </h2>
-            </div>
+        {(displayOwnerName || contactPhoneValue || contactEmailValue || displayCity || displayNote || data.alerts.length > 0) ? (
+          <section className="grid gap-3 sm:grid-cols-2">
+            {displayOwnerName ? (
+              <InfoCard label={getOwnerLabel(data.productType)} value={displayOwnerName} />
+            ) : null}
 
-            <div className="mt-4 flex flex-wrap gap-2.5">
-              {data.alerts.map((alert) => (
-                <span
-                  key={alert}
-                  className="rounded-full border border-amber-300 bg-amber-50 px-3.5 py-2 text-xs font-medium text-amber-900"
-                >
-                  {alert}
-                </span>
-              ))}
-            </div>
+            {contactPhoneValue ? (
+              <InfoCard label="Telefon" value={contactPhoneValue} />
+            ) : null}
+
+            {contactEmailValue ? (
+              <InfoCard label="E-posta" value={contactEmailValue} />
+            ) : null}
+
+            {displayCity ? <InfoCard label="Şehir" value={displayCity} /> : null}
+
+            {displayNote ? (
+              <div className="rounded-[22px] border border-neutral-200 bg-white px-4 py-4 sm:col-span-2">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-neutral-500">
+                  Not
+                </p>
+                <p className="mt-2 text-sm leading-6 text-neutral-900">{displayNote}</p>
+              </div>
+            ) : null}
+
+            {data.alerts.length > 0 ? (
+              <div className="rounded-[22px] border border-neutral-200 bg-white px-4 py-4 sm:col-span-2">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-neutral-500">
+                  Uyarılar
+                </p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {data.alerts.map((alert) => (
+                    <span
+                      key={alert}
+                      className="rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-medium text-amber-900"
+                    >
+                      {alert}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            ) : null}
           </section>
         ) : null}
 
-        {hasVisibleProfileInfo ? (
-          <section className="rounded-[30px] border border-neutral-200 bg-white p-6 shadow-sm sm:p-7">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">
-                Herkese açık bilgiler
-              </p>
-              <h2 className="mt-2 text-lg font-semibold text-neutral-900">
-                Paylaşılan profil bilgileri
-              </h2>
-              <p className="mt-2 text-sm leading-6 text-neutral-600">
-                Yalnızca profil sahibi tarafından görünür yapılmış bilgiler aşağıda yer alır.
-              </p>
-            </div>
-
-            <div className="mt-5 grid gap-3 sm:grid-cols-2">
-              {showPetName && data.petName ? (
-                <InfoRow
-                  label={getPrimaryNameLabel(data.productType)}
-                  value={data.petName}
-                />
-              ) : null}
-
-              {showName && data.ownerName ? (
-                <InfoRow
-                  label={getOwnerLabel(data.productType)}
-                  value={data.ownerName}
-                />
-              ) : null}
-
-              {data.productSubtype ? (
-                <InfoRow label="Kategori" value={getProductSubtypeLabel(data.productSubtype)} />
-              ) : null}
-
-              {showSecondaryNameSeparately ? (
-                <InfoRow label="Etiket başlığı" value={data.name} />
-              ) : null}
-
-              {showPhone && data.phone ? (
-                <InfoRow label="Telefon" value={data.phone} />
-              ) : null}
-
-              {showCity && data.city ? (
-                <InfoRow label="Şehir" value={data.city} />
-              ) : null}
-
-              {data.distinctiveFeature ? (
-                <HighlightRow label="Ayırt edici özellik" value={data.distinctiveFeature} />
-              ) : null}
-
-              {showNote && data.note ? (
-                <InfoRow label="Not" value={data.note} fullWidth />
-              ) : null}
-            </div>
-          </section>
-        ) : null}
-
-        {hasQuickActions ? (
-          <section className="rounded-[30px] border border-neutral-200 bg-white p-6 shadow-sm sm:p-7">
-            <div className="max-w-lg">
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">
-                Hızlı iletişim
-              </p>
-              <h2 className="mt-2 text-lg font-semibold text-neutral-900">
-                Doğrudan ulaşın
-              </h2>
-              <p className="mt-2 text-sm leading-6 text-neutral-600">
-                Uygun iletişim seçenekleri açıksa aşağıdan hızlıca bağlantı kurabilirsiniz.
-              </p>
-            </div>
-
-            <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
-              {allowDirectCall && data.phone ? (
-                <a
-                  href={callHref}
-                  className="inline-flex min-h-[58px] items-center justify-center rounded-2xl bg-neutral-800 px-5 py-4 text-center text-sm font-semibold text-white shadow-sm transition hover:bg-neutral-700"
-                >
-                  Ara
-                </a>
-              ) : null}
-
-              {allowDirectWhatsapp && data.phone ? (
-                <a
-                  href={whatsappHref}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex min-h-[58px] items-center justify-center rounded-2xl border border-neutral-300 bg-white px-5 py-4 text-center text-sm font-semibold text-neutral-900 transition hover:border-neutral-400 hover:bg-neutral-50"
-                >
-                  WhatsApp ile yaz
-                </a>
-              ) : null}
-            </div>
-          </section>
-        ) : null}
-
-        <section className="rounded-[30px] border border-neutral-200 bg-white p-6 shadow-sm sm:p-7">
-          <div className="max-w-lg">
+        <section className="overflow-hidden rounded-[2rem] border border-neutral-200 bg-white shadow-sm">
+          <div className="border-b border-neutral-200 px-6 py-5 sm:px-8">
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">
-              Mesaj gönderin
+              Alternatif iletişim
             </p>
-            <h2 className="mt-2 text-lg font-semibold text-neutral-900">
-              Profil sahibine ulaşın
+            <h2 className="mt-2 text-xl font-semibold text-neutral-900">
+              Kısa mesaj bırak
             </h2>
             <p className="mt-2 text-sm leading-6 text-neutral-600">
-              Mesajınız uygun görülürse profil sahibi sizinle iletişime geçer.
+              Doğrudan aramak istemiyorsanız kısa bir bilgi bırakabilirsiniz.
             </p>
           </div>
 
-          {sendError ? (
-            <div className="mt-5 rounded-2xl border border-red-200 bg-red-50 px-4 py-4 text-sm text-red-700">
-              {sendError}
-            </div>
-          ) : null}
+          <div className="px-6 py-6 sm:px-8">
+            {sendError ? (
+              <div className="mb-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-4 text-sm text-red-700">
+                {sendError}
+              </div>
+            ) : null}
 
-          {sendSuccess ? (
-            <div className="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-4 shadow-sm">
-              <p className="text-sm font-semibold text-emerald-900">
-                Mesaj iletildi
-              </p>
-              <p className="mt-1 text-sm leading-6 text-emerald-700">
+            {sendSuccess ? (
+              <div className="mb-4 rounded-2xl border border-green-200 bg-green-50 px-4 py-4 text-sm text-green-700">
                 {sendSuccess}
-              </p>
-            </div>
-          ) : null}
+              </div>
+            ) : null}
 
-          <form onSubmit={handleSendMessage} className="mt-5 space-y-4">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div>
-                <label className="mb-2 block text-sm font-medium text-neutral-900">
-                  Adınız
-                </label>
-                <input
-                  value={senderName}
-                  onChange={(e) => setSenderName(e.target.value)}
-                  className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
-                  placeholder="Adınızı yazın"
-                />
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-neutral-900">
+                    Adınız
+                  </label>
+                  <input
+                    value={senderName}
+                    onChange={(e) => setSenderName(e.target.value)}
+                    className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
+                    placeholder="Adınız"
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-neutral-900">
+                    Telefon
+                  </label>
+                  <input
+                    value={senderPhone}
+                    onChange={(e) =>
+                      setSenderPhone(e.target.value.replace(/[^0-9]/g, ""))
+                    }
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
+                    placeholder="05xxxxxxxxx"
+                  />
+                </div>
               </div>
 
               <div>
                 <label className="mb-2 block text-sm font-medium text-neutral-900">
-                  Telefon numaranız
+                  E-posta
                 </label>
                 <input
-                  value={senderPhone}
-                  onChange={(e) => setSenderPhone(e.target.value)}
+                  type="email"
+                  value={senderEmail}
+                  onChange={(e) => setSenderEmail(e.target.value)}
                   className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
-                  placeholder="+90 5xx xxx xx xx"
+                  placeholder="ornek@mail.com"
                 />
               </div>
-            </div>
 
-            <div>
-              <label className="mb-2 block text-sm font-medium text-neutral-900">
-                E-posta adresiniz
-              </label>
-              <input
-                type="email"
-                value={senderEmail}
-                onChange={(e) => setSenderEmail(e.target.value)}
-                className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
-                placeholder="ornek@mail.com"
-              />
-            </div>
-
-            <div>
-              <label className="mb-3 block text-sm font-medium text-neutral-900">
-                Size nasıl ulaşılmasını istersiniz?
-              </label>
-              <div className="grid gap-3 sm:grid-cols-3">
-                <ContactOptionCard
-                  label="Telefon"
-                  checked={contactPhone}
-                  onChange={setContactPhone}
-                />
-                <ContactOptionCard
-                  label="WhatsApp"
-                  checked={contactWhatsapp}
-                  onChange={setContactWhatsapp}
-                />
-                <ContactOptionCard
-                  label="E-posta"
-                  checked={contactEmail}
-                  onChange={setContactEmail}
+              <div>
+                <label className="mb-2 block text-sm font-medium text-neutral-900">
+                  Mesajınız
+                </label>
+                <textarea
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  rows={4}
+                  className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
+                  placeholder="Kısa bir bilgi paylaşın"
                 />
               </div>
-              <p className="mt-3 text-xs leading-5 text-neutral-500">
-                İsterseniz birden fazla seçenek işaretleyebilirsiniz.
-              </p>
-            </div>
 
-            <div>
-              <label className="mb-2 block text-sm font-medium text-neutral-900">
-                Mesaj
-              </label>
-              <textarea
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                required
-                className="min-h-[140px] w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
-                placeholder="Örn: Etiketi güvenli şekilde buldum. Uygunsanız bana ulaşabilirsiniz."
-              />
-            </div>
+              <div>
+                <p className="mb-2 text-sm font-medium text-neutral-900">
+                  Size nasıl dönülsün?
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  <label className="inline-flex items-center gap-2 rounded-full border border-neutral-300 px-3 py-2 text-sm text-neutral-700">
+                    <input
+                      type="checkbox"
+                      checked={contactPhone}
+                      onChange={(e) => setContactPhone(e.target.checked)}
+                    />
+                    Telefon
+                  </label>
+                  <label className="inline-flex items-center gap-2 rounded-full border border-neutral-300 px-3 py-2 text-sm text-neutral-700">
+                    <input
+                      type="checkbox"
+                      checked={contactWhatsapp}
+                      onChange={(e) => setContactWhatsapp(e.target.checked)}
+                    />
+                    WhatsApp
+                  </label>
+                  <label className="inline-flex items-center gap-2 rounded-full border border-neutral-300 px-3 py-2 text-sm text-neutral-700">
+                    <input
+                      type="checkbox"
+                      checked={contactEmail}
+                      onChange={(e) => setContactEmail(e.target.checked)}
+                    />
+                    E-posta
+                  </label>
+                </div>
+              </div>
 
-            <button
-              type="submit"
-              disabled={sending}
-              className="w-full rounded-2xl bg-neutral-900 px-5 py-4 text-sm font-medium text-white transition hover:bg-neutral-800 disabled:opacity-60"
-            >
-              {sending ? "Gönderiliyor..." : "Mesaj gönder"}
-            </button>
-          </form>
+              <button
+                type="submit"
+                disabled={sending}
+                className="inline-flex min-h-12 items-center justify-center rounded-2xl bg-neutral-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {sending ? "Gönderiliyor..." : "Mesajı Gönder"}
+              </button>
+            </form>
+          </div>
         </section>
       </div>
+
+      {primaryAction ? (
+        <div className="fixed inset-x-0 bottom-0 z-20 border-t border-neutral-200 bg-white/95 px-4 py-3 backdrop-blur sm:hidden">
+          <a
+            href={primaryAction.href}
+            className="inline-flex min-h-12 w-full items-center justify-center rounded-2xl bg-neutral-900 px-5 py-3 text-sm font-semibold text-white"
+          >
+            {primaryAction.label}
+          </a>
+        </div>
+      ) : null}
     </main>
   );
 }
