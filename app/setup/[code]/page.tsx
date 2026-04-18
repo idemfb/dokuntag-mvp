@@ -905,7 +905,7 @@ export default function SetupCodePage({ params }: Props) {
                   onClick={() => router.push(`/p/${code}`)}
                   className="rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm font-medium transition hover:border-neutral-400 hover:bg-neutral-50"
                 >
-                  Herkese açık profili gör
+                  Paylaşım sayfasını gör
                 </button>
               </div>
 
@@ -960,16 +960,16 @@ export default function SetupCodePage({ params }: Props) {
             <div className="px-6 py-6 sm:px-8">
               <div className="grid gap-4">
                 <LinkCard
-                  title="Herkese açık profil bağlantısı"
-                  description="Karşı tarafa paylaşılacak bağlantı."
+                  title="Paylaşım bağlantısı"
+                  description="Karşı tarafın göreceği bağlantı."
                   value={publicLink}
                   copied={copiedPublic}
                   onCopy={() => void copyText(publicLink, "public")}
                 />
 
                 <LinkCard
-                  title="Yönetim bağlantısı"
-                  description="Bu size özel bağlantı ile ürün bilgilerini düzenleyebilirsiniz. Güvenli şekilde saklayın."
+                  title="Düzenleme bağlantısı"
+                  description="Bu size özel bağlantı ile ürün bilgilerini değiştirebilirsiniz. Güvenli şekilde saklayın."
                   value={manageLink}
                   copied={copiedManage}
                   onCopy={() => void copyText(manageLink, "manage")}
@@ -977,15 +977,14 @@ export default function SetupCodePage({ params }: Props) {
               </div>
 
               <div className="mt-5 rounded-[1.5rem] border border-amber-200 bg-amber-50 px-4 py-4">
-                <p className="text-sm font-medium text-amber-900">Önemli not</p>
+                <p className="text-sm font-medium text-amber-900">Önemli bilgi</p>
                 <p className="mt-1 text-sm leading-6 text-amber-800">
-                  Setup bağlantısı ilk kurulum içindir. Bundan sonraki tüm
-                  düzenlemeler yönetim bağlantısı üzerinden yapılmalıdır.
+                  Bu sayfa ilk kurulum içindir. Sonraki değişiklikleri düzenleme bağlantınızdan yapın.
                 </p>
               </div>
 
               <div className="mt-5 rounded-[1.5rem] border border-blue-200 bg-blue-50 px-4 py-4 text-sm leading-6 text-blue-900">
-                Kurtarma bilgilerinizi yönetim panelinden dilediğiniz zaman güncelleyebilirsiniz.
+                Erişim bilgilerinizi daha sonra düzenleme sayfasından güncelleyebilirsiniz.
               </div>
 
               <div className="mt-5 grid gap-3 sm:grid-cols-3">
@@ -994,7 +993,7 @@ export default function SetupCodePage({ params }: Props) {
                   onClick={() => router.push(`/p/${code}`)}
                   className="rounded-2xl bg-neutral-800 px-4 py-3 text-sm font-medium text-white transition hover:bg-neutral-700"
                 >
-                  Herkese açık profili gör
+                  Paylaşım sayfasını gör
                 </button>
 
                 <button
@@ -1006,7 +1005,7 @@ export default function SetupCodePage({ params }: Props) {
                   }}
                   className="rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm font-medium transition hover:border-neutral-400 hover:bg-neutral-50"
                 >
-                  Yönetim paneline git
+                  Düzenleme sayfasına git
                 </button>
 
                 <button
@@ -1050,47 +1049,47 @@ export default function SetupCodePage({ params }: Props) {
             Dokuntag
           </p>
           <h1 className="mt-2 text-3xl font-semibold tracking-tight">
-            İlk kurulum
+              Ürününüzü hazırlayın
           </h1>
           <p className="mt-3 text-sm text-neutral-600">Kod: {code}</p>
         </div>
 
         <section className="mb-5 overflow-hidden rounded-[2rem] border border-neutral-200 bg-white shadow-sm">
           <div className="border-b border-neutral-200 bg-gradient-to-br from-white via-neutral-50 to-neutral-100/80 px-5 py-5 sm:px-6">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">
-              Kurulum rehberi
-            </p>
-            <h2 className="mt-2 text-xl font-semibold tracking-tight text-neutral-900">
-              Bu ürün için kurulum adımları
-            </h2>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-neutral-600">
-              Aşağıdaki bilgileri doldurun, ardından kurulumu tamamlayın. Son adımda size özel yönetim bağlantısı oluşur.
-            </p>
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">
+            Hızlı başlangıç
+          </p>
+          <h2 className="mt-2 text-xl font-semibold tracking-tight text-neutral-900">
+            Bu ürünü birkaç adımda hazır hale getirin
+          </h2>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-neutral-600">
+            Aşağıdaki bilgileri girin. Son adımda size özel düzenleme bağlantınız oluşur.
+          </p>
+        </div>
+
+        <div className="px-5 py-5 sm:px-6">
+          <div className="grid gap-3 sm:grid-cols-3">
+            <GuideStep
+              step="1. Adım"
+              title="Temel bilgileri girin"
+              text="Ürün tipi ve gerekli bilgileri kısa şekilde doldurun."
+            />
+            <GuideStep
+              step="2. Adım"
+              title="İletişim bilgilerini seçin"
+              text="Size nasıl ulaşılacağını ve erişimi geri alma bilgilerini belirleyin."
+            />
+            <GuideStep
+              step="3. Adım"
+              title="Bağlantıları saklayın"
+              text="Kurulum bitince paylaşım ve düzenleme bağlantılarınızı güvenli şekilde kaydedin."
+            />
           </div>
 
-          <div className="px-5 py-5 sm:px-6">
-            <div className="grid gap-3 sm:grid-cols-3">
-              <GuideStep
-                step="1. Adım"
-                title="Temel bilgileri girin"
-                text="Ürün tipi, ana isim ve gerekli profil alanlarını doldurun."
-              />
-              <GuideStep
-                step="2. Adım"
-                title="İletişim ve kurtarma bilgilerini ekleyin"
-                text="Telefon ve zorunlu kurtarma alanlarını belirleyin."
-              />
-              <GuideStep
-                step="3. Adım"
-                title="Bağlantıları güvenle saklayın"
-                text="Kurulum sonrası oluşan public ve yönetim bağlantılarını kaydedin."
-              />
-            </div>
-
-            <div className="mt-4 rounded-[1.5rem] border border-blue-200 bg-blue-50 px-4 py-4 text-sm leading-6 text-blue-900">
-              Public e-posta görünümü kapalıdır. Kurtarma bilgileri yalnızca size yeniden erişim sağlamak ve isterseniz sistem içi iletişim için kullanılır.
-            </div>
+          <div className="mt-4 rounded-[1.5rem] border border-blue-200 bg-blue-50 px-4 py-4 text-sm leading-6 text-blue-900">
+            E-posta herkese açık görünmez. Buradaki erişim bilgileri yalnızca ürüne yeniden ulaşmanız için kullanılır.
           </div>
+        </div>
         </section>
 
         {error ? (

@@ -170,25 +170,25 @@ function getHeadline(productType?: ProductType) {
 
 function getDescription(productType?: ProductType) {
   if (productType === "pet") {
-    return "Hızlı iletişim seçeneklerinden birini kullanarak sahibine güvenli şekilde haber verebilirsiniz.";
+    return "Aşağıdaki iletişim seçeneklerinden biriyle hızlıca haber verebilirsiniz.";
   }
 
   if (productType === "key") {
-    return "Düşünmeden tek aksiyonla iletişime geçin. Gereksiz bilgi paylaşmadan sahibine ulaşmasına yardımcı olun.";
+    return "Gereksiz bilgi paylaşmadan sahibine en hızlı şekilde ulaşmasına yardımcı olabilirsiniz.";
   }
 
   if (productType === "person") {
-    return "Gördüğünüz kişiyle ilgili kısa bilgi paylaşmak veya yakınına ulaşmak için aşağıdaki iletişim seçeneklerini kullanabilirsiniz.";
+    return "Kısa bilgi paylaşmak veya ilgili kişiye ulaşmak için aşağıdaki seçenekleri kullanabilirsiniz.";
   }
 
-  return "Hızlı iletişim seçeneklerinden birini kullanarak sahibine güvenli şekilde haber verebilirsiniz.";
+  return "Aşağıdaki iletişim seçeneklerinden biriyle hızlıca haber verebilirsiniz.";
 }
 
 function getPrimaryNameLabel(productType?: ProductType) {
   if (productType === "pet") return "Evcil hayvan";
   if (productType === "key") return "Anahtar";
   if (productType === "person") return "Kişi";
-  return "Ürün";
+  return "Eşya";
 }
 
 function getOwnerLabel(productType?: ProductType) {
@@ -226,17 +226,83 @@ function buildPrimaryAction(input: {
   return null;
 }
 
+function getTheme(productType?: ProductType) {
+  if (productType === "pet") {
+    return {
+      pageBg: "bg-[linear-gradient(180deg,#fffcf8_0%,#fffdfa_55%,#ffffff_100%)]",
+      heroBg: "bg-gradient-to-br from-amber-50/70 via-white to-orange-50/60",
+      badge: "border-amber-200 bg-amber-100/80 text-amber-900",
+      softLabel: "text-amber-700",
+      accentPanel: "border-amber-100 bg-amber-200/70 text-amber-900",
+      accentButton: "bg-amber-300 text-amber-900 hover:bg-amber-400",
+      secondaryButton:
+        "border-amber-200 bg-white text-amber-900 hover:border-amber-300 hover:bg-amber-50/70",
+      ring: "focus:border-amber-300 focus:ring-amber-100",
+      chip: "border-amber-200 bg-amber-50/80 text-amber-900",
+      stickyButton: "bg-amber-300 text-amber-900"
+    };
+  }
+
+  if (productType === "key") {
+    return {
+      pageBg: "bg-[linear-gradient(180deg,#f9fcff_0%,#fcfdff_55%,#ffffff_100%)]",
+      heroBg: "bg-gradient-to-br from-sky-50/70 via-white to-cyan-50/60",
+      badge: "border-sky-200 bg-sky-100/80 text-sky-900",
+      softLabel: "text-sky-700",
+      accentPanel: "border-sky-100 bg-sky-200/70 text-sky-900",
+      accentButton: "bg-sky-300 text-sky-900 hover:bg-sky-400",
+      secondaryButton:
+        "border-sky-200 bg-white text-sky-900 hover:border-sky-300 hover:bg-sky-50/70",
+      ring: "focus:border-sky-300 focus:ring-sky-100",
+      chip: "border-sky-200 bg-sky-50/80 text-sky-900",
+      stickyButton: "bg-sky-300 text-sky-900"
+    };
+  }
+
+  if (productType === "person") {
+    return {
+      pageBg: "bg-[linear-gradient(180deg,#f9fcfc_0%,#fcfefe_55%,#ffffff_100%)]",
+      heroBg: "bg-gradient-to-br from-teal-50/70 via-white to-emerald-50/60",
+      badge: "border-teal-200 bg-teal-100/80 text-teal-900",
+      softLabel: "text-teal-700",
+      accentPanel: "border-teal-100 bg-teal-200/70 text-teal-900",
+      accentButton: "bg-teal-300 text-teal-900 hover:bg-teal-400",
+      secondaryButton:
+        "border-teal-200 bg-white text-teal-900 hover:border-teal-300 hover:bg-teal-50/70",
+      ring: "focus:border-teal-300 focus:ring-teal-100",
+      chip: "border-teal-200 bg-teal-50/80 text-teal-900",
+      stickyButton: "bg-teal-300 text-teal-900"
+    };
+  }
+
+  return {
+    pageBg: "bg-[linear-gradient(180deg,#fbfbfa_0%,#fdfdfc_55%,#ffffff_100%)]",
+    heroBg: "bg-gradient-to-br from-stone-50/80 via-white to-zinc-50/70",
+    badge: "border-stone-200 bg-stone-100/80 text-stone-900",
+    softLabel: "text-stone-700",
+    accentPanel: "border-stone-200 bg-stone-200/80 text-stone-900",
+    accentButton: "bg-stone-300 text-stone-900 hover:bg-stone-400",
+    secondaryButton:
+      "border-stone-200 bg-white text-stone-900 hover:border-stone-300 hover:bg-stone-50/70",
+    ring: "focus:border-stone-300 focus:ring-stone-100",
+    chip: "border-stone-200 bg-stone-50/80 text-stone-900",
+    stickyButton: "bg-stone-300 text-stone-900"
+  };
+}
+
 function SecondaryAction({
   href,
-  label
+  label,
+  className
 }: {
   href: string;
   label: string;
+  className: string;
 }) {
   return (
     <a
       href={href}
-      className="inline-flex min-h-12 items-center justify-center rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm font-medium text-neutral-800 transition hover:border-neutral-400 hover:bg-neutral-50"
+      className={`inline-flex min-h-12 items-center justify-center rounded-2xl border px-4 py-3 text-sm font-medium transition ${className}`}
     >
       {label}
     </a>
@@ -413,7 +479,16 @@ export default function PublicPage({
       whatsappHref,
       emailHref
     });
-  }, [allowDirectCall, allowDirectWhatsapp, contactEmailValue, callHref, whatsappHref, emailHref]);
+  }, [
+    allowDirectCall,
+    allowDirectWhatsapp,
+    contactEmailValue,
+    callHref,
+    whatsappHref,
+    emailHref
+  ]);
+
+  const theme = useMemo(() => getTheme(data?.productType), [data?.productType]);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -483,7 +558,7 @@ export default function PublicPage({
       <main className="min-h-screen bg-neutral-100 px-4 py-8 text-neutral-900 sm:px-5 sm:py-10">
         <div className="mx-auto max-w-3xl rounded-[2rem] border border-red-200 bg-white px-6 py-8 shadow-sm">
           <p className="text-sm font-medium text-red-700">
-            {error || "Profil yüklenemedi."}
+            {error || "Sayfa yüklenemedi."}
           </p>
         </div>
       </main>
@@ -492,10 +567,14 @@ export default function PublicPage({
 
   if (data.status === "inactive") {
     return (
-      <main className="min-h-screen bg-neutral-100 px-4 py-8 text-neutral-900 sm:px-5 sm:py-10">
+      <main
+        className={`min-h-screen px-4 py-8 text-neutral-900 sm:px-5 sm:py-10 ${theme.pageBg}`}
+      >
         <div className="mx-auto max-w-3xl space-y-5">
           <section className="overflow-hidden rounded-[2rem] border border-neutral-200 bg-white shadow-sm">
-            <div className="border-b border-neutral-200 bg-gradient-to-br from-white via-neutral-50 to-neutral-100/80 px-6 py-7 sm:px-8">
+            <div
+              className={`border-b border-neutral-200 px-6 py-7 sm:px-8 ${theme.heroBg}`}
+            >
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <a
                   href={dokuntagHref}
@@ -506,22 +585,24 @@ export default function PublicPage({
                   Dokuntag
                 </a>
 
-                <div className="inline-flex items-center gap-2 rounded-full bg-neutral-900 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-white">
+                <div
+                  className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] ${theme.badge}`}
+                >
                   <span aria-hidden="true">{getProductIcon(data.productType)}</span>
                   <span>{getProductTypeLabel(data.productType)}</span>
                 </div>
               </div>
 
               <div className="mt-6 flex items-start gap-4">
-                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-[20px] border border-neutral-200 bg-neutral-50 text-2xl">
+                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-[20px] border border-neutral-200 bg-white text-2xl">
                   {getProductIcon(data.productType)}
                 </div>
                 <div>
                   <h1 className="text-2xl font-semibold leading-tight sm:text-[32px]">
-                    Bu ürün şu an aktif değil
+                    Bu sayfa şu an kapalı
                   </h1>
                   <p className="mt-2 max-w-xl text-sm leading-6 text-neutral-600 sm:text-[15px]">
-                    Profil sahibi herkese açık erişimi geçici olarak kapatmıştır.
+                    Profil sahibi herkese açık görünürlüğü geçici olarak kapatmıştır.
                   </p>
                 </div>
               </div>
@@ -529,7 +610,7 @@ export default function PublicPage({
 
             <div className="px-6 py-6 sm:px-8">
               <div className="rounded-[22px] border border-amber-200 bg-amber-50 px-4 py-4 text-sm leading-6 text-amber-900">
-                Hızlı iletişim ve profil bilgileri şu an görünmüyor. Ürün yeniden aktifleştirildiğinde public profil tekrar açılır.
+                İletişim seçenekleri şu an görünmüyor. Sayfa yeniden açıldığında tekrar kullanılabilir.
               </div>
             </div>
           </section>
@@ -539,10 +620,14 @@ export default function PublicPage({
   }
 
   return (
-    <main className="min-h-screen bg-neutral-100 px-4 py-8 pb-28 text-neutral-900 sm:px-5 sm:py-10 sm:pb-12">
+    <main
+      className={`min-h-screen px-4 py-8 pb-28 text-neutral-900 sm:px-5 sm:py-10 sm:pb-12 ${theme.pageBg}`}
+    >
       <div className="mx-auto max-w-3xl space-y-5 sm:space-y-6">
         <section className="overflow-hidden rounded-[2rem] border border-neutral-200 bg-white shadow-sm">
-          <div className="border-b border-neutral-200 bg-gradient-to-br from-white via-neutral-50 to-neutral-100/80 px-6 py-6 sm:px-8 sm:py-8">
+          <div
+            className={`border-b border-neutral-200 px-6 py-6 sm:px-8 sm:py-8 ${theme.heroBg}`}
+          >
             <div className="flex flex-wrap items-center justify-between gap-3">
               <a
                 href={dokuntagHref}
@@ -553,7 +638,9 @@ export default function PublicPage({
                 Dokuntag
               </a>
 
-              <div className="inline-flex items-center gap-2 rounded-full bg-neutral-900 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-white">
+              <div
+                className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] ${theme.badge}`}
+              >
                 <span aria-hidden="true">{getProductIcon(data.productType)}</span>
                 <span>{getProductTypeLabel(data.productType)}</span>
               </div>
@@ -561,8 +648,10 @@ export default function PublicPage({
 
             <div className="mt-6 space-y-4">
               <div className="space-y-2">
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">
-                  Güvenli iletişim profili
+                <p
+                  className={`text-xs font-semibold uppercase tracking-[0.16em] ${theme.softLabel}`}
+                >
+                  İletişim sayfası
                 </p>
                 <h1 className="text-2xl font-semibold leading-tight sm:text-[32px]">
                   {getHeadline(data.productType)}
@@ -588,43 +677,60 @@ export default function PublicPage({
 
           <div className="px-6 py-6 sm:px-8">
             {primaryAction ? (
-              <div className="rounded-[24px] border border-neutral-900 bg-neutral-900 p-4 text-white shadow-sm">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-neutral-300">
-                  Ana aksiyon
+              <div className={`rounded-[24px] border p-4 shadow-sm ${theme.accentPanel}`}>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-current/70">
+                  En hızlı yol
                 </p>
                 <a
                   href={primaryAction.href}
-                  className="mt-3 inline-flex min-h-14 w-full items-center justify-center rounded-2xl bg-white px-5 py-3 text-base font-semibold text-neutral-900 transition hover:bg-neutral-100"
+                  className={`mt-3 inline-flex min-h-14 w-full items-center justify-center rounded-2xl px-5 py-3 text-base font-semibold transition ${theme.accentButton}`}
                 >
                   {primaryAction.label}
                 </a>
-                <p className="mt-3 text-sm leading-6 text-neutral-300">
-                  Sahibine en hızlı ulaşım için tek dokunuşla iletişim kurabilirsiniz.
+                <p className="mt-3 text-sm leading-6 text-current/80">
+                  Sahibine en hızlı şekilde ulaşmak için tek dokunuşla iletişim kurabilirsiniz.
                 </p>
               </div>
             ) : (
               <div className="rounded-[22px] border border-amber-200 bg-amber-50 px-4 py-4 text-sm leading-6 text-amber-900">
-                Bu profil şu an doğrudan iletişim paylaşmıyor. Aşağıdaki formdan kısa mesaj bırakabilirsiniz.
+                Bu sayfada doğrudan iletişim bilgisi paylaşılmıyor. Aşağıdan kısa mesaj bırakabilirsiniz.
               </div>
             )}
 
             <div className="mt-4 grid gap-3 sm:grid-cols-3">
               {allowDirectCall && callHref ? (
-                <SecondaryAction href={callHref} label="Ara" />
+                <SecondaryAction
+                  href={callHref}
+                  label="Ara"
+                  className={theme.secondaryButton}
+                />
               ) : null}
 
               {allowDirectWhatsapp && whatsappHref ? (
-                <SecondaryAction href={whatsappHref} label="WhatsApp" />
+                <SecondaryAction
+                  href={whatsappHref}
+                  label="WhatsApp"
+                  className={theme.secondaryButton}
+                />
               ) : null}
 
               {contactEmailValue && emailHref ? (
-                <SecondaryAction href={emailHref} label="E-posta" />
+                <SecondaryAction
+                  href={emailHref}
+                  label="E-posta"
+                  className={theme.secondaryButton}
+                />
               ) : null}
             </div>
           </div>
         </section>
 
-        {(displayOwnerName || contactPhoneValue || contactEmailValue || displayCity || displayNote || data.alerts.length > 0) ? (
+        {displayOwnerName ||
+        contactPhoneValue ||
+        contactEmailValue ||
+        displayCity ||
+        displayNote ||
+        data.alerts.length > 0 ? (
           <section className="grid gap-3 sm:grid-cols-2">
             {displayOwnerName ? (
               <InfoCard label={getOwnerLabel(data.productType)} value={displayOwnerName} />
@@ -658,7 +764,7 @@ export default function PublicPage({
                   {data.alerts.map((alert) => (
                     <span
                       key={alert}
-                      className="rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-medium text-amber-900"
+                      className={`rounded-full border px-3 py-1 text-xs font-medium ${theme.chip}`}
                     >
                       {alert}
                     </span>
@@ -671,14 +777,16 @@ export default function PublicPage({
 
         <section className="overflow-hidden rounded-[2rem] border border-neutral-200 bg-white shadow-sm">
           <div className="border-b border-neutral-200 px-6 py-5 sm:px-8">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">
+            <p
+              className={`text-xs font-semibold uppercase tracking-[0.16em] ${theme.softLabel}`}
+            >
               Alternatif iletişim
             </p>
             <h2 className="mt-2 text-xl font-semibold text-neutral-900">
               Kısa mesaj bırak
             </h2>
             <p className="mt-2 text-sm leading-6 text-neutral-600">
-              Doğrudan aramak istemiyorsanız kısa bir bilgi bırakabilirsiniz.
+              Doğrudan aramak istemiyorsanız kısa bir bilgi paylaşabilirsiniz.
             </p>
           </div>
 
@@ -704,7 +812,7 @@ export default function PublicPage({
                   <input
                     value={senderName}
                     onChange={(e) => setSenderName(e.target.value)}
-                    className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
+                    className={`w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition focus:ring-2 ${theme.ring}`}
                     placeholder="Adınız"
                   />
                 </div>
@@ -720,7 +828,7 @@ export default function PublicPage({
                     }
                     inputMode="numeric"
                     pattern="[0-9]*"
-                    className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
+                    className={`w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition focus:ring-2 ${theme.ring}`}
                     placeholder="05xxxxxxxxx"
                   />
                 </div>
@@ -734,7 +842,7 @@ export default function PublicPage({
                   type="email"
                   value={senderEmail}
                   onChange={(e) => setSenderEmail(e.target.value)}
-                  className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
+                  className={`w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition focus:ring-2 ${theme.ring}`}
                   placeholder="ornek@mail.com"
                 />
               </div>
@@ -747,14 +855,14 @@ export default function PublicPage({
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
                   rows={4}
-                  className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
+                  className={`w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition focus:ring-2 ${theme.ring}`}
                   placeholder="Kısa bir bilgi paylaşın"
                 />
               </div>
 
               <div>
                 <p className="mb-2 text-sm font-medium text-neutral-900">
-                  Size nasıl dönülsün?
+                  Size nasıl dönüş yapılsın?
                 </p>
                 <div className="flex flex-wrap gap-2">
                   <label className="inline-flex items-center gap-2 rounded-full border border-neutral-300 px-3 py-2 text-sm text-neutral-700">
@@ -787,7 +895,7 @@ export default function PublicPage({
               <button
                 type="submit"
                 disabled={sending}
-                className="inline-flex min-h-12 items-center justify-center rounded-2xl bg-neutral-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-60"
+                className={`inline-flex min-h-12 items-center justify-center rounded-2xl px-5 py-3 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${theme.accentButton}`}
               >
                 {sending ? "Gönderiliyor..." : "Mesajı Gönder"}
               </button>
@@ -800,7 +908,7 @@ export default function PublicPage({
         <div className="fixed inset-x-0 bottom-0 z-20 border-t border-neutral-200 bg-white/95 px-4 py-3 backdrop-blur sm:hidden">
           <a
             href={primaryAction.href}
-            className="inline-flex min-h-12 w-full items-center justify-center rounded-2xl bg-neutral-900 px-5 py-3 text-sm font-semibold text-white"
+            className={`inline-flex min-h-12 w-full items-center justify-center rounded-2xl px-5 py-3 text-sm font-semibold ${theme.stickyButton}`}
           >
             {primaryAction.label}
           </a>

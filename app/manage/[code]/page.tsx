@@ -545,7 +545,7 @@ export default function ManagePage({
   const [success, setSuccess] = useState("");
   const [manageLink, setManageLink] = useState("");
   const [warning, setWarning] = useState(
-    "Bu size özel yönetim bağlantısıdır. Şifre gibi düşünün, güvenli şekilde saklayın. Kaybederseniz recover alanından yenisini oluşturabilirsiniz."
+  "Bu size özel düzenleme bağlantısıdır. Şifre gibi düşünün ve güvenli şekilde saklayın. Kaybederseniz erişimi geri alma adımını kullanabilirsiniz."
   );
   const [initialSnapshot, setInitialSnapshot] = useState("");
   const [openSection, setOpenSection] = useState<OpenSection>("basic");
@@ -667,7 +667,7 @@ export default function ManagePage({
 
     if (!token) {
       setLoading(false);
-      setError("Yönetim bağlantısı eksik.");
+      setError("Düzenleme bağlantısı eksik.");
       return;
     }
 
@@ -1190,7 +1190,7 @@ export default function ManagePage({
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data?.error || "Devir linki oluşturulamadı.");
+        throw new Error(data?.error || "Devir bağlantısı oluşturulamadı.");
       }
 
       const nextTransferLink =
@@ -1202,7 +1202,7 @@ export default function ManagePage({
       setTransferExpiresAt(nextTransferExpiresAt);
       setTransferSuccess(
         data?.message ||
-          "Devir linki oluşturuldu. Ürün güvenlik için pasif duruma alındı."
+          "Devir bağlantısı oluşturuldu. Ürün güvenlik için pasif duruma alındı."
       );
       setStatus("inactive");
       setConfirmDeactivate(false);
@@ -1243,7 +1243,7 @@ export default function ManagePage({
       }
     } catch (err) {
       setTransferError(
-        err instanceof Error ? err.message : "Devir linki oluşturulamadı."
+        err instanceof Error ? err.message : "Devir bağlantısı oluşturulamadı."
       );
     } finally {
       setTransferLoading(false);
@@ -1515,8 +1515,8 @@ export default function ManagePage({
       setInitialSnapshot(nextSnapshot);
       setSuccess(
         resolvedStatus === "inactive"
-          ? "Ürün pasif duruma alındı. Public sayfada iletişim ve görünür profil kapatıldı."
-          : "Ürün yeniden aktif edildi. Public sayfa ve iletişim seçenekleri tekrar açıldı."
+          ? "Ürün pasif duruma alındı. Herkese açık sayfada iletişim ve görünür profil kapatıldı."
+          : "Ürün yeniden aktif edildi. Herkese açık sayfa ve iletişim seçenekleri tekrar açıldı."
       );
     } catch (err) {
       setError(err instanceof Error ? err.message : "Bir hata oluştu.");
@@ -1667,7 +1667,7 @@ export default function ManagePage({
             <p className="text-sm text-red-700">{error}</p>
 
             <div className="mt-4 rounded-2xl border border-neutral-200 bg-white p-4 text-sm text-neutral-700">
-              Yönetim bağlantınızı kaybettiyseniz{" "}
+              Düzenleme bağlantınızı kaybettiyseniz{" "}
               <a href="/recover" className="font-medium underline underline-offset-4">
                 kurtarma sayfasından yeni bağlantı oluşturabilirsiniz
               </a>
@@ -1749,7 +1749,7 @@ export default function ManagePage({
                 </p>
                 <p className="mt-2 text-sm leading-6 text-neutral-600">
                   {status === "inactive"
-                    ? "Bu ürün şu anda public tarafta kapalıdır. Profil ve iletişim seçenekleri yalnızca yeniden aktifleştirildiğinde görünür."
+                    ? "Bu ürün şu anda  herkese açıkpaylaşım tarafında kapalıdır. Profil ve iletişim seçenekleri yalnızca yeniden aktifleştirildiğinde görünür."
                     : "Burada yaptığınız değişiklikler kaydedildiğinde herkese açık profil otomatik olarak güncellenir."}
                 </p>
 
@@ -1788,7 +1788,7 @@ export default function ManagePage({
 
                 {status === "active" && confirmDeactivate ? (
                   <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm leading-6 text-amber-900">
-                    Pasife alındığında public profilde bilgiler ve iletişim seçenekleri kapanır. Manage erişiminiz devam eder.
+                    Pasife alındığında herkese açık profilde bilgiler ve iletişim seçenekleri kapanır. Manage erişiminiz devam eder.
                   </div>
                 ) : null}
               </div>
@@ -2225,7 +2225,7 @@ export default function ManagePage({
                       Ürünü başkasına devret
                     </p>
                     <p className="mt-1 text-sm leading-6 text-neutral-600">
-                      Devir linki oluşturduğunuzda ürün güvenlik için pasif duruma alınır. Yeni sahip linki kullanınca size özel yönetim erişimi kapanır.
+                      Devir bağlantısı oluşturduğunuzda ürün güvenlik için pasif duruma alınır. Yeni sahip bağlantıyı kullanınca size özel Düzenleme erişimi kapanır.
                     </p>
                   </div>
 
@@ -2235,7 +2235,7 @@ export default function ManagePage({
                     disabled={transferLoading || isDirty}
                     className="rounded-2xl bg-neutral-900 px-4 py-3 text-sm font-medium text-white transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-60"
                   >
-                    {transferLoading ? "Oluşturuluyor..." : "Devir linki oluştur"}
+                    {transferLoading ? "Oluşturuluyor..." : "Devir bağlantısı oluştur"}
                   </button>
                 </div>
 
@@ -2273,7 +2273,7 @@ export default function ManagePage({
                       <p className="mt-1">
                         {formattedTransferExpiry
                           ? `Son kullanım: ${formattedTransferExpiry}`
-                          : "Son kullanım tarihi link oluşturulduktan sonra otomatik belirlenir."}
+                          : "Son kullanım tarihi bağlantı oluşturulduktan sonra otomatik belirlenir."}
                       </p>
                       <p className="mt-1">
                         Bağlantıyı açan kişi ürünü kendi hesabına aktarabilir.
@@ -2286,7 +2286,7 @@ export default function ManagePage({
                         onClick={() => void copyTransferLink()}
                         className="rounded-2xl border border-neutral-300 bg-white px-4 py-2 text-sm font-medium transition hover:border-neutral-400 hover:bg-neutral-50"
                       >
-                        {copiedTransfer ? "Devir linki kopyalandı" : "Devir linkini kopyala"}
+                        {copiedTransfer ? "Devir bağlantısı kopyalandı" : "Devir bağlantısını kopyala"}
                       </button>
 
                       <button
@@ -2295,7 +2295,7 @@ export default function ManagePage({
                         disabled={transferCancelLoading}
                         className="rounded-2xl border border-red-300 bg-red-50 px-4 py-2 text-sm font-medium text-red-700 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
                       >
-                        {transferCancelLoading ? "İptal ediliyor..." : "Devir linkini iptal et"}
+                        {transferCancelLoading ? "İptal ediliyor..." : "Devir bağlantısını iptal et"}
                       </button>
 
                       <a
@@ -2339,7 +2339,7 @@ export default function ManagePage({
                   onClick={() => void copyManageLink()}
                   className="rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm font-medium transition hover:border-neutral-400 hover:bg-neutral-50"
                 >
-                  {copiedManage ? "Yönetim linki kopyalandı" : "Yönetim linkini kopyala"}
+                  {copiedManage ? "Düzenleme bağlantısı kopyalandı" : "Düzenlemem bağlantısını kopyala"}
                 </button>
 
                 <button
