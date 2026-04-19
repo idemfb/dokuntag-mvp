@@ -182,5 +182,69 @@
     "fingerprint": "10f34b1244566bb397b6ce86323723b3701c6698a1f2a21e8b4e39bd76d13e12",
     "ip": "::1",
     "createdAt": "2026-04-18T09:17:37.711Z"
+  },
+  {
+    "id": "ed5085fc-1a15-4771-b108-2cf053ec8c7c",
+    "email": "i.dem@hotmail.com",
+    "entryType": "my",
+    "fingerprint": "10f34b1244566bb397b6ce86323723b3701c6698a1f2a21e8b4e39bd76d13e12",
+    "ip": "::1",
+    "createdAt": "2026-04-19T09:40:07.381Z"
+  },
+  {
+    "id": "175795ba-e8ad-480c-aba1-28862f273747",
+    "email": "i.dem@hotmail.com",
+    "entryType": "my",
+    "fingerprint": "10f34b1244566bb397b6ce86323723b3701c6698a1f2a21e8b4e39bd76d13e12",
+    "ip": "::1",
+    "createdAt": "2026-04-19T11:20:56.832Z"
+  },
+  {
+    "id": "ce5e40f8-fa15-47e9-9774-9d084aa6d9c6",
+    "email": "i.dem@hotmail.com",
+    "entryType": "my",
+    "fingerprint": "10f34b1244566bb397b6ce86323723b3701c6698a1f2a21e8b4e39bd76d13e12",
+    "ip": "::1",
+    "createdAt": "2026-04-19T11:24:15.980Z"
+  },
+  {
+    "id": "066bde86-61db-4943-9f17-6f75f381ad4f",
+    "email": "i.dem@hotmail.com",
+    "entryType": "my",
+    "fingerprint": "10f34b1244566bb397b6ce86323723b3701c6698a1f2a21e8b4e39bd76d13e12",
+    "ip": "::1",
+    "createdAt": "2026-04-19T11:31:33.165Z"
+  },
+  {
+    "id": "4662470d-4e45-475c-8d91-908bee1cf199",
+    "email": "i.dem@hotmail.com",
+    "entryType": "my",
+    "fingerprint": "10f34b1244566bb397b6ce86323723b3701c6698a1f2a21e8b4e39bd76d13e12",
+    "ip": "::1",
+    "createdAt": "2026-04-19T11:32:51.039Z"
+  },
+  {
+    "id": "bda6a117-33aa-426c-8f1e-4cb738d752e6",
+    "email": "i.dem@hotmail.com",
+    "entryType": "my",
+    "fingerprint": "10f34b1244566bb397b6ce86323723b3701c6698a1f2a21e8b4e39bd76d13e12",
+    "ip": "::1",
+    "createdAt": "2026-04-19T11:55:34.969Z"
+  },
+  {
+    "id": "4f190f55-0b17-44de-861e-fb474216e1dc",
+    "email": "i.dem@hotmail.com",
+    "entryType": "my",
+    "fingerprint": "10f34b1244566bb397b6ce86323723b3701c6698a1f2a21e8b4e39bd76d13e12",
+    "ip": "::1",
+    "createdAt": "2026-04-19T12:14:06.484Z"
+  },
+  {
+    "id": "ac1ec6c2-8081-499c-9ee9-3f8cb608bf70",
+    "email": "i.dem@hotmail.com",
+    "entryType": "my",
+    "fingerprint": "10f34b1244566bb397b6ce86323723b3701c6698a1f2a21e8b4e39bd76d13e12",
+    "ip": "::1",
+    "createdAt": "2026-04-19T13:21:51.420Z"
   }
 ]

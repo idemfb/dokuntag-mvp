@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
-  consumeRecoverySessionTokenAsync,
+  verifyRecoverySessionTokenAsync,
   recoverManageAccessAsync
 } from "@/lib/tags";
 
@@ -29,49 +29,42 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const consumed = await consumeRecoverySessionTokenAsync(token);
+    const session = await verifyRecoverySessionTokenAsync(token);
 
-    if (!consumed) {
-      return NextResponse.json(
-        { error: "Doğrulama bağlantısı geçersiz." },
-        { status: 404 }
-      );
-    }
+if (!session) {
+  return NextResponse.json(
+    { error: "Doğrulama bağlantısı geçersiz." },
+    { status: 404 }
+  );
+}
 
-    if ("success" in consumed && consumed.success === false) {
-      if (consumed.reason === "expired") {
-        return NextResponse.json(
-          { error: "Doğrulama bağlantısının süresi doldu." },
-          { status: 410 }
-        );
-      }
+if (session.status === "expired") {
+  return NextResponse.json(
+    { error: "Doğrulama bağlantısının süresi doldu." },
+    { status: 410 }
+  );
+}
 
-      if (consumed.reason === "used") {
-        return NextResponse.json(
-          { error: "Bu doğrulama bağlantısı daha önce kullanılmış." },
-          { status: 409 }
-        );
-      }
+if (session.status === "used") {
+  return NextResponse.json(
+    { error: "Bu doğrulama bağlantısı artık kullanılamıyor." },
+    { status: 409 }
+  );
+}
 
-      return NextResponse.json(
-        { error: "Doğrulama bağlantısı geçersiz." },
-        { status: 400 }
-      );
-    }
+const selectedItem = session.items.find((item) => item.code === code);
 
-    const selectedItem = consumed.items.find((item) => item.code === code);
+if (!selectedItem) {
+  return NextResponse.json(
+    { error: "Seçilen ürün bu bağlantıya bağlı değil." },
+    { status: 403 }
+  );
+}
 
-    if (!selectedItem) {
-      return NextResponse.json(
-        { error: "Seçilen ürün bu doğrulama bağlantısına bağlı değil." },
-        { status: 403 }
-      );
-    }
-
-    const recovered = await recoverManageAccessAsync({
-      code,
-      email: consumed.email
-    });
+const recovered = await recoverManageAccessAsync({
+  code,
+  email: session.email
+});
 
     if (!recovered) {
       return NextResponse.json(

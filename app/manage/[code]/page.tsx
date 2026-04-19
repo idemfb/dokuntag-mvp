@@ -465,9 +465,9 @@ function InfoCard({
   subtext: string;
 }) {
   return (
-    <div className="rounded-[1.5rem] border border-neutral-200 bg-white p-4 shadow-sm">
+    <div className="rounded-[1.25rem] border border-neutral-200 bg-white p-3 shadow-sm">
       <p className="text-xs text-neutral-500">{title}</p>
-      <p className="mt-2 text-2xl font-semibold text-neutral-900">{value}</p>
+      <p className="mt-1 text-xl font-semibold text-neutral-900">{value}</p>
       <p className="mt-1 text-xs text-neutral-500">{subtext}</p>
     </div>
   );
@@ -545,7 +545,7 @@ export default function ManagePage({
   const [success, setSuccess] = useState("");
   const [manageLink, setManageLink] = useState("");
   const [warning, setWarning] = useState(
-  "Bu size özel düzenleme bağlantısıdır. Şifre gibi düşünün ve güvenli şekilde saklayın. Kaybederseniz erişimi geri alma adımını kullanabilirsiniz."
+  "Bu bağlantı sadece sana aittir. Güvenli sakla. Şifre gibi düşünün ve güvenli şekilde saklayın. Kaybederseniz Hesabı geri alma adımını kullanabilirsiniz."
   );
   const [initialSnapshot, setInitialSnapshot] = useState("");
   const [openSection, setOpenSection] = useState<OpenSection>("basic");
@@ -813,6 +813,12 @@ export default function ManagePage({
       setShowPhone(false);
     }
   }, [allowDirectCall, showPhone]);
+
+  useEffect(() => {
+  if (allowDirectCall && phone.trim()) {
+    setShowPhone(true);
+  }
+}, [allowDirectCall, phone]);
 
   useEffect(() => {
     if (!allowDirectCall && allowDirectWhatsapp) {
@@ -1640,7 +1646,7 @@ export default function ManagePage({
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-neutral-100 px-4 py-8 text-neutral-900 sm:px-5 sm:py-10">
+      <main className="... bg-[linear-gradient(180deg,#fbfbfa_0%,#fdfdfc_55%,#ffffff_100%)] ...">
         <div className="mx-auto max-w-3xl">
           <div className="rounded-[2rem] border border-neutral-200 bg-white px-6 py-7 shadow-sm">
             <p className="text-sm text-neutral-600">Yükleniyor...</p>
@@ -1652,14 +1658,12 @@ export default function ManagePage({
 
   if (error && (error.includes("Geçersiz") || error.includes("eksik"))) {
     return (
-      <main className="min-h-screen bg-neutral-100 px-4 py-8 text-neutral-900 sm:px-5 sm:py-10">
+      <main className="... bg-[linear-gradient(180deg,#fbfbfa_0%,#fdfdfc_55%,#ffffff_100%)] ...">
         <div className="mx-auto max-w-2xl">
           <div className="mb-6">
-            <p className="text-sm uppercase tracking-[0.24em] text-neutral-500">
-              Dokuntag Yönetim
-            </p>
-            <h1 className="mt-2 text-3xl font-semibold tracking-tight">
-              Profil yönetimi
+            <h1 className="text-2xl font-semibold tracking-tight text-neutral-900">
+              Dokuntag
+              <span className="ml-2 text-neutral-500">Profil Yönetimi</span>
             </h1>
           </div>
 
@@ -1680,7 +1684,7 @@ export default function ManagePage({
   }
 
   return (
-    <main className="min-h-screen bg-neutral-100 px-4 py-8 text-neutral-900 sm:px-5 sm:py-10">
+    <main className="... bg-[linear-gradient(180deg,#fbfbfa_0%,#fdfdfc_55%,#ffffff_100%)] ...">
       <div className="mx-auto max-w-3xl">
         <div className="mb-6">
           <a
@@ -1694,158 +1698,115 @@ export default function ManagePage({
             <div className="border-b border-neutral-200 bg-gradient-to-br from-white via-neutral-50 to-neutral-100/80 p-5 sm:p-6">
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
-                  <p className="text-sm uppercase tracking-[0.24em] text-neutral-500">
-                    Dokuntag Yönetim
-                  </p>
-                  <h1 className="mt-2 text-3xl font-semibold tracking-tight">
-                    Profil yönetimi
+                  <h1 className="text-2xl font-semibold tracking-tight text-neutral-900">
+                    Dokuntag
+                    <span className="ml-2 text-neutral-500">Profil Yönetimi</span>
                   </h1>
-                  <p className="mt-3 max-w-2xl text-sm leading-6 text-neutral-600">
-                    Bu ürünün herkese açık profilini, iletişim seçeneklerini ve gelen mesajlarını buradan yönetebilirsiniz.
-                  </p>
                 </div>
 
-                <a
-                  href={shareLink}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm font-medium transition hover:border-neutral-400 hover:bg-neutral-50"
-                >
-                  Herkese açık profili aç
-                </a>
-              </div>
-
-              <div className="mt-5 flex flex-wrap gap-2">
-                <span className="rounded-full border border-neutral-300 bg-white px-3 py-1 text-xs font-medium text-neutral-700">
-                  Kod: {code}
-                </span>
-                <span
-                  className={`rounded-full px-3 py-1 text-xs font-medium ${
-                    status === "inactive"
-                      ? "border border-amber-200 bg-amber-50 text-amber-800"
-                      : "border border-emerald-200 bg-emerald-50 text-emerald-700"
-                  }`}
-                >
-                  Durum: {status === "inactive" ? "pasif" : "aktif"}
-                </span>
-                <span className="rounded-full border border-neutral-300 bg-white px-3 py-1 text-xs font-medium text-neutral-700">
-                  Tip: {getProductTypeLabel(productType)}
-                </span>
-                {displaySecondaryName ? (
-                  <span className="rounded-full border border-neutral-300 bg-white px-3 py-1 text-xs font-medium text-neutral-700">
-                    Başlık: {displaySecondaryName}
-                  </span>
-                ) : null}
-              </div>
-            </div>
-
-            <div className="p-5 sm:p-6">
-              <div className="rounded-[1.5rem] border border-neutral-200 bg-neutral-50 px-4 py-4">
-                <p className="text-xs uppercase tracking-[0.16em] text-neutral-500">
-                  {status === "inactive" ? "Pasif ürün" : "Aktif ürün"}
-                </p>
-                <p className="mt-2 text-xl font-semibold text-neutral-900">
-                  {displayPrimaryName}
-                </p>
-                <p className="mt-2 text-sm leading-6 text-neutral-600">
-                  {status === "inactive"
-                    ? "Bu ürün şu anda  herkese açıkpaylaşım tarafında kapalıdır. Profil ve iletişim seçenekleri yalnızca yeniden aktifleştirildiğinde görünür."
-                    : "Burada yaptığınız değişiklikler kaydedildiğinde herkese açık profil otomatik olarak güncellenir."}
-                </p>
-
-                <div className="mt-4 flex flex-wrap gap-3">
-                  <button
-                    type="button"
-                    onClick={() => void handleStatusToggle()}
-                    disabled={statusSaving}
-                    className={`rounded-2xl px-4 py-3 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-60 ${
-                      status === "inactive"
-                        ? "border border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100"
-                        : confirmDeactivate
-                          ? "border border-red-300 bg-red-50 text-red-700 hover:bg-red-100"
-                          : "border border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100"
-                    }`}
-                  >
-                    {statusSaving
-                      ? "İşleniyor..."
-                      : status === "inactive"
-                        ? "Yeniden aktifleştir"
-                        : confirmDeactivate
-                          ? "Pasife almayı onayla"
-                          : "Ürünü pasife al"}
-                  </button>
-
-                  {status === "active" && confirmDeactivate ? (
-                    <button
-                      type="button"
-                      onClick={() => setConfirmDeactivate(false)}
-                      className="rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm font-medium transition hover:border-neutral-400 hover:bg-neutral-50"
-                    >
-                      Vazgeç
-                    </button>
-                  ) : null}
                 </div>
 
-                {status === "active" && confirmDeactivate ? (
-                  <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm leading-6 text-amber-900">
-                    Pasife alındığında herkese açık profilde bilgiler ve iletişim seçenekleri kapanır. Manage erişiminiz devam eder.
-                  </div>
-                ) : null}
-              </div>
+              <div className="mt-5 rounded-[1.5rem] border border-neutral-200 bg-neutral-50 p-4 sm:p-5">
+  <div className="flex flex-wrap items-start justify-between gap-3">
+  <div className="min-w-0">
+    <p className="text-xl font-semibold text-neutral-900">
+      {displayPrimaryName}
+    </p>
+    <p className="mt-2 max-w-2xl text-sm leading-6 text-neutral-600">
+      Bu üründe yaptığınız güncellemeler herkese açık sayfada görünür.
+    </p>
+  </div>
 
-              <div className="mt-5 flex flex-wrap gap-2">
-                <SectionNavButton
-                  label="Temel bilgiler"
-                  isActive={openSection === "basic"}
-                  onClick={() => openAndScrollToSection("basic")}
-                />
-                <SectionNavButton
-                  label="İletişim"
-                  isActive={openSection === "contact"}
-                  onClick={() => openAndScrollToSection("contact")}
-                />
-                <SectionNavButton
-                  label="Uyarılar"
-                  isActive={openSection === "alerts"}
-                  onClick={() => openAndScrollToSection("alerts")}
-                />
-                <SectionNavButton
-                  label="Kurtarma"
-                  isActive={openSection === "recovery"}
-                  onClick={() => openAndScrollToSection("recovery")}
-                />
-                <SectionNavButton
-                  label="Mesajlar"
-                  isActive={openSection === "messages"}
-                  onClick={() => openAndScrollToSection("messages")}
-                  badge={unreadCount > 0 ? unreadCount : undefined}
-                />
-              </div>
+  <button
+    type="button"
+    onClick={() => void handleStatusToggle()}
+    disabled={statusSaving}
+    className={`rounded-2xl px-4 py-3 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-60 ${
+      status === "inactive"
+        ? "border border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100"
+        : confirmDeactivate
+          ? "border border-red-300 bg-red-50 text-red-700 hover:bg-red-100"
+          : "border border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100"
+    }`}
+  >
+    {statusSaving
+      ? "İşleniyor..."
+      : status === "inactive"
+        ? "Yeniden aktifleştir"
+        : confirmDeactivate
+          ? "Pasife almayı onayla"
+          : "Ürünü pasife al"}
+  </button>
+</div>
+
+  <div className="mt-4 flex flex-wrap gap-2">
+  <span className="rounded-full border border-neutral-300 bg-white px-3 py-1 text-xs font-medium text-neutral-700">
+    {code}
+  </span>
+  <span className="rounded-full border border-neutral-300 bg-white px-3 py-1 text-xs font-medium text-neutral-700">
+    {getProductTypeLabel(productType)}
+  </span>
+  <span
+    className={`rounded-full px-3 py-1 text-xs font-medium ${
+      status === "inactive"
+        ? "border border-amber-200 bg-amber-50 text-amber-800"
+        : "border border-emerald-200 bg-emerald-50 text-emerald-700"
+    }`}
+  >
+    {status === "inactive" ? "Pasif" : "Aktif"}
+  </span>
+</div>
+
+  {status === "active" && confirmDeactivate ? (
+    <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm leading-6 text-amber-900">
+      Pasife alındığında herkese açık profilde bilgiler ve iletişim seçenekleri kapanır.
+    </div>
+  ) : null}
+
+  <div className="mt-5 flex flex-wrap items-center gap-2">
+  <SectionNavButton
+    label="Bilgiler"
+    isActive={openSection === "basic"}
+    onClick={() => openAndScrollToSection("basic")}
+  />
+  <SectionNavButton
+    label="İletişim"
+    isActive={openSection === "contact"}
+    onClick={() => openAndScrollToSection("contact")}
+  />
+  <SectionNavButton
+    label="Notlar"
+    isActive={openSection === "alerts"}
+    onClick={() => openAndScrollToSection("alerts")}
+  />
+  <SectionNavButton
+    label="Kurtarma"
+    isActive={openSection === "recovery"}
+    onClick={() => openAndScrollToSection("recovery")}
+  />
+  <SectionNavButton
+    label="Bildirimler"
+    isActive={openSection === "messages"}
+    onClick={() => openAndScrollToSection("messages")}
+    badge={unreadCount > 0 ? unreadCount : undefined}
+  />
+
+  <a
+    href={shareLink}
+    target="_blank"
+    rel="noreferrer"
+    className="rounded-full border border-neutral-900 bg-neutral-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-neutral-800"
+  >
+    Profili Görüntüle
+  </a>
+</div>
+</div>
             </div>
+
+            
           </div>
         </div>
-
-        {unreadCount > 0 ? (
-          <button
-            type="button"
-            onClick={() => openAndScrollToSection("messages")}
-            className="mb-5 flex w-full items-center justify-between rounded-[1.5rem] border border-amber-300 bg-amber-50 px-5 py-4 text-left shadow-sm transition hover:border-amber-400 hover:bg-amber-100"
-          >
-            <div>
-              <p className="text-sm font-semibold text-amber-900">
-                Yeni mesajlarınız var
-              </p>
-              <p className="mt-1 text-sm text-amber-700">
-                {unreadCount} okunmamış mesaj bulundu. Tıklayarak mesajlar bölümüne geçebilirsiniz.
-              </p>
-            </div>
-
-            <span className="rounded-full border border-amber-300 bg-white px-3 py-1 text-xs font-semibold text-amber-800">
-              {unreadCount} yeni
-            </span>
-          </button>
-        ) : null}
-
+        
         {error ? (
           <div className="mb-5 rounded-[1.5rem] border border-red-200 bg-red-50 px-4 py-4 text-sm text-red-700">
             {error}
@@ -1863,7 +1824,7 @@ export default function ManagePage({
           </div>
         ) : null}
 
-        <div className="mb-5 grid gap-3 sm:grid-cols-3">
+        <div className="mb-5 grid gap-2 sm:grid-cols-3">
           <InfoCard
             title="Görünür alan"
             value={visibleFieldCount}
@@ -1884,7 +1845,7 @@ export default function ManagePage({
         <form onSubmit={handleSubmit} className="space-y-4">
           <SectionCard
             id="basic"
-            title="Temel bilgiler"
+            title="Ürün bilgileri"
             description="Ürün ve profil bilgilerini düzenleyin."
             isOpen={openSection === "basic"}
             onToggle={toggleSection}
@@ -1941,60 +1902,85 @@ export default function ManagePage({
                 </Field>
               </div>
 
-              <Field label={getSecondaryNameLabel(productType)} optional>
-                <input
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
-                  placeholder="Sadece farklıysa girin"
-                  required
-                />
-                <p className="mt-2 text-xs text-neutral-500">
-                  Ana isimden farklıysa gösterilir.
-                </p>
-              </Field>
+              <div className="grid gap-4 sm:grid-cols-2">
+  <Field label={getSecondaryNameLabel(productType)} optional>
+    <input
+      value={name}
+      onChange={(e) => setName(e.target.value)}
+      className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
+      placeholder="Sadece farklıysa girin"
+      required
+    />
+    <p className="mt-2 text-xs text-neutral-500">
+      Ana isimden farklıysa gösterilir.
+    </p>
+  </Field>
 
-              <Field label={getOwnerNameLabel(productType)} optional>
-                <input
-                  value={ownerName}
-                  onChange={(e) => setOwnerName(e.target.value)}
-                  className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
-                  placeholder="İsteğe bağlı"
-                />
-                <div className="mt-3 flex flex-wrap gap-2">
-                  <InlineToggle
-                    checked={showName}
-                    label={`${getOwnerNameLabel(productType)} görünsün`}
-                    onChange={setShowName}
-                  />
-                </div>
-              </Field>
+  <Field label={getOwnerNameLabel(productType)} optional>
+    <input
+      value={ownerName}
+      onChange={(e) => setOwnerName(e.target.value)}
+      className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
+      placeholder="İsteğe bağlı"
+    />
+    <div className="mt-3 flex flex-wrap gap-2">
+      <InlineToggle
+        checked={showName}
+        label={`${getOwnerNameLabel(productType)} görünsün`}
+        onChange={setShowName}
+      />
+    </div>
+  </Field>
+</div>
+              
+              <div className="grid gap-4 sm:grid-cols-2">
+  <Field label="Not" optional>
+    <textarea
+      value={note}
+      onChange={(e) => setNote(e.target.value)}
+      className="min-h-[120px] w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
+      placeholder="Bulana göstermek istediğiniz kısa not. Varsa ayırt edici özellikleri de buraya yazabilirsiniz"
+    />
+    <div className="mt-3 flex flex-wrap gap-2">
+      <InlineToggle
+        checked={showNote}
+        disabled={!note.trim()}
+        label="Not görünsün"
+        onChange={setShowNote}
+      />
+    </div>
+  </Field>
 
-              <Field label="Ayırt edici özellik" optional>
-                <input
-                  value={distinctiveFeature}
-                  onChange={(e) => setDistinctiveFeature(e.target.value)}
-                  className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
-                  placeholder={DISTINCTIVE_FEATURE_PLACEHOLDERS[productType]}
-                />
-              </Field>
+  <div>
+    <div className="mb-2 flex items-center gap-2">
+      <label className="block text-sm font-medium text-neutral-900">
+        Hızlı notlar
+      </label>
+      <span className="text-xs text-neutral-400">Opsiyonel</span>
+    </div>
 
-              <Field label="Not" optional>
-                <textarea
-                  value={note}
-                  onChange={(e) => setNote(e.target.value)}
-                  className="min-h-[120px] w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
-                  placeholder="Bulana göstermek istediğiniz kısa not"
-                />
-                <div className="mt-3 flex flex-wrap gap-2">
-                  <InlineToggle
-                    checked={showNote}
-                    disabled={!note.trim()}
-                    label="Not görünsün"
-                    onChange={setShowNote}
-                  />
-                </div>
-              </Field>
+    <div className="grid gap-2">
+      {allowedAlerts.map((item) => {
+        const isActive = alerts.includes(item);
+
+        return (
+          <button
+            key={`${productType}-${item}`}
+            type="button"
+            onClick={() => toggleAlert(item)}
+            className={`w-full rounded-2xl border px-4 py-3 text-left text-sm transition ${
+              isActive
+                ? "border-neutral-900 bg-neutral-900 text-white"
+                : "border-neutral-300 bg-white text-neutral-700 hover:border-neutral-400 hover:bg-neutral-50"
+            }`}
+          >
+            {item}
+          </button>
+        );
+      })}
+    </div>
+  </div>
+</div>
             </div>
           </SectionCard>
 
@@ -2048,12 +2034,7 @@ export default function ManagePage({
                       label="WhatsApp açılsın"
                       onChange={setAllowDirectWhatsapp}
                     />
-                    <InlineToggle
-                      checked={showPhone}
-                      disabled={!phone.trim() || !allowDirectCall}
-                      label="Telefon görünsün"
-                      onChange={setShowPhone}
-                    />
+                    
                   </div>
                 </Field>
 
@@ -2160,27 +2141,7 @@ export default function ManagePage({
               </div>
             </div>
           </SectionCard>
-
-          <SectionCard
-            id="alerts"
-            title="Uyarılar"
-            description="İsterseniz dikkat çekmesi gereken notları seçin."
-            isOpen={openSection === "alerts"}
-            onToggle={toggleSection}
-            sectionRef={alertsRef}
-          >
-            <div className="grid gap-3">
-              {allowedAlerts.map((item) => (
-                <AlertOption
-                  key={`${productType}-${item}`}
-                  label={item}
-                  checked={alerts.includes(item)}
-                  onChange={() => toggleAlert(item)}
-                />
-              ))}
-            </div>
-          </SectionCard>
-
+          
           <SectionCard
             id="recovery"
             title="Kurtarma ve bağlantılar"
@@ -2602,7 +2563,7 @@ export default function ManagePage({
               rel="noreferrer"
               className="rounded-2xl border border-neutral-300 bg-white px-5 py-4 text-center text-sm font-medium transition hover:border-neutral-400 hover:bg-neutral-50"
             >
-              Herkese açık profili aç
+              Profili görüntüle
             </a>
           </div>
         </form>

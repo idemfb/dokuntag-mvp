@@ -812,7 +812,7 @@ export default function SetupCodePage({ params }: Props) {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-neutral-100 px-4 py-8 text-neutral-900 sm:px-5 sm:py-10">
+      <main className="min-h-screen bg-[linear-gradient(180deg,#fbfbfa_0%,#fdfdfc_55%,#ffffff_100%)] px-4 py-8 text-neutral-900 sm:px-5 sm:py-10">
         <div className="mx-auto max-w-3xl">
           <div className="mb-6">
             <a
@@ -835,7 +835,7 @@ export default function SetupCodePage({ params }: Props) {
 
   if (locked) {
     return (
-      <main className="min-h-screen bg-neutral-100 px-4 py-8 text-neutral-900 sm:px-5 sm:py-10">
+      <main className="min-h-screen bg-[linear-gradient(180deg,#fbfbfa_0%,#fdfdfc_55%,#ffffff_100%)] px-4 py-8 text-neutral-900 sm:px-5 sm:py-10">
         <div className="mx-auto max-w-3xl space-y-5">
           <div>
             <a
@@ -921,7 +921,7 @@ export default function SetupCodePage({ params }: Props) {
 
   if (done) {
     return (
-      <main className="min-h-screen bg-neutral-100 px-4 py-8 text-neutral-900 sm:px-5 sm:py-10">
+      <main className="min-h-screen bg-[linear-gradient(180deg,#fbfbfa_0%,#fdfdfc_55%,#ffffff_100%)] px-4 py-8 text-neutral-900 sm:px-5 sm:py-10">
         <div className="mx-auto max-w-3xl space-y-5">
           <div>
             <a
@@ -1033,7 +1033,7 @@ export default function SetupCodePage({ params }: Props) {
   }
 
   return (
-    <main className="min-h-screen bg-neutral-100 px-4 py-8 text-neutral-900 sm:px-5 sm:py-10">
+    <main className="min-h-screen bg-[linear-gradient(180deg,#fbfbfa_0%,#fdfdfc_55%,#ffffff_100%)] px-4 py-8 text-neutral-900 sm:px-5 sm:py-10">
       <div className="mx-auto max-w-3xl">
         <div className="mb-6">
           <a
@@ -1057,13 +1057,13 @@ export default function SetupCodePage({ params }: Props) {
         <section className="mb-5 overflow-hidden rounded-[2rem] border border-neutral-200 bg-white shadow-sm">
           <div className="border-b border-neutral-200 bg-gradient-to-br from-white via-neutral-50 to-neutral-100/80 px-5 py-5 sm:px-6">
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">
-            Hızlı başlangıç
+            Ürünü hazırla
           </p>
           <h2 className="mt-2 text-xl font-semibold tracking-tight text-neutral-900">
-            Bu ürünü birkaç adımda hazır hale getirin
+            Bilgileri gir, iletişim hazır olsun.
           </h2>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-neutral-600">
-            Aşağıdaki bilgileri girin. Son adımda size özel düzenleme bağlantınız oluşur.
+            Sonunda sana özel düzenleme bağlantın oluşur.
           </p>
         </div>
 
@@ -1071,23 +1071,23 @@ export default function SetupCodePage({ params }: Props) {
           <div className="grid gap-3 sm:grid-cols-3">
             <GuideStep
               step="1. Adım"
-              title="Temel bilgileri girin"
+              title="Bilgileri gir"
               text="Ürün tipi ve gerekli bilgileri kısa şekilde doldurun."
             />
             <GuideStep
               step="2. Adım"
-              title="İletişim bilgilerini seçin"
+              title="Nasıl ulaşılacağını seç"
               text="Size nasıl ulaşılacağını ve erişimi geri alma bilgilerini belirleyin."
             />
             <GuideStep
               step="3. Adım"
-              title="Bağlantıları saklayın"
+              title="Kaydet ve devam et"
               text="Kurulum bitince paylaşım ve düzenleme bağlantılarınızı güvenli şekilde kaydedin."
             />
           </div>
 
           <div className="mt-4 rounded-[1.5rem] border border-blue-200 bg-blue-50 px-4 py-4 text-sm leading-6 text-blue-900">
-            E-posta herkese açık görünmez. Buradaki erişim bilgileri yalnızca ürüne yeniden ulaşmanız için kullanılır.
+            E-posta sadece sana özeldir. Başkaları görmez. Buradaki erişim bilgileri yalnızca ürüne yeniden ulaşmanız için kullanılır.
           </div>
         </div>
         </section>

@@ -87,7 +87,8 @@ export async function POST(request: NextRequest) {
 
     const session = await createRecoverySessionByEmailAsync({
       email,
-      entryType
+      entryType,
+      expiresInMinutes: 60
     });
 
     await addRecoverLog({
@@ -99,7 +100,7 @@ export async function POST(request: NextRequest) {
 
     if (session) {
       const baseUrl = getBaseUrl(request);
-      const verifyLink = `${baseUrl}/recover/verify?token=${encodeURIComponent(
+      const verifyLink = `${baseUrl}/my/list?token=${encodeURIComponent(
         session.token
       )}`;
 

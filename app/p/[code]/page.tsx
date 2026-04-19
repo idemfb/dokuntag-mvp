@@ -212,15 +212,23 @@ function buildPrimaryAction(input: {
   emailHref: string;
 }) {
   if (input.allowDirectCall && input.callHref) {
-    return { href: input.callHref, label: "Hemen Ara" };
+    return { href: input.callHref, label: "Hemen Ara", kind: "call" as const };
   }
 
   if (input.allowDirectWhatsapp && input.whatsappHref) {
-    return { href: input.whatsappHref, label: "WhatsApp ile Ulaş" };
+    return {
+      href: input.whatsappHref,
+      label: "WhatsApp ile Ulaş",
+      kind: "whatsapp" as const
+    };
   }
 
   if (input.hasEmail && input.emailHref) {
-    return { href: input.emailHref, label: "E-posta Gönder" };
+    return {
+      href: input.emailHref,
+      label: "E-posta Gönder",
+      kind: "email" as const
+    };
   }
 
   return null;
@@ -230,27 +238,27 @@ function getTheme(productType?: ProductType) {
   if (productType === "pet") {
     return {
       pageBg: "bg-[linear-gradient(180deg,#fffcf8_0%,#fffdfa_55%,#ffffff_100%)]",
-      heroBg: "bg-gradient-to-br from-amber-50/70 via-white to-orange-50/60",
+      heroBg: "bg-gradient-to-br from-violet-50 via-white to-orange-50",
       badge: "border-amber-200 bg-amber-100/80 text-amber-900",
       softLabel: "text-amber-700",
       accentPanel: "border-amber-100 bg-amber-200/70 text-amber-900",
-      accentButton: "bg-amber-300 text-amber-900 hover:bg-amber-400",
+      accentButton: "bg-neutral-800 text-white hover:bg-neutral-700",
       secondaryButton:
         "border-amber-200 bg-white text-amber-900 hover:border-amber-300 hover:bg-amber-50/70",
       ring: "focus:border-amber-300 focus:ring-amber-100",
       chip: "border-amber-200 bg-amber-50/80 text-amber-900",
-      stickyButton: "bg-amber-300 text-amber-900"
+      stickyButton: "bg-violet-200 text-amber-900"
     };
   }
 
   if (productType === "key") {
     return {
       pageBg: "bg-[linear-gradient(180deg,#f9fcff_0%,#fcfdff_55%,#ffffff_100%)]",
-      heroBg: "bg-gradient-to-br from-sky-50/70 via-white to-cyan-50/60",
+      heroBg: "bg-gradient-to-br from-slate-50 via-white to-slate-100",
       badge: "border-sky-200 bg-sky-100/80 text-sky-900",
       softLabel: "text-sky-700",
       accentPanel: "border-sky-100 bg-sky-200/70 text-sky-900",
-      accentButton: "bg-sky-300 text-sky-900 hover:bg-sky-400",
+      accentButton: "bg-neutral-800 text-white hover:bg-neutral-700",
       secondaryButton:
         "border-sky-200 bg-white text-sky-900 hover:border-sky-300 hover:bg-sky-50/70",
       ring: "focus:border-sky-300 focus:ring-sky-100",
@@ -262,11 +270,11 @@ function getTheme(productType?: ProductType) {
   if (productType === "person") {
     return {
       pageBg: "bg-[linear-gradient(180deg,#f9fcfc_0%,#fcfefe_55%,#ffffff_100%)]",
-      heroBg: "bg-gradient-to-br from-teal-50/70 via-white to-emerald-50/60",
+      heroBg: "bg-gradient-to-br from-blue-50 via-white to-indigo-50",
       badge: "border-teal-200 bg-teal-100/80 text-teal-900",
       softLabel: "text-teal-700",
       accentPanel: "border-teal-100 bg-teal-200/70 text-teal-900",
-      accentButton: "bg-teal-300 text-teal-900 hover:bg-teal-400",
+      accentButton: "bg-neutral-800 text-white hover:bg-neutral-700",
       secondaryButton:
         "border-teal-200 bg-white text-teal-900 hover:border-teal-300 hover:bg-teal-50/70",
       ring: "focus:border-teal-300 focus:ring-teal-100",
@@ -281,7 +289,7 @@ function getTheme(productType?: ProductType) {
     badge: "border-stone-200 bg-stone-100/80 text-stone-900",
     softLabel: "text-stone-700",
     accentPanel: "border-stone-200 bg-stone-200/80 text-stone-900",
-    accentButton: "bg-stone-300 text-stone-900 hover:bg-stone-400",
+    accentButton: "bg-neutral-800 text-white hover:bg-neutral-700",
     secondaryButton:
       "border-stone-200 bg-white text-stone-900 hover:border-stone-300 hover:bg-stone-50/70",
     ring: "focus:border-stone-300 focus:ring-stone-100",
@@ -293,18 +301,21 @@ function getTheme(productType?: ProductType) {
 function SecondaryAction({
   href,
   label,
-  className
+  className,
+  icon
 }: {
   href: string;
   label: string;
   className: string;
+  icon?: React.ReactNode;
 }) {
   return (
     <a
       href={href}
-      className={`inline-flex min-h-12 items-center justify-center rounded-2xl border px-4 py-3 text-sm font-medium transition ${className}`}
+      className={`inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl border px-4 py-3 text-sm font-medium transition ${className}`}
     >
-      {label}
+      {icon ? <span aria-hidden="true">{icon}</span> : null}
+      <span>{label}</span>
     </a>
   );
 }
@@ -323,6 +334,14 @@ function InfoCard({
       </p>
       <p className="mt-1 text-sm leading-6 text-neutral-900">{value}</p>
     </div>
+  );
+}
+
+function WhatsAppIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-4 w-4 fill-current" aria-hidden="true">
+      <path d="M19.05 4.94A9.86 9.86 0 0 0 12.03 2C6.57 2 2.13 6.44 2.13 11.9c0 1.75.46 3.46 1.33 4.97L2 22l5.28-1.38a9.86 9.86 0 0 0 4.74 1.21h.01c5.46 0 9.9-4.44 9.9-9.9a9.82 9.82 0 0 0-2.88-6.99Zm-7.02 15.22h-.01a8.2 8.2 0 0 1-4.18-1.14l-.3-.18-3.13.82.84-3.05-.2-.31a8.18 8.18 0 0 1-1.26-4.4c0-4.53 3.69-8.22 8.24-8.22a8.15 8.15 0 0 1 5.82 2.42 8.16 8.16 0 0 1 2.4 5.81c0 4.54-3.69 8.23-8.22 8.23Zm4.51-6.16c-.25-.13-1.49-.73-1.72-.81-.23-.09-.4-.13-.57.12-.17.25-.66.81-.8.98-.15.17-.29.19-.54.06-.25-.13-1.04-.38-1.99-1.22-.74-.66-1.24-1.47-1.39-1.72-.15-.25-.02-.38.11-.51.11-.11.25-.29.38-.44.13-.15.17-.25.25-.42.08-.17.04-.31-.02-.44-.06-.13-.57-1.37-.78-1.88-.2-.49-.41-.42-.57-.43h-.48c-.17 0-.44.06-.67.31-.23.25-.88.86-.88 2.09s.9 2.42 1.03 2.59c.13.17 1.77 2.7 4.28 3.79.6.26 1.07.42 1.43.53.6.19 1.14.16 1.57.1.48-.07 1.49-.61 1.7-1.2.21-.59.21-1.1.15-1.2-.06-.1-.23-.17-.48-.29Z" />
+    </svg>
   );
 }
 
@@ -543,6 +562,24 @@ export default function PublicPage({
     }
   }
 
+  const showCallSecondary = Boolean(
+    allowDirectCall &&
+      callHref &&
+      (!primaryAction || primaryAction.kind !== "call")
+  );
+
+  const showWhatsappSecondary = Boolean(
+    allowDirectWhatsapp &&
+      whatsappHref &&
+      (!primaryAction || primaryAction.kind !== "whatsapp")
+  );
+
+  const showEmailSecondary = Boolean(
+    contactEmailValue &&
+      emailHref &&
+      (!primaryAction || primaryAction.kind !== "email")
+  );
+
   if (loading) {
     return (
       <main className="min-h-screen bg-neutral-100 px-4 py-8 text-neutral-900 sm:px-5 sm:py-10">
@@ -698,7 +735,7 @@ export default function PublicPage({
             )}
 
             <div className="mt-4 grid gap-3 sm:grid-cols-3">
-              {allowDirectCall && callHref ? (
+              {showCallSecondary ? (
                 <SecondaryAction
                   href={callHref}
                   label="Ara"
@@ -706,15 +743,16 @@ export default function PublicPage({
                 />
               ) : null}
 
-              {allowDirectWhatsapp && whatsappHref ? (
+              {showWhatsappSecondary ? (
                 <SecondaryAction
                   href={whatsappHref}
                   label="WhatsApp"
-                  className={theme.secondaryButton}
+                  className="border-[#25D366]/30 bg-[#25D366]/10 text-[#1d6f42] hover:border-[#25D366]/50 hover:bg-[#25D366]/15"
+                  icon={<WhatsAppIcon />}
                 />
               ) : null}
 
-              {contactEmailValue && emailHref ? (
+              {showEmailSecondary ? (
                 <SecondaryAction
                   href={emailHref}
                   label="E-posta"
@@ -723,6 +761,21 @@ export default function PublicPage({
               ) : null}
             </div>
           </div>
+        </section>
+
+        <section className="rounded-[2rem] border border-neutral-200 bg-white px-6 py-5 shadow-sm sm:px-8">
+          <p className="mt-2 text-sm leading-6 text-neutral-600">
+            Bu sayfa, kaybolan bir ürünün sahibine daha hızlı ulaşılması için hazırlanmıştır.
+            <a
+              href={`${dokuntagHref}/how-it-works`}
+              target="_blank"
+              rel="noreferrer"
+              className="ml-1 font-medium underline underline-offset-2 hover:opacity-80"
+            >
+              Dokuntag
+            </a>{" "}
+            sistemi yalnızca güvenli iletişim kurmanızı sağlar.
+          </p>
         </section>
 
         {displayOwnerName ||

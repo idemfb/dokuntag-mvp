@@ -102,7 +102,7 @@ export default function MyPage() {
             </h1>
 
             <p className="mt-3 max-w-2xl text-sm leading-6 text-neutral-600">
-              Recovery e-posta adresinizi girin. Güvenli giriş bağlantısı mailinize gönderilsin, ardından bu e-postaya bağlı ürünlerinizi görüntüleyin.
+              Kurtarma e-posta adresinizi girin. Mailinize gönderilen güvenli bağlantı ile ürünlerinizi belirli bir süre boyunca görüntüleyip yönetebilirsiniz.
             </p>
           </div>
 
