@@ -26,7 +26,16 @@ type ProductSubtype =
   | "headphones"
   | "item_other";
 
-const PRODUCT_SUBTYPE_OPTIONS: Record<ProductType, Array<{ value: ProductSubtype; label: string }>> = {
+type ContactMethod = "phone" | "whatsapp" | "email";
+type MessageFilter = "all" | "unread" | "read" | "pinned" | "archived";
+type MessageSort = "newest" | "oldest" | "unread-first";
+type OpenSection = "basic" | "contact" | "recovery" | "messages" | null;
+type TagStatus = "active" | "inactive";
+
+const PRODUCT_SUBTYPE_OPTIONS: Record<
+  ProductType,
+  Array<{ value: ProductSubtype; label: string }>
+> = {
   pet: [
     { value: "cat", label: "Kedi" },
     { value: "dog", label: "Köpek" },
@@ -58,20 +67,6 @@ const PRODUCT_SUBTYPE_OPTIONS: Record<ProductType, Array<{ value: ProductSubtype
   ]
 };
 
-function getProductSubtypeLabel(value?: string) {
-  if (!value) return "";
-  for (const options of Object.values(PRODUCT_SUBTYPE_OPTIONS)) {
-    const matched = options.find((item) => item.value === value);
-    if (matched) return matched.label;
-  }
-  return "";
-}
-type ContactMethod = "phone" | "whatsapp" | "email";
-type MessageFilter = "all" | "unread" | "read" | "pinned" | "archived";
-type MessageSort = "newest" | "oldest" | "unread-first";
-type OpenSection = "basic" | "contact" | "alerts" | "recovery" | "messages" | null;
-type TagStatus = "active" | "inactive";
-
 const ALERT_OPTIONS_BY_TYPE: Record<ProductType, string[]> = {
   pet: [
     "Acil bana ulaşın",
@@ -100,24 +95,89 @@ const ALERT_OPTIONS_BY_TYPE: Record<ProductType, string[]> = {
   ]
 };
 
-
 const TURKIYE_CITIES = [
-  "Adana", "Adıyaman", "Afyonkarahisar", "Ağrı", "Aksaray", "Amasya", "Ankara", "Antalya", "Ardahan", "Artvin",
-  "Aydın", "Balıkesir", "Bartın", "Batman", "Bayburt", "Bilecik", "Bingöl", "Bitlis", "Bolu", "Burdur",
-  "Bursa", "Çanakkale", "Çankırı", "Çorum", "Denizli", "Diyarbakır", "Düzce", "Edirne", "Elazığ", "Erzincan",
-  "Erzurum", "Eskişehir", "Gaziantep", "Giresun", "Gümüşhane", "Hakkâri", "Hatay", "Iğdır", "Isparta", "İstanbul",
-  "İzmir", "Kahramanmaraş", "Karabük", "Karaman", "Kars", "Kastamonu", "Kayseri", "Kırıkkale", "Kırklareli", "Kırşehir",
-  "Kilis", "Kocaeli", "Konya", "Kütahya", "Malatya", "Manisa", "Mardin", "Mersin", "Muğla", "Muş",
-  "Nevşehir", "Niğde", "Ordu", "Osmaniye", "Rize", "Sakarya", "Samsun", "Siirt", "Sinop", "Sivas",
-  "Şanlıurfa", "Şırnak", "Tekirdağ", "Tokat", "Trabzon", "Tunceli", "Uşak", "Van", "Yalova", "Yozgat", "Zonguldak"
+  "Adana",
+  "Adıyaman",
+  "Afyonkarahisar",
+  "Ağrı",
+  "Aksaray",
+  "Amasya",
+  "Ankara",
+  "Antalya",
+  "Ardahan",
+  "Artvin",
+  "Aydın",
+  "Balıkesir",
+  "Bartın",
+  "Batman",
+  "Bayburt",
+  "Bilecik",
+  "Bingöl",
+  "Bitlis",
+  "Bolu",
+  "Burdur",
+  "Bursa",
+  "Çanakkale",
+  "Çankırı",
+  "Çorum",
+  "Denizli",
+  "Diyarbakır",
+  "Düzce",
+  "Edirne",
+  "Elazığ",
+  "Erzincan",
+  "Erzurum",
+  "Eskişehir",
+  "Gaziantep",
+  "Giresun",
+  "Gümüşhane",
+  "Hakkâri",
+  "Hatay",
+  "Iğdır",
+  "Isparta",
+  "İstanbul",
+  "İzmir",
+  "Kahramanmaraş",
+  "Karabük",
+  "Karaman",
+  "Kars",
+  "Kastamonu",
+  "Kayseri",
+  "Kırıkkale",
+  "Kırklareli",
+  "Kırşehir",
+  "Kilis",
+  "Kocaeli",
+  "Konya",
+  "Kütahya",
+  "Malatya",
+  "Manisa",
+  "Mardin",
+  "Mersin",
+  "Muğla",
+  "Muş",
+  "Nevşehir",
+  "Niğde",
+  "Ordu",
+  "Osmaniye",
+  "Rize",
+  "Sakarya",
+  "Samsun",
+  "Siirt",
+  "Sinop",
+  "Sivas",
+  "Şanlıurfa",
+  "Şırnak",
+  "Tekirdağ",
+  "Tokat",
+  "Trabzon",
+  "Tunceli",
+  "Uşak",
+  "Van",
+  "Yalova",
+  "Yozgat",
+  "Zonguldak"
 ] as const;
-
-const DISTINCTIVE_FEATURE_PLACEHOLDERS: Record<ProductType, string> = {
-  pet: "Örn: sağ kulağında beyaz leke, mavi tasma",
-  item: "Örn: siyah sırt çantası, köşesi hafif çizik",
-  key: "Örn: kırmızı anahtarlık, metal halka",
-  person: "Örn: mavi mont, siyah sırt çantası"
-};
 
 type ManageResponse = {
   code: string;
@@ -212,7 +272,9 @@ type NotifyLogsResponse = {
 
 function getSubtypeLabel(productType: ProductType, value: ProductSubtype | "") {
   if (!value) return "";
-  const match = PRODUCT_SUBTYPE_OPTIONS[productType].find((item) => item.value === value);
+  const match = PRODUCT_SUBTYPE_OPTIONS[productType].find(
+    (item) => item.value === value
+  );
   return match?.label || "";
 }
 
@@ -254,7 +316,9 @@ function buildSearchText(log: NotifyLogItem) {
     log.senderPhone || "",
     log.senderEmail || "",
     log.message || "",
-    ...(log.preferredContactMethods || []).map((method) => getMethodLabel(method)),
+    ...(log.preferredContactMethods || []).map((method) =>
+      getMethodLabel(method)
+    ),
     new Date(log.createdAt).toLocaleString("tr-TR")
   ]
     .join(" ")
@@ -344,28 +408,28 @@ function SectionCard({
       className="scroll-mt-24 rounded-[1.75rem] border border-neutral-200 bg-white shadow-sm"
     >
       <button
-        type="button"
-        onClick={() => onToggle(id)}
-        className="flex w-full items-center justify-between px-5 py-5 text-left sm:px-6"
-      >
-        <div>
-          <h2 className="text-lg font-semibold tracking-tight text-neutral-900">
-            {title}
-          </h2>
-          {description ? (
-            <p className="mt-1 text-sm leading-6 text-neutral-600">
-              {description}
-            </p>
-          ) : null}
-        </div>
+  type="button"
+  onClick={() => onToggle(id)}
+  className="flex w-full items-center justify-between px-4 py-3 text-left sm:px-5"
+>
+  <div>
+    <h2 className="text-base font-semibold tracking-tight text-neutral-900">
+      {title}
+    </h2>
+    {description ? (
+      <p className="mt-1 text-xs leading-5 text-neutral-600">
+        {description}
+      </p>
+    ) : null}
+  </div>
 
-        <div className="ml-4 flex items-center gap-3">
-          {right}
-          <span className="text-xl text-neutral-500">
-            {isOpen ? "−" : "+"}
-          </span>
-        </div>
-      </button>
+  <div className="ml-4 flex items-center gap-2">
+    {right}
+    <span className="text-lg text-neutral-500">
+      {isOpen ? "−" : "+"}
+    </span>
+  </div>
+</button>
 
       {isOpen ? (
         <div className="border-t border-neutral-200 px-5 py-5 sm:px-6">
@@ -433,43 +497,40 @@ function InlineToggle({
   );
 }
 
-function AlertOption({
+function SectionNavButton({
   label,
-  checked,
-  onChange
+  isActive,
+  onClick,
+  badge
 }: {
   label: string;
-  checked: boolean;
-  onChange: () => void;
+  isActive: boolean;
+  onClick: () => void;
+  badge?: string | number;
 }) {
   return (
-    <label className="flex items-start gap-3 rounded-2xl border border-neutral-200 px-4 py-3 transition hover:border-neutral-300 hover:bg-neutral-50">
-      <input
-        type="checkbox"
-        checked={checked}
-        onChange={onChange}
-        className="mt-0.5"
-      />
-      <span className="text-sm text-neutral-900">{label}</span>
-    </label>
-  );
-}
-
-function InfoCard({
-  title,
-  value,
-  subtext
-}: {
-  title: string;
-  value: string | number;
-  subtext: string;
-}) {
-  return (
-    <div className="rounded-[1.25rem] border border-neutral-200 bg-white p-3 shadow-sm">
-      <p className="text-xs text-neutral-500">{title}</p>
-      <p className="mt-1 text-xl font-semibold text-neutral-900">{value}</p>
-      <p className="mt-1 text-xs text-neutral-500">{subtext}</p>
-    </div>
+    <button
+      type="button"
+      onClick={onClick}
+      className={`inline-flex w-full items-center justify-center gap-2 rounded-2xl border px-4 py-3 text-sm font-medium transition ${
+        isActive
+          ? "border-neutral-900 bg-neutral-900 text-white shadow-sm"
+          : "border-neutral-300 bg-white text-neutral-700 hover:border-neutral-400 hover:bg-neutral-50"
+      }`}
+    >
+      <span>{label}</span>
+      {badge !== undefined ? (
+        <span
+          className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${
+            isActive
+              ? "bg-white/15 text-white"
+              : "border border-neutral-200 bg-neutral-50 text-neutral-600"
+          }`}
+        >
+          {badge}
+        </span>
+      ) : null}
+    </button>
   );
 }
 
@@ -493,43 +554,6 @@ function maskEmail(email: string) {
   return `${safeName}@${domain}`;
 }
 
-function SectionNavButton({
-  label,
-  isActive,
-  onClick,
-  badge
-}: {
-  label: string;
-  isActive: boolean;
-  onClick: () => void;
-  badge?: string | number;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition ${
-        isActive
-          ? "border-neutral-900 bg-neutral-900 text-white shadow-sm"
-          : "border-neutral-300 bg-white text-neutral-700 hover:border-neutral-400 hover:bg-neutral-50"
-      }`}
-    >
-      <span>{label}</span>
-      {badge !== undefined ? (
-        <span
-          className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${
-            isActive
-              ? "bg-white/15 text-white"
-              : "border border-neutral-200 bg-neutral-50 text-neutral-600"
-          }`}
-        >
-          {badge}
-        </span>
-      ) : null}
-    </button>
-  );
-}
-
 export default function ManagePage({
   params
 }: {
@@ -544,9 +568,6 @@ export default function ManagePage({
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [manageLink, setManageLink] = useState("");
-  const [warning, setWarning] = useState(
-  "Bu bağlantı sadece sana aittir. Güvenli sakla. Şifre gibi düşünün ve güvenli şekilde saklayın. Kaybederseniz Hesabı geri alma adımını kullanabilirsiniz."
-  );
   const [initialSnapshot, setInitialSnapshot] = useState("");
   const [openSection, setOpenSection] = useState<OpenSection>("basic");
 
@@ -574,8 +595,10 @@ export default function ManagePage({
   const [allowDirectWhatsapp, setAllowDirectWhatsapp] = useState(false);
   const [recoveryPhone, setRecoveryPhone] = useState("");
   const [recoveryEmail, setRecoveryEmail] = useState("");
-  const [useRecoveryPhoneAsContact, setUseRecoveryPhoneAsContact] = useState(false);
-  const [useRecoveryEmailAsContact, setUseRecoveryEmailAsContact] = useState(false);
+  const [useRecoveryPhoneAsContact, setUseRecoveryPhoneAsContact] =
+    useState(false);
+  const [useRecoveryEmailAsContact, setUseRecoveryEmailAsContact] =
+    useState(false);
   const [copiedManage, setCopiedManage] = useState(false);
   const [copiedPublic, setCopiedPublic] = useState(false);
   const [transferLoading, setTransferLoading] = useState(false);
@@ -599,14 +622,12 @@ export default function ManagePage({
 
   const basicRef = useRef<HTMLElement | null>(null);
   const contactRef = useRef<HTMLElement | null>(null);
-  const alertsRef = useRef<HTMLElement | null>(null);
   const recoveryRef = useRef<HTMLElement | null>(null);
   const messagesRef = useRef<HTMLElement | null>(null);
 
   function getSectionRef(section: Exclude<OpenSection, null>) {
     if (section === "basic") return basicRef;
     if (section === "contact") return contactRef;
-    if (section === "alerts") return alertsRef;
     if (section === "recovery") return recoveryRef;
     return messagesRef;
   }
@@ -691,8 +712,11 @@ export default function ManagePage({
         const manageData = data as ManageResponse;
 
         const nextProductType = manageData.productType || "item";
-        const nextProductSubtype = (manageData.productSubtype || "") as ProductSubtype | "";
-        const nextStatus = manageData.status === "inactive" ? "inactive" : "active";
+        const nextProductSubtype = (manageData.productSubtype || "") as
+          | ProductSubtype
+          | "";
+        const nextStatus =
+          manageData.status === "inactive" ? "inactive" : "active";
         const nextName = manageData.profile.name || "";
         const nextOwnerName = manageData.profile.ownerName || "";
         const nextPhone = manageData.profile.phone || "";
@@ -756,10 +780,13 @@ export default function ManagePage({
         setUseRecoveryPhoneAsContact(nextUseRecoveryPhoneAsContact);
         setUseRecoveryEmailAsContact(nextUseRecoveryEmailAsContact);
         setManageLink(manageData.manageLink || "");
+
         const activeTransfer =
-          manageData.transfer?.status === "pending" && manageData.transfer?.transferLink
+          manageData.transfer?.status === "pending" &&
+          manageData.transfer?.transferLink
             ? manageData.transfer
             : null;
+
         setTransferLink(activeTransfer?.transferLink || "");
         setTransferExpiresAt(activeTransfer?.expiresAt || "");
         setTransferError("");
@@ -815,16 +842,17 @@ export default function ManagePage({
   }, [allowDirectCall, showPhone]);
 
   useEffect(() => {
-  if (allowDirectCall && phone.trim()) {
-    setShowPhone(true);
-  }
-}, [allowDirectCall, phone]);
+    if (allowDirectCall && phone.trim()) {
+      setShowPhone(true);
+    }
+  }, [allowDirectCall, phone]);
 
   useEffect(() => {
     if (!allowDirectCall && allowDirectWhatsapp) {
       setAllowDirectWhatsapp(false);
     }
   }, [allowDirectCall, allowDirectWhatsapp]);
+
   useEffect(() => {
     if (!useRecoveryPhoneAsContact) return;
     setPhone(recoveryPhone.trim());
@@ -834,7 +862,6 @@ export default function ManagePage({
     if (!useRecoveryEmailAsContact) return;
     setEmail(recoveryEmail.trim());
   }, [useRecoveryEmailAsContact, recoveryEmail]);
-
 
   useEffect(() => {
     if (!city.trim() && showCity) {
@@ -860,6 +887,16 @@ export default function ManagePage({
     }
   }, [note, showNote]);
 
+  useEffect(() => {
+    if (!productSubtype) return;
+    const isValid = PRODUCT_SUBTYPE_OPTIONS[productType].some(
+      (item) => item.value === productSubtype
+    );
+    if (!isValid) {
+      setProductSubtype("");
+    }
+  }, [productType, productSubtype]);
+
   const allowedAlerts = useMemo(() => {
     return ALERT_OPTIONS_BY_TYPE[productType];
   }, [productType]);
@@ -867,6 +904,49 @@ export default function ManagePage({
   const allowedSubtypeOptions = useMemo(() => {
     return PRODUCT_SUBTYPE_OPTIONS[productType];
   }, [productType]);
+
+  useEffect(() => {
+    setAlerts((prev) => prev.filter((item) => allowedAlerts.includes(item)));
+  }, [allowedAlerts]);
+
+  const shareLink = useMemo(() => {
+    if (!code) return "";
+    if (typeof window === "undefined") return `/p/${code}`;
+    return `${window.location.origin}/p/${code}`;
+  }, [code]);
+
+  const formattedTransferExpiry = useMemo(() => {
+    if (!transferExpiresAt) return "";
+    const parsed = new Date(transferExpiresAt);
+    if (Number.isNaN(parsed.getTime())) return "";
+    return parsed.toLocaleString("tr-TR");
+  }, [transferExpiresAt]);
+
+  const transferShareText = useMemo(() => {
+    if (!transferLink) return "";
+    const expiryText = formattedTransferExpiry
+      ? `Bu bağlantı ${formattedTransferExpiry} tarihine kadar geçerlidir.`
+      : "Bu bağlantı sınırlı süreyle geçerlidir.";
+
+    return [
+      "Dokuntag ürün devri bağlantısı",
+      "",
+      transferLink,
+      "",
+      expiryText,
+      "Bağlantıyı açan kişi ürünü kendi hesabına aktarabilir."
+    ].join("\n");
+  }, [formattedTransferExpiry, transferLink]);
+
+  const transferWhatsappHref = useMemo(() => {
+    if (!transferShareText) return "";
+    return `https://wa.me/?text=${encodeURIComponent(transferShareText)}`;
+  }, [transferShareText]);
+
+  const transferEmailHref = useMemo(() => {
+    if (!transferShareText) return "";
+    return `mailto:?subject=${encodeURIComponent("Dokuntag ürün devri")}&body=${encodeURIComponent(transferShareText)}`;
+  }, [transferShareText]);
 
   const publicPreviewItems = useMemo(() => {
     const items: Array<{ label: string; value: string }> = [];
@@ -917,81 +997,6 @@ export default function ManagePage({
     if (!showNote || !note.trim()) return "";
     return note.trim();
   }, [note, showNote]);
-
-  useEffect(() => {
-    if (!productSubtype) return;
-    const isValid = PRODUCT_SUBTYPE_OPTIONS[productType].some(
-      (item) => item.value === productSubtype
-    );
-    if (!isValid) {
-      setProductSubtype("");
-    }
-  }, [productType, productSubtype]);
-
-  useEffect(() => {
-    setAlerts((prev) => prev.filter((item) => allowedAlerts.includes(item)));
-  }, [allowedAlerts]);
-
-  const shareLink = useMemo(() => {
-    if (!code) return "";
-    if (typeof window === "undefined") return `/p/${code}`;
-    return `${window.location.origin}/p/${code}`;
-  }, [code]);
-
-  const formattedTransferExpiry = useMemo(() => {
-    if (!transferExpiresAt) return "";
-    const parsed = new Date(transferExpiresAt);
-    if (Number.isNaN(parsed.getTime())) return "";
-    return parsed.toLocaleString("tr-TR");
-  }, [transferExpiresAt]);
-
-  const transferShareText = useMemo(() => {
-    if (!transferLink) return "";
-    const expiryText = formattedTransferExpiry
-      ? `Bu bağlantı ${formattedTransferExpiry} tarihine kadar geçerlidir.`
-      : "Bu bağlantı sınırlı süreyle geçerlidir.";
-
-    return [
-      "Dokuntag ürün devri bağlantısı",
-      "",
-      transferLink,
-      "",
-      expiryText,
-      "Bağlantıyı açan kişi ürünü kendi hesabına aktarabilir."
-    ].join("\n");
-  }, [formattedTransferExpiry, transferLink]);
-
-  const transferWhatsappHref = useMemo(() => {
-    if (!transferShareText) return "";
-    return `https://wa.me/?text=${encodeURIComponent(transferShareText)}`;
-  }, [transferShareText]);
-
-  const transferEmailHref = useMemo(() => {
-    if (!transferShareText) return "";
-    return `mailto:?subject=${encodeURIComponent("Dokuntag ürün devri")}&body=${encodeURIComponent(transferShareText)}`;
-  }, [transferShareText]);
-
-  const visibleFieldCount = useMemo(() => {
-    return [
-      showName,
-      showPhone,
-      showCity,
-      showAddressDetail,
-      showPetName,
-      showNote
-    ].filter(Boolean).length;
-  }, [
-    showName,
-    showPhone,
-    showCity,
-    showAddressDetail,
-    showPetName,
-    showNote
-  ]);
-
-  const enabledQuickActionsCount = useMemo(() => {
-    return [allowDirectCall, allowDirectWhatsapp].filter(Boolean).length;
-  }, [allowDirectCall, allowDirectWhatsapp]);
 
   const currentSnapshot = useMemo(() => {
     return buildFormSnapshot({
@@ -1056,14 +1061,6 @@ export default function ManagePage({
     return petName.trim() || "İsimsiz ürün";
   }, [petName]);
 
-  const displaySecondaryName = useMemo(() => {
-    const primary = petName.trim().toLocaleLowerCase("tr-TR");
-    const secondary = name.trim();
-    if (!secondary) return "";
-    if (secondary.toLocaleLowerCase("tr-TR") === primary) return "";
-    return secondary;
-  }, [name, petName]);
-
   useEffect(() => {
     if (!isDirty) return;
 
@@ -1125,7 +1122,9 @@ export default function ManagePage({
           return bPinned - aPinned;
         }
 
-        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        return (
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
       });
     } else {
       sorted.sort((a, b) => {
@@ -1136,7 +1135,9 @@ export default function ManagePage({
           return bPinned - aPinned;
         }
 
-        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        return (
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
       });
     }
 
@@ -1256,7 +1257,6 @@ export default function ManagePage({
     }
   }
 
-
   async function handleCancelTransfer() {
     if (!code || !token || transferCancelLoading || !transferLink) return;
 
@@ -1281,7 +1281,8 @@ export default function ManagePage({
       setStatus("active");
       setConfirmDeactivate(false);
       setTransferSuccess(
-        data?.message || "Devir bağlantısı iptal edildi. Ürün yeniden aktif duruma alındı."
+        data?.message ||
+          "Devir bağlantısı iptal edildi. Ürün yeniden aktif duruma alındı."
       );
 
       setInitialSnapshot(
@@ -1416,7 +1417,8 @@ export default function ManagePage({
   async function handleStatusToggle() {
     if (!code || !token || statusSaving) return;
 
-    const nextStatus: TagStatus = status === "inactive" ? "active" : "inactive";
+    const nextStatus: TagStatus =
+      status === "inactive" ? "active" : "inactive";
 
     if (status === "active" && !confirmDeactivate) {
       setConfirmDeactivate(true);
@@ -1479,15 +1481,12 @@ export default function ManagePage({
       }
 
       const submitData = data as ManageSubmitResponse;
-      const resolvedStatus = submitData.status === "inactive" ? "inactive" : nextStatus;
+      const resolvedStatus =
+        submitData.status === "inactive" ? "inactive" : nextStatus;
 
       setStatus(resolvedStatus);
       setManageLink(submitData.manageLink || "");
       setConfirmDeactivate(false);
-
-      if (submitData.warning) {
-        setWarning(submitData.warning);
-      }
 
       const nextSnapshot = buildFormSnapshot({
         productType,
@@ -1588,7 +1587,8 @@ export default function ManagePage({
       }
 
       const submitData = data as ManageSubmitResponse;
-      const resolvedStatus = submitData.status === "inactive" ? "inactive" : status;
+      const resolvedStatus =
+        submitData.status === "inactive" ? "inactive" : status;
 
       setStatus(resolvedStatus);
       setManageLink(submitData.manageLink || "");
@@ -1598,10 +1598,6 @@ export default function ManagePage({
         submitData.message ||
           "Değişiklikler kaydedildi. Herkese açık profil otomatik olarak güncellendi."
       );
-
-      if (submitData.warning) {
-        setWarning(submitData.warning);
-      }
 
       setInitialSnapshot(
         buildFormSnapshot({
@@ -1646,7 +1642,7 @@ export default function ManagePage({
 
   if (loading) {
     return (
-      <main className="... bg-[linear-gradient(180deg,#fbfbfa_0%,#fdfdfc_55%,#ffffff_100%)] ...">
+      <main className="min-h-screen bg-[linear-gradient(180deg,#fbfbfa_0%,#fdfdfc_55%,#ffffff_100%)] px-4 py-6 text-neutral-900">
         <div className="mx-auto max-w-3xl">
           <div className="rounded-[2rem] border border-neutral-200 bg-white px-6 py-7 shadow-sm">
             <p className="text-sm text-neutral-600">Yükleniyor...</p>
@@ -1658,7 +1654,7 @@ export default function ManagePage({
 
   if (error && (error.includes("Geçersiz") || error.includes("eksik"))) {
     return (
-      <main className="... bg-[linear-gradient(180deg,#fbfbfa_0%,#fdfdfc_55%,#ffffff_100%)] ...">
+      <main className="min-h-screen bg-[linear-gradient(180deg,#fbfbfa_0%,#fdfdfc_55%,#ffffff_100%)] px-4 py-6 text-neutral-900">
         <div className="mx-auto max-w-2xl">
           <div className="mb-6">
             <h1 className="text-2xl font-semibold tracking-tight text-neutral-900">
@@ -1672,7 +1668,10 @@ export default function ManagePage({
 
             <div className="mt-4 rounded-2xl border border-neutral-200 bg-white p-4 text-sm text-neutral-700">
               Düzenleme bağlantınızı kaybettiyseniz{" "}
-              <a href="/recover" className="font-medium underline underline-offset-4">
+              <a
+                href="/recover"
+                className="font-medium underline underline-offset-4"
+              >
                 kurtarma sayfasından yeni bağlantı oluşturabilirsiniz
               </a>
               .
@@ -1684,7 +1683,7 @@ export default function ManagePage({
   }
 
   return (
-    <main className="... bg-[linear-gradient(180deg,#fbfbfa_0%,#fdfdfc_55%,#ffffff_100%)] ...">
+    <main className="min-h-screen bg-[linear-gradient(180deg,#fbfbfa_0%,#fdfdfc_55%,#ffffff_100%)] px-4 py-6 text-neutral-900">
       <div className="mx-auto max-w-3xl">
         <div className="mb-6">
           <a
@@ -1696,117 +1695,93 @@ export default function ManagePage({
 
           <div className="mt-4 overflow-hidden rounded-[2rem] border border-neutral-200 bg-white shadow-sm">
             <div className="border-b border-neutral-200 bg-gradient-to-br from-white via-neutral-50 to-neutral-100/80 p-5 sm:p-6">
-              <div className="flex flex-wrap items-start justify-between gap-4">
+              <div className="flex items-start justify-between gap-4">
                 <div>
                   <h1 className="text-2xl font-semibold tracking-tight text-neutral-900">
                     Dokuntag
                     <span className="ml-2 text-neutral-500">Profil Yönetimi</span>
                   </h1>
                 </div>
-
-                </div>
+              </div>
 
               <div className="mt-5 rounded-[1.5rem] border border-neutral-200 bg-neutral-50 p-4 sm:p-5">
-  <div className="flex flex-wrap items-start justify-between gap-3">
-  <div className="min-w-0">
-    <p className="text-xl font-semibold text-neutral-900">
-      {displayPrimaryName}
-    </p>
-    <p className="mt-2 max-w-2xl text-sm leading-6 text-neutral-600">
-      Bu üründe yaptığınız güncellemeler herkese açık sayfada görünür.
-    </p>
-  </div>
+                <div className="min-w-0">
+                  <p className="text-xl font-semibold text-neutral-900">
+                    {displayPrimaryName}
+                  </p>
+                  <p className="mt-2 max-w-2xl text-sm leading-6 text-neutral-600">
+                    Bu üründe yaptığınız güncellemeler herkese açık sayfada
+                    görünür.
+                  </p>
+                </div>
 
-  <button
-    type="button"
-    onClick={() => void handleStatusToggle()}
-    disabled={statusSaving}
-    className={`rounded-2xl px-4 py-3 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-60 ${
-      status === "inactive"
-        ? "border border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100"
-        : confirmDeactivate
-          ? "border border-red-300 bg-red-50 text-red-700 hover:bg-red-100"
-          : "border border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100"
-    }`}
-  >
-    {statusSaving
-      ? "İşleniyor..."
-      : status === "inactive"
-        ? "Yeniden aktifleştir"
-        : confirmDeactivate
-          ? "Pasife almayı onayla"
-          : "Ürünü pasife al"}
-  </button>
-</div>
+                <div className="mt-4 grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => void handleStatusToggle()}
+                    disabled={statusSaving}
+                    className={`w-full rounded-2xl px-4 py-3 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-60 ${
+                      status === "inactive"
+                        ? "border border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100"
+                        : confirmDeactivate
+                          ? "border border-red-300 bg-red-50 text-red-700 hover:bg-red-100"
+                          : "border border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100"
+                    }`}
+                  >
+                    {statusSaving
+                      ? "İşleniyor..."
+                      : status === "inactive"
+                        ? "Yeniden aktifleştir"
+                        : confirmDeactivate
+                          ? "Pasife almayı onayla"
+                          : "Ürünü pasife al"}
+                  </button>
 
-  <div className="mt-4 flex flex-wrap gap-2">
-  <span className="rounded-full border border-neutral-300 bg-white px-3 py-1 text-xs font-medium text-neutral-700">
-    {code}
-  </span>
-  <span className="rounded-full border border-neutral-300 bg-white px-3 py-1 text-xs font-medium text-neutral-700">
-    {getProductTypeLabel(productType)}
-  </span>
-  <span
-    className={`rounded-full px-3 py-1 text-xs font-medium ${
-      status === "inactive"
-        ? "border border-amber-200 bg-amber-50 text-amber-800"
-        : "border border-emerald-200 bg-emerald-50 text-emerald-700"
-    }`}
-  >
-    {status === "inactive" ? "Pasif" : "Aktif"}
-  </span>
-</div>
+                  <a
+                    href={shareLink}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex w-full items-center justify-center rounded-2xl border border-neutral-900 bg-neutral-900 px-4 py-3 text-sm font-medium text-white transition hover:bg-neutral-800"
+                  >
+                    Profili görüntüle
+                  </a>
+                </div>
 
-  {status === "active" && confirmDeactivate ? (
-    <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm leading-6 text-amber-900">
-      Pasife alındığında herkese açık profilde bilgiler ve iletişim seçenekleri kapanır.
-    </div>
-  ) : null}
+                {status === "active" && confirmDeactivate ? (
+                  <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm leading-6 text-amber-900">
+                    Pasife alındığında herkese açık profilde bilgiler ve
+                    iletişim seçenekleri kapanır.
+                  </div>
+                ) : null}
 
-  <div className="mt-5 flex flex-wrap items-center gap-2">
-  <SectionNavButton
-    label="Bilgiler"
-    isActive={openSection === "basic"}
-    onClick={() => openAndScrollToSection("basic")}
-  />
-  <SectionNavButton
-    label="İletişim"
-    isActive={openSection === "contact"}
-    onClick={() => openAndScrollToSection("contact")}
-  />
-  <SectionNavButton
-    label="Notlar"
-    isActive={openSection === "alerts"}
-    onClick={() => openAndScrollToSection("alerts")}
-  />
-  <SectionNavButton
-    label="Kurtarma"
-    isActive={openSection === "recovery"}
-    onClick={() => openAndScrollToSection("recovery")}
-  />
-  <SectionNavButton
-    label="Bildirimler"
-    isActive={openSection === "messages"}
-    onClick={() => openAndScrollToSection("messages")}
-    badge={unreadCount > 0 ? unreadCount : undefined}
-  />
-
-  <a
-    href={shareLink}
-    target="_blank"
-    rel="noreferrer"
-    className="rounded-full border border-neutral-900 bg-neutral-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-neutral-800"
-  >
-    Profili Görüntüle
-  </a>
-</div>
-</div>
+                <div className="mt-4 grid grid-cols-2 gap-2">
+                  <SectionNavButton
+                    label="Bilgiler"
+                    isActive={openSection === "basic"}
+                    onClick={() => openAndScrollToSection("basic")}
+                  />
+                  <SectionNavButton
+                    label="İletişim"
+                    isActive={openSection === "contact"}
+                    onClick={() => openAndScrollToSection("contact")}
+                  />
+                  <SectionNavButton
+                    label="Kurtarma"
+                    isActive={openSection === "recovery"}
+                    onClick={() => openAndScrollToSection("recovery")}
+                  />
+                  <SectionNavButton
+                    label="Bildirimler"
+                    isActive={openSection === "messages"}
+                    onClick={() => openAndScrollToSection("messages")}
+                    badge={unreadCount > 0 ? unreadCount : undefined}
+                  />
+                </div>
+              </div>
             </div>
-
-            
           </div>
         </div>
-        
+
         {error ? (
           <div className="mb-5 rounded-[1.5rem] border border-red-200 bg-red-50 px-4 py-4 text-sm text-red-700">
             {error}
@@ -1824,24 +1799,6 @@ export default function ManagePage({
           </div>
         ) : null}
 
-        <div className="mb-5 grid gap-2 sm:grid-cols-3">
-          <InfoCard
-            title="Görünür alan"
-            value={visibleFieldCount}
-            subtext="Herkese açık sayfada"
-          />
-          <InfoCard
-            title="Hızlı iletişim"
-            value={enabledQuickActionsCount}
-            subtext="Aktif seçenek"
-          />
-          <InfoCard
-            title="Yeni mesaj"
-            value={unreadCount}
-            subtext="Okunmamış kayıt"
-          />
-        </div>
-
         <form onSubmit={handleSubmit} className="space-y-4">
           <SectionCard
             id="basic"
@@ -1851,137 +1808,153 @@ export default function ManagePage({
             onToggle={toggleSection}
             sectionRef={basicRef}
           >
+            
             <div className="grid gap-4">
-              <div className="grid gap-4 sm:grid-cols-3">
-                <Field label="Ürün tipi">
-                  <select
-                    value={productType}
-                    onChange={(e) => setProductType(e.target.value as ProductType)}
-                    className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
-                  >
-                    <option value="item">Eşya</option>
-                    <option value="key">Anahtar</option>
-                    <option value="pet">Evcil hayvan</option>
-                    <option value="person">Kişi</option>
-                  </select>
-                </Field>
+  <div className="grid grid-cols-2 gap-3">
+    <Field label="Ürün tipi">
+      <select
+        value={productType}
+        onChange={(e) => setProductType(e.target.value as ProductType)}
+        className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm text-neutral-900 outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
+      >
+        <option value="item">Eşya</option>
+        <option value="key">Anahtar</option>
+        <option value="pet">Evcil hayvan</option>
+        <option value="person">Kişi</option>
+      </select>
+    </Field>
 
-                <Field label="Kategori" optional>
-                  <select
-                    value={productSubtype}
-                    onChange={(e) => setProductSubtype(e.target.value as ProductSubtype | "")}
-                    className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
-                  >
-                    <option value="">Seçmek istemiyorum</option>
-                    {allowedSubtypeOptions.map((item) => (
-                      <option key={`${productType}-${item.value}`} value={item.value}>
-                        {item.label}
-                      </option>
-                    ))}
-                  </select>
-                  <p className="mt-2 text-xs text-neutral-500">
-                    İsterseniz ürün tipini biraz daha net anlatabilirsiniz.
-                  </p>
-                </Field>
+    <Field label="Kategori" optional>
+      <select
+        value={productSubtype}
+        onChange={(e) =>
+          setProductSubtype(e.target.value as ProductSubtype | "")
+        }
+        className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm text-neutral-900 outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
+      >
+        <option value="">Seçmek istemiyorum</option>
+        {allowedSubtypeOptions.map((item) => (
+          <option
+            key={`${productType}-${item.value}`}
+            value={item.value}
+          >
+            {item.label}
+          </option>
+        ))}
+      </select>
+      <p className="mt-2 text-xs text-neutral-500">
+        İsterseniz ürün tipini biraz daha net anlatabilirsiniz.
+      </p>
+    </Field>
+  </div>
 
-                <Field label={getPrimaryNameLabel(productType)}>
-                  <input
-                    value={petName}
-                    onChange={(e) => setPetName(e.target.value)}
-                    className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
-                    placeholder="Ana görünen isim"
-                    required
-                  />
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    <InlineToggle
-                      checked={showPetName}
-                      label={`${getPrimaryNameLabel(productType)} görünsün`}
-                      onChange={setShowPetName}
-                    />
-                  </div>
-                </Field>
-              </div>
+  <div className="grid grid-cols-2 gap-3">
+    <div>
+      <div className="mb-2 flex items-center justify-between gap-3">
+        <label className="block text-sm font-medium text-neutral-900">
+          {getPrimaryNameLabel(productType)}
+        </label>
 
-              <div className="grid gap-4 sm:grid-cols-2">
+        <InlineToggle
+          checked={showPetName}
+          label="Görünsün"
+          onChange={setShowPetName}
+        />
+      </div>
+
+      <input
+        value={petName}
+        onChange={(e) => setPetName(e.target.value)}
+        className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm text-neutral-900 outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
+        placeholder="Ana görünen isim"
+        required
+      />
+    </div>
+
+    <div>
+      <div className="mb-2 flex items-center justify-between gap-3">
+        <label className="block text-sm font-medium text-neutral-900">
+          {getOwnerNameLabel(productType)}
+        </label>
+
+        <InlineToggle
+          checked={showName}
+          label="Görünsün"
+          onChange={setShowName}
+        />
+      </div>
+
+      <input
+        value={ownerName}
+        onChange={(e) => setOwnerName(e.target.value)}
+        className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm text-neutral-900 outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
+        placeholder="İsteğe bağlı"
+      />
+    </div>
+  </div>
+
   <Field label={getSecondaryNameLabel(productType)} optional>
     <input
       value={name}
       onChange={(e) => setName(e.target.value)}
-      className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
-      placeholder="Sadece farklıysa girin"
+      className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm text-neutral-900 outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
+      placeholder="Kısa başlık"
       required
     />
     <p className="mt-2 text-xs text-neutral-500">
-      Ana isimden farklıysa gösterilir.
+      Gerekirse kullanın.
     </p>
   </Field>
 
-  <Field label={getOwnerNameLabel(productType)} optional>
-    <input
-      value={ownerName}
-      onChange={(e) => setOwnerName(e.target.value)}
-      className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
-      placeholder="İsteğe bağlı"
-    />
-    <div className="mt-3 flex flex-wrap gap-2">
-      <InlineToggle
-        checked={showName}
-        label={`${getOwnerNameLabel(productType)} görünsün`}
-        onChange={setShowName}
+  <div className="grid gap-4 sm:grid-cols-2">
+    <Field label="Not" optional>
+      <textarea
+        value={note}
+        onChange={(e) => setNote(e.target.value)}
+        className="min-h-[120px] w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm text-neutral-900 outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
+        placeholder="Bulana göstermek istediğiniz kısa not. Varsa ayırt edici özellikleri de buraya yazabilirsiniz"
       />
-    </div>
-  </Field>
-</div>
-              
-              <div className="grid gap-4 sm:grid-cols-2">
-  <Field label="Not" optional>
-    <textarea
-      value={note}
-      onChange={(e) => setNote(e.target.value)}
-      className="min-h-[120px] w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
-      placeholder="Bulana göstermek istediğiniz kısa not. Varsa ayırt edici özellikleri de buraya yazabilirsiniz"
-    />
-    <div className="mt-3 flex flex-wrap gap-2">
-      <InlineToggle
-        checked={showNote}
-        disabled={!note.trim()}
-        label="Not görünsün"
-        onChange={setShowNote}
-      />
-    </div>
-  </Field>
+      <div className="mt-3 flex flex-wrap gap-2">
+        <InlineToggle
+          checked={showNote}
+          disabled={!note.trim()}
+          label="Not görünsün"
+          onChange={setShowNote}
+        />
+      </div>
+    </Field>
 
-  <div>
-    <div className="mb-2 flex items-center gap-2">
-      <label className="block text-sm font-medium text-neutral-900">
-        Hızlı notlar
-      </label>
-      <span className="text-xs text-neutral-400">Opsiyonel</span>
-    </div>
+    <div>
+      <div className="mb-2 flex items-center gap-2">
+        <label className="block text-sm font-medium text-neutral-900">
+          Hızlı notlar
+        </label>
+        <span className="text-xs text-neutral-400">Opsiyonel</span>
+      </div>
 
-    <div className="grid gap-2">
-      {allowedAlerts.map((item) => {
-        const isActive = alerts.includes(item);
+      <div className="grid gap-2">
+        {allowedAlerts.map((item) => {
+          const isActive = alerts.includes(item);
 
-        return (
-          <button
-            key={`${productType}-${item}`}
-            type="button"
-            onClick={() => toggleAlert(item)}
-            className={`w-full rounded-2xl border px-4 py-3 text-left text-sm transition ${
-              isActive
-                ? "border-neutral-900 bg-neutral-900 text-white"
-                : "border-neutral-300 bg-white text-neutral-700 hover:border-neutral-400 hover:bg-neutral-50"
-            }`}
-          >
-            {item}
-          </button>
-        );
-      })}
+          return (
+            <button
+              key={`${productType}-${item}`}
+              type="button"
+              onClick={() => toggleAlert(item)}
+              className={`w-full rounded-2xl border px-4 py-3 text-left text-sm transition ${
+                isActive
+                  ? "border-neutral-900 bg-neutral-900 text-white"
+                  : "border-neutral-300 bg-white text-neutral-700 hover:border-neutral-400 hover:bg-neutral-50"
+              }`}
+            >
+              {item}
+            </button>
+          );
+        })}
+      </div>
     </div>
   </div>
 </div>
-            </div>
           </SectionCard>
 
           <SectionCard
@@ -2006,7 +1979,7 @@ export default function ManagePage({
                     className={`w-full rounded-2xl border px-4 py-3 text-sm outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200 ${
                       useRecoveryPhoneAsContact
                         ? "cursor-not-allowed border-neutral-200 bg-neutral-100 text-neutral-500"
-                        : "border-neutral-300 bg-white"
+                        : "border-neutral-300 bg-white text-neutral-900"
                     }`}
                     placeholder="05xxxxxxxxx"
                   />
@@ -2014,7 +1987,7 @@ export default function ManagePage({
                     <InlineToggle
                       checked={useRecoveryPhoneAsContact}
                       disabled={!recoveryPhone.trim()}
-                      label="Kurtarma telefonunu iletişim telefonu olarak kullan"
+                      label="Kurtarma telefonunu kullan"
                       onChange={(checked) => {
                         setUseRecoveryPhoneAsContact(checked);
                         if (checked) {
@@ -2034,7 +2007,6 @@ export default function ManagePage({
                       label="WhatsApp açılsın"
                       onChange={setAllowDirectWhatsapp}
                     />
-                    
                   </div>
                 </Field>
 
@@ -2047,7 +2019,7 @@ export default function ManagePage({
                     className={`w-full rounded-2xl border px-4 py-3 text-sm outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200 ${
                       useRecoveryEmailAsContact
                         ? "cursor-not-allowed border-neutral-200 bg-neutral-100 text-neutral-500"
-                        : "border-neutral-300 bg-white"
+                        : "border-neutral-300 bg-white text-neutral-900"
                     }`}
                     placeholder="ornek@mail.com"
                   />
@@ -2055,7 +2027,7 @@ export default function ManagePage({
                     <InlineToggle
                       checked={useRecoveryEmailAsContact}
                       disabled={!recoveryEmail.trim()}
-                      label="Kurtarma e-postasını iletişim maili olarak kullan"
+                      label="Kurtarma e-postasını kullan"
                       onChange={(checked) => {
                         setUseRecoveryEmailAsContact(checked);
                         if (checked) {
@@ -2065,36 +2037,53 @@ export default function ManagePage({
                     />
                   </div>
                   <p className="mt-2 text-xs text-neutral-500">
-                    Herkese açık profilde e-posta görünmez. Bu alan mesaj bildirimleri için kullanılır.
+                    Herkese açık profilde e-posta görünmez. Bu alan mesaj
+                    bildirimleri için kullanılır.
                   </p>
                 </Field>
               </div>
 
               <div className="rounded-[1.5rem] border border-neutral-200 bg-neutral-50 px-4 py-4">
                 <div className="flex items-center justify-between gap-3">
-                  <p className="text-sm font-medium text-neutral-900">Herkese açık bilgiler önizlemesi</p>
+                  <p className="text-sm font-medium text-neutral-900">
+                    Herkese açık bilgiler önizlemesi
+                  </p>
                   <span className="rounded-full bg-white px-3 py-1 text-[11px] font-medium text-neutral-500">
                     Şu an görünecek alanlar
                   </span>
                 </div>
+
                 {publicPreviewItems.length > 0 ? (
                   <div className="mt-3 grid gap-3 sm:grid-cols-2">
                     {publicPreviewItems.map((item) => (
-                      <div key={`${item.label}-${item.value}`} className="rounded-2xl border border-neutral-200 bg-white px-4 py-3">
-                        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-neutral-500">{item.label}</p>
-                        <p className="mt-1 text-sm text-neutral-900">{item.value}</p>
+                      <div
+                        key={`${item.label}-${item.value}`}
+                        className="rounded-2xl border border-neutral-200 bg-white px-4 py-3"
+                      >
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-neutral-500">
+                          {item.label}
+                        </p>
+                        <p className="mt-1 text-sm text-neutral-900">
+                          {item.value}
+                        </p>
                       </div>
                     ))}
                   </div>
                 ) : (
                   <p className="mt-3 text-sm leading-6 text-neutral-600">
-                    Şu an herkese açık profilde bilgi görünmüyor. İsterseniz görünürlük seçeneklerinden bazı alanları açabilirsiniz.
+                    Şu an herkese açık profilde bilgi görünmüyor. İsterseniz
+                    görünürlük seçeneklerinden bazı alanları açabilirsiniz.
                   </p>
                 )}
+
                 {publicPreviewNote ? (
                   <div className="mt-3 rounded-2xl border border-neutral-200 bg-white px-4 py-3">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-neutral-500">Not</p>
-                    <p className="mt-1 text-sm leading-6 text-neutral-900">{publicPreviewNote}</p>
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-neutral-500">
+                      Not
+                    </p>
+                    <p className="mt-1 text-sm leading-6 text-neutral-900">
+                      {publicPreviewNote}
+                    </p>
                   </div>
                 ) : null}
               </div>
@@ -2104,7 +2093,7 @@ export default function ManagePage({
                   <select
                     value={city}
                     onChange={(e) => setCity(e.target.value)}
-                    className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
+                    className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm text-neutral-900 outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
                   >
                     <option value="">Seçiniz</option>
                     {TURKIYE_CITIES.map((item) => (
@@ -2123,86 +2112,106 @@ export default function ManagePage({
                   </div>
                   {productType === "key" ? (
                     <p className="mt-2 text-xs leading-5 text-amber-700">
-                      Anahtar ürünlerinde konum paylaşımı güvenlik riski oluşturabilir. Gerekmedikçe şehir bilgisini kapalı tutun.
+                      Anahtar ürünlerinde konum paylaşımı güvenlik riski
+                      oluşturabilir. Gerekmedikçe şehir bilgisini kapalı tutun.
                     </p>
                   ) : null}
                 </Field>
 
                 <div className="rounded-[1.5rem] border border-neutral-200 bg-neutral-50 px-4 py-4">
-                  <p className="text-sm font-medium text-neutral-900">Adres bilgisi gizli tutulur</p>
+                  <p className="text-sm font-medium text-neutral-900">
+                    Adres bilgisi gizli tutulur
+                  </p>
                   <p className="mt-2 text-sm leading-6 text-neutral-600">
-                    Adres detayı güvenlik nedeniyle Dokuntag içinde paylaşılmaz ve herkese açık profilde gösterilmez.
-                    Adres belirtmek isterseniz bunu not alanına manuel olarak sizin yazmanız gerekir.
+                    Adres detayı güvenlik nedeniyle Dokuntag içinde paylaşılmaz
+                    ve herkese açık profilde gösterilmez. Adres belirtmek
+                    isterseniz bunu not alanına manuel olarak yazabilirsiniz.
                   </p>
                   <p className="mt-2 text-xs leading-5 text-neutral-500">
-                    Mevcut eski adres kayıtları sistemde saklı kalabilir ancak yeni ziyaretçilere gösterilmez.
+                    Mevcut eski adres kayıtları sistemde saklı kalabilir ancak
+                    yeni ziyaretçilere gösterilmez.
                   </p>
                 </div>
               </div>
             </div>
           </SectionCard>
-          
+
           <SectionCard
             id="recovery"
             title="Kurtarma ve bağlantılar"
-            description="Yedek iletişim ve bağlantıları burada tutun."
+            description="Yedek iletişim ve bağlantıları burada yönetin."
             isOpen={openSection === "recovery"}
             onToggle={toggleSection}
             sectionRef={recoveryRef}
-          >
+          ><p className="text-sm text-neutral-600 text-center">
+            Bu bilgiler sadece size özel kurtarma ve erişim için kullanılır.
+          </p>
             <div className="grid gap-4">
-              <div className="grid gap-4 sm:grid-cols-2">
-                <Field label="Kurtarma telefonu">
-                  <input
-                    value={recoveryPhone}
-                    onChange={(e) =>
-                      setRecoveryPhone(e.target.value.replace(/[^0-9]/g, ""))
-                    }
-                    inputMode="numeric"
-                    pattern="[0-9]*"
-                    className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
-                    placeholder="05xxxxxxxxx"
-                  />
-                </Field>
+              <div className="grid grid-cols-2 gap-3">
 
-                <Field label="Kurtarma e-postası">
-                  <input
-                    type="email"
-                    value={recoveryEmail}
-                    onChange={(e) => setRecoveryEmail(e.target.value)}
-                    className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
-                    placeholder="ornek@mail.com"
-                  />
-                  <p className="mt-2 text-xs text-neutral-500">
-                    İsterseniz bunu tek dokunuşla iletişim bildirimi için de kullanabilirsiniz.
-                  </p>
-                </Field>
-              </div>
+  {/* Telefon */}
+  <div>
+    <label className="block text-sm font-medium text-neutral-700 text-center mb-2">
+      Kurtarma telefonu
+    </label>
+
+    <input
+      value={recoveryPhone}
+      onChange={(e) =>
+        setRecoveryPhone(e.target.value.replace(/[^0-9]/g, ""))
+      }
+      inputMode="numeric"
+      pattern="[0-9]*"
+      className="w-full rounded-2xl border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
+      placeholder="05xxxxxxxxx"
+    />
+
+    </div>
+
+  {/* Email */}
+  <div>
+    <label className="block text-sm font-medium text-neutral-700 text-center mb-2">
+      Kurtarma e-posta
+    </label>
+
+    <input
+      type="email"
+      value={recoveryEmail}
+      onChange={(e) => setRecoveryEmail(e.target.value)}
+      className="w-full rounded-2xl border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
+      placeholder="ornek@mail.com"
+    />
+    
+  </div>
+<p className="col-span-2 text-xs text-neutral-500 text-center">
+  Gerekirse iletişim bilgisi olarak da kullanılabilir
+</p>
+</div>
 
               <div className="rounded-[1.5rem] border border-neutral-200 bg-neutral-50 px-4 py-4">
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-neutral-900">
-                      Ürünü başkasına devret
-                    </p>
-                    <p className="mt-1 text-sm leading-6 text-neutral-600">
-                      Devir bağlantısı oluşturduğunuzda ürün güvenlik için pasif duruma alınır. Yeni sahip bağlantıyı kullanınca size özel Düzenleme erişimi kapanır.
-                    </p>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => void handleCreateTransfer()}
-                    disabled={transferLoading || isDirty}
-                    className="rounded-2xl bg-neutral-900 px-4 py-3 text-sm font-medium text-white transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    {transferLoading ? "Oluşturuluyor..." : "Devir bağlantısı oluştur"}
-                  </button>
+                <div className="grid gap-3">
+                <div>
+                  <p className="text-sm font-medium text-neutral-900">
+                    Ürünü başkasına devret
+                  </p>
+                  <p className="mt-1 text-sm leading-6 text-neutral-600">
+                    Devir bağlantısı oluşturduğunuzda ürün pasif duruma alınır.
+                  </p>
                 </div>
+
+                <button
+                  type="button"
+                  onClick={() => void handleCreateTransfer()}
+                  disabled={transferLoading || isDirty}
+                  className="w-full rounded-2xl bg-neutral-900 px-4 py-3 text-sm font-medium text-white transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {transferLoading ? "Oluşturuluyor..." : "Devir bağlantısı oluştur"}
+                </button>
+              </div>
 
                 {isDirty ? (
                   <div className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-                    Devir oluşturmadan önce mevcut değişiklikleri kaydedin.
+                    Önce değişiklikleri kaydedin.
                   </div>
                 ) : null}
 
@@ -2241,83 +2250,76 @@ export default function ManagePage({
                       </p>
                     </div>
 
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      <button
-                        type="button"
-                        onClick={() => void copyTransferLink()}
-                        className="rounded-2xl border border-neutral-300 bg-white px-4 py-2 text-sm font-medium transition hover:border-neutral-400 hover:bg-neutral-50"
-                      >
-                        {copiedTransfer ? "Devir bağlantısı kopyalandı" : "Devir bağlantısını kopyala"}
-                      </button>
+                    <div className="mt-3 grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => void copyTransferLink()}
+                      className="w-full rounded-2xl border border-neutral-300 bg-white px-3 py-3 text-sm font-medium transition hover:border-neutral-400 hover:bg-neutral-50"
+                    >
+                      {copiedTransfer ? "Kopyalandı" : "Devir linki"}
+                    </button>
 
-                      <button
-                        type="button"
-                        onClick={() => void handleCancelTransfer()}
-                        disabled={transferCancelLoading}
-                        className="rounded-2xl border border-red-300 bg-red-50 px-4 py-2 text-sm font-medium text-red-700 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
-                      >
-                        {transferCancelLoading ? "İptal ediliyor..." : "Devir bağlantısını iptal et"}
-                      </button>
+                    <button
+                      type="button"
+                      onClick={() => void handleCancelTransfer()}
+                      disabled={transferCancelLoading}
+                      className="w-full rounded-2xl border border-red-300 bg-red-50 px-3 py-3 text-sm font-medium text-red-700 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {transferCancelLoading ? "İptal..." : "Deviri iptal et"}
+                    </button>
 
-                      <a
-                        href={transferWhatsappHref || undefined}
-                        target="_blank"
-                        rel="noreferrer"
-                        className={`rounded-2xl border px-4 py-2 text-sm font-medium transition ${
-                          transferWhatsappHref
-                            ? "border-neutral-300 bg-white hover:border-neutral-400 hover:bg-neutral-50"
-                            : "pointer-events-none cursor-not-allowed border-neutral-200 bg-neutral-100 text-neutral-400"
-                        }`}
-                      >
-                        WhatsApp ile paylaş
-                      </a>
+                    <a
+                      href={transferWhatsappHref || undefined}
+                      target="_blank"
+                      rel="noreferrer"
+                      className={`inline-flex w-full items-center justify-center rounded-2xl border px-3 py-3 text-sm font-medium transition ${
+                        transferWhatsappHref
+                          ? "border-neutral-300 bg-white hover:border-neutral-400 hover:bg-neutral-50"
+                          : "pointer-events-none cursor-not-allowed border-neutral-200 bg-neutral-100 text-neutral-400"
+                      }`}
+                    >
+                      WhatsApp ile Paylaş
+                    </a>
 
-                      <a
-                        href={transferEmailHref || undefined}
-                        className={`rounded-2xl border px-4 py-2 text-sm font-medium transition ${
-                          transferEmailHref
-                            ? "border-neutral-300 bg-white hover:border-neutral-400 hover:bg-neutral-50"
-                            : "pointer-events-none cursor-not-allowed border-neutral-200 bg-neutral-100 text-neutral-400"
-                        }`}
-                      >
-                        E-posta ile paylaş
-                      </a>
-                    </div>
+                    <a
+                      href={transferEmailHref || undefined}
+                      className={`inline-flex w-full items-center justify-center rounded-2xl border px-3 py-3 text-sm font-medium transition ${
+                        transferEmailHref
+                          ? "border-neutral-300 bg-white hover:border-neutral-400 hover:bg-neutral-50"
+                          : "pointer-events-none cursor-not-allowed border-neutral-200 bg-neutral-100 text-neutral-400"
+                      }`}
+                    >
+                      E-posta İle Paylaş
+                    </a>
+                  </div>
                   </div>
                 ) : null}
               </div>
 
-              <div className="rounded-[1.5rem] border border-amber-200 bg-amber-50 px-4 py-4">
-                <p className="text-sm font-medium text-amber-900">Önemli not</p>
-                <p className="mt-1 text-sm leading-6 text-amber-800">
-                  {warning}
-                </p>
-              </div>
+              <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => void copyManageLink()}
+                className="w-full rounded-2xl border border-neutral-300 bg-white px-3 py-3 text-sm font-medium transition hover:border-neutral-400 hover:bg-neutral-50"
+              >
+                {copiedManage ? "Kopyalandı" : "Düzenleme linki"}
+              </button>
 
-              <div className="grid gap-3 sm:grid-cols-2">
-                <button
-                  type="button"
-                  onClick={() => void copyManageLink()}
-                  className="rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm font-medium transition hover:border-neutral-400 hover:bg-neutral-50"
-                >
-                  {copiedManage ? "Düzenleme bağlantısı kopyalandı" : "Düzenlemem bağlantısını kopyala"}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => void copyShareLink()}
-                  className="rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm font-medium transition hover:border-neutral-400 hover:bg-neutral-50"
-                >
-                  {copiedPublic ? "Herkese açık bağlantı kopyalandı" : "Herkese açık bağlantıyı kopyala"}
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={() => void copyShareLink()}
+                className="w-full rounded-2xl border border-neutral-300 bg-white px-3 py-3 text-sm font-medium transition hover:border-neutral-400 hover:bg-neutral-50"
+              >
+                {copiedPublic ? "Kopyalandı" : "Herkese Açık profil linki"}
+              </button>
+            </div>
             </div>
           </SectionCard>
 
           <SectionCard
             id="messages"
-            title="Mesajlar"
-            description="Size gelen mesajları buradan yönetin."
+            title="Bildirimler"
+            description="Gelen mesajları buradan yönetin."
             isOpen={openSection === "messages"}
             onToggle={toggleSection}
             right={
@@ -2330,18 +2332,16 @@ export default function ManagePage({
             sectionRef={messagesRef}
           >
             <section>
-              <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-                <div>
-                  <p className="text-sm leading-6 text-neutral-600">
-                    Gelen mesajları buradan görebilir, sabitleyebilir, arşivleyebilir ve düzenleyebilirsiniz.
-                  </p>
-                </div>
+              <div className="mb-4 grid gap-3">
+                <p className="text-sm leading-6 text-neutral-600">
+                  Gelen mesajları buradan görüntüleyebilir ve yönetebilirsiniz.
+                </p>
 
-                <div className="flex flex-wrap gap-2">
+                <div className="grid grid-cols-2 gap-2">
                   <button
                     type="button"
                     onClick={() => void loadLogs(code, token)}
-                    className="rounded-2xl border border-neutral-300 bg-white px-4 py-2 text-sm font-medium transition hover:border-neutral-400 hover:bg-neutral-50"
+                    className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm font-medium transition hover:border-neutral-400 hover:bg-neutral-50"
                   >
                     Yenile
                   </button>
@@ -2350,43 +2350,45 @@ export default function ManagePage({
                     type="button"
                     onClick={() => void markAllAsRead()}
                     disabled={markingRead || unreadCount === 0}
-                    className="rounded-2xl border border-neutral-300 bg-white px-4 py-2 text-sm font-medium transition hover:border-neutral-400 hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm font-medium transition hover:border-neutral-400 hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     {markingRead ? "İşleniyor..." : "Tümünü okundu yap"}
                   </button>
                 </div>
               </div>
 
-              <div className="mb-4 grid gap-3 sm:grid-cols-3">
-                <select
-                  value={messageFilter}
-                  onChange={(e) => setMessageFilter(e.target.value as MessageFilter)}
-                  className="rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none"
-                >
-                  <option value="all">Tümü</option>
-                  <option value="unread">Okunmamış</option>
-                  <option value="read">Okunmuş</option>
-                  <option value="pinned">Sabitlenen</option>
-                  <option value="archived">Arşiv</option>
-                </select>
+              <div className="mb-4 grid gap-2">
+  <input
+    value={messageSearch}
+    onChange={(e) => setMessageSearch(e.target.value)}
+    className="rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm text-neutral-900 outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
+    placeholder="Mesaj ara"
+  />
 
-                <select
-                  value={messageSort}
-                  onChange={(e) => setMessageSort(e.target.value as MessageSort)}
-                  className="rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none"
-                >
-                  <option value="newest">En yeni</option>
-                  <option value="oldest">En eski</option>
-                  <option value="unread-first">Önce okunmamış</option>
-                </select>
+      <div className="grid grid-cols-2 gap-2">
+        <select
+          value={messageFilter}
+          onChange={(e) => setMessageFilter(e.target.value as MessageFilter)}
+          className="rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm text-neutral-900 outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
+        >
+          <option value="all">Tümü</option>
+          <option value="unread">Okunmamış</option>
+          <option value="read">Okunmuş</option>
+          <option value="pinned">Sabitlenen</option>
+          <option value="archived">Arşiv</option>
+        </select>
 
-                <input
-                  value={messageSearch}
-                  onChange={(e) => setMessageSearch(e.target.value)}
-                  className="rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none"
-                  placeholder="Mesaj ara"
-                />
-              </div>
+        <select
+          value={messageSort}
+          onChange={(e) => setMessageSort(e.target.value as MessageSort)}
+          className="rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm text-neutral-900 outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
+        >
+          <option value="newest">En yeni</option>
+          <option value="oldest">En eski</option>
+          <option value="unread-first">Önce okunmamış</option>
+        </select>
+      </div>
+    </div>
 
               {logsLoading ? (
                 <div className="rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-4 text-sm text-neutral-600">
@@ -2397,16 +2399,17 @@ export default function ManagePage({
                   Bu filtrede mesaj bulunmuyor.
                 </div>
               ) : (
-                <div className="space-y-4">
+                <div className="space-y-3">
                   {filteredLogs.map((log) => {
                     const isArchived = Boolean(log.archivedAt);
                     const isPinned = Boolean(log.pinnedAt);
-                    const isBusy = actingLogId === log.id || readingLogId === log.id;
+                    const isBusy =
+                      actingLogId === log.id || readingLogId === log.id;
 
                     return (
                       <div
                         key={log.id}
-                        className="rounded-[1.5rem] border border-neutral-200 bg-neutral-50 p-4"
+                        className="rounded-[1.25rem] border border-neutral-200 bg-white p-3 shadow-sm"
                       >
                         <div className="flex flex-wrap items-center gap-2">
                           <span className="rounded-full border border-neutral-300 bg-white px-3 py-1 text-xs text-neutral-700">
@@ -2443,45 +2446,57 @@ export default function ManagePage({
                           )}
                         </div>
 
-                        <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                          <div className="rounded-2xl bg-white p-3">
-                            <p className="text-xs text-neutral-400">Gönderen</p>
+                        <div className="mt-3 grid gap-2">
+                          <div className="rounded-2xl border border-neutral-200 bg-neutral-50 px-3 py-3">
+                            <p className="text-[11px] uppercase tracking-[0.14em] text-neutral-500">
+                              Gönderen
+                            </p>
                             <p className="mt-1 text-sm font-medium text-neutral-900">
                               {log.senderName || "-"}
                             </p>
                           </div>
 
-                          <div className="rounded-2xl bg-white p-3">
-                            <p className="text-xs text-neutral-400">Telefon</p>
-                            <p className="mt-1 text-sm text-neutral-700">
-                              {maskPhone(log.senderPhone || "")}
-                            </p>
-                          </div>
+                          <div className="grid gap-2 sm:grid-cols-2">
+                            <div className="rounded-2xl border border-neutral-200 bg-neutral-50 px-3 py-3">
+                              <p className="text-[11px] uppercase tracking-[0.14em] text-neutral-500">
+                                Telefon
+                              </p>
+                              <p className="mt-1 text-sm text-neutral-700">
+                                {maskPhone(log.senderPhone || "")}
+                              </p>
+                            </div>
 
-                          <div className="rounded-2xl bg-white p-3 sm:col-span-2">
-                            <p className="text-xs text-neutral-400">E-posta</p>
-                            <p className="mt-1 break-all text-sm text-neutral-700">
-                              {maskEmail(log.senderEmail || "")}
-                            </p>
+                            <div className="rounded-2xl border border-neutral-200 bg-neutral-50 px-3 py-3">
+                              <p className="text-[11px] uppercase tracking-[0.14em] text-neutral-500">
+                                E-posta
+                              </p>
+                              <p className="mt-1 break-all text-sm text-neutral-700">
+                                {maskEmail(log.senderEmail || "")}
+                              </p>
+                            </div>
                           </div>
                         </div>
 
-                        <div className="mt-4 rounded-2xl border border-neutral-200 bg-white p-4">
-                          <p className="text-xs text-neutral-400">Mesaj</p>
+                        <div className="mt-3 rounded-2xl border border-neutral-200 bg-neutral-50 px-3 py-3">
+                          <p className="text-[11px] uppercase tracking-[0.14em] text-neutral-500">
+                            Mesaj
+                          </p>
                           <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-6 text-neutral-800">
                             {log.message || "-"}
                           </p>
                         </div>
 
-                        <div className="mt-4 flex flex-wrap gap-2">
+                        <div className="mt-3 grid grid-cols-2 gap-2">
                           {!log.readAt && !isArchived ? (
                             <button
                               type="button"
                               onClick={() => void markSingleAsRead(log.id)}
                               disabled={isBusy}
-                              className="rounded-2xl border border-neutral-300 bg-white px-4 py-2 text-sm font-medium transition hover:border-neutral-400 hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-60"
+                              className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm font-medium transition hover:border-neutral-400 hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-60"
                             >
-                              {readingLogId === log.id ? "İşleniyor..." : "Okundu yap"}
+                              {readingLogId === log.id
+                                ? "İşleniyor..."
+                                : "Okundu yap"}
                             </button>
                           ) : null}
 
@@ -2490,7 +2505,7 @@ export default function ManagePage({
                               type="button"
                               onClick={() => void runLogAction(log.id, "pin")}
                               disabled={isBusy}
-                              className="rounded-2xl border border-neutral-300 bg-white px-4 py-2 text-sm font-medium transition hover:border-neutral-400 hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-60"
+                              className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm font-medium transition hover:border-neutral-400 hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-60"
                             >
                               {actingLogId === log.id
                                 ? "İşleniyor..."
@@ -2505,7 +2520,7 @@ export default function ManagePage({
                               type="button"
                               onClick={() => void runLogAction(log.id, "archive")}
                               disabled={isBusy}
-                              className="rounded-2xl border border-neutral-300 bg-white px-4 py-2 text-sm font-medium transition hover:border-neutral-400 hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-60"
+                              className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm font-medium transition hover:border-neutral-400 hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-60"
                             >
                               {actingLogId === log.id ? "İşleniyor..." : "Arşivle"}
                             </button>
@@ -2517,15 +2532,17 @@ export default function ManagePage({
                                 type="button"
                                 onClick={() => void runLogAction(log.id, "delete")}
                                 disabled={isBusy}
-                                className="rounded-2xl border border-red-300 bg-red-50 px-4 py-2 text-sm font-medium text-red-700 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
+                                className="w-full rounded-2xl border border-red-300 bg-red-50 px-4 py-3 text-sm font-medium text-red-700 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
                               >
-                                {actingLogId === log.id ? "Siliniyor..." : "Silmeyi onayla"}
+                                {actingLogId === log.id
+                                  ? "Siliniyor..."
+                                  : "Silmeyi onayla"}
                               </button>
 
                               <button
                                 type="button"
                                 onClick={() => setPendingDeleteId("")}
-                                className="rounded-2xl border border-neutral-300 bg-white px-4 py-2 text-sm font-medium transition hover:border-neutral-400 hover:bg-neutral-50"
+                                className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm font-medium transition hover:border-neutral-400 hover:bg-neutral-50"
                               >
                                 Vazgeç
                               </button>
@@ -2534,7 +2551,7 @@ export default function ManagePage({
                             <button
                               type="button"
                               onClick={() => setPendingDeleteId(log.id)}
-                              className="rounded-2xl border border-neutral-300 bg-white px-4 py-2 text-sm font-medium transition hover:border-neutral-400 hover:bg-neutral-50"
+                              className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm font-medium transition hover:border-neutral-400 hover:bg-neutral-50"
                             >
                               Sil
                             </button>
@@ -2548,20 +2565,24 @@ export default function ManagePage({
             </section>
           </SectionCard>
 
-          <div className="flex flex-col gap-3 sm:flex-row">
+          <div className="grid gap-3 sm:grid-cols-2">
             <button
               type="submit"
               disabled={saving || statusSaving}
-              className="rounded-2xl bg-neutral-800 px-5 py-4 text-sm font-medium text-white transition hover:bg-neutral-700 disabled:cursor-not-allowed disabled:opacity-60"
+              className="w-full rounded-2xl bg-neutral-800 px-5 py-4 text-sm font-medium text-white transition hover:bg-neutral-700 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {saving ? "Kaydediliyor..." : isDirty ? "Değişiklikleri kaydet" : "Kaydedilecek değişiklik yok"}
+              {saving
+                ? "Kaydediliyor..."
+                : isDirty
+                  ? "Değişiklikleri kaydet"
+                  : "Kaydedilecek değişiklik yok"}
             </button>
 
             <a
               href={shareLink}
               target="_blank"
               rel="noreferrer"
-              className="rounded-2xl border border-neutral-300 bg-white px-5 py-4 text-center text-sm font-medium transition hover:border-neutral-400 hover:bg-neutral-50"
+              className="inline-flex w-full items-center justify-center rounded-2xl border border-neutral-300 bg-white px-5 py-4 text-center text-sm font-medium transition hover:border-neutral-400 hover:bg-neutral-50"
             >
               Profili görüntüle
             </a>
