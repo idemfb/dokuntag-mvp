@@ -1666,7 +1666,7 @@ export default function ManagePage({
           <div className="rounded-[2rem] border border-red-200 bg-red-50 p-5 shadow-sm">
             <p className="text-sm text-red-700">{error}</p>
 
-            <div className="mt-4 rounded-2xl border border-neutral-200 bg-white p-4 text-sm text-neutral-700">
+            <div className="mt-3 rounded-xl border border-neutral-200 bg-neutral-50 p-3 text-sm text-neutral-700">
               Düzenleme bağlantınızı kaybettiyseniz{" "}
               <a
                 href="/recover"
@@ -1709,10 +1709,7 @@ export default function ManagePage({
                   <p className="text-xl font-semibold text-neutral-900">
                     {displayPrimaryName}
                   </p>
-                  <p className="mt-2 max-w-2xl text-sm leading-6 text-neutral-600">
-                    Bu üründe yaptığınız güncellemeler herkese açık sayfada
-                    görünür.
-                  </p>
+                  
                 </div>
 
                 <div className="mt-4 grid grid-cols-2 gap-3">
@@ -1746,7 +1743,9 @@ export default function ManagePage({
                     Profili görüntüle
                   </a>
                 </div>
-
+                    <p className="mt-3 text-xs text-neutral-500">
+                      Değişiklikler herkese açık profilde anında görünür.
+                  </p>
                 {status === "active" && confirmDeactivate ? (
                   <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm leading-6 text-amber-900">
                     Pasife alındığında herkese açık profilde bilgiler ve
@@ -1771,7 +1770,7 @@ export default function ManagePage({
                     onClick={() => openAndScrollToSection("recovery")}
                   />
                   <SectionNavButton
-                    label="Bildirimler"
+                    label="Mesajlar"
                     isActive={openSection === "messages"}
                     onClick={() => openAndScrollToSection("messages")}
                     badge={unreadCount > 0 ? unreadCount : undefined}
@@ -1893,7 +1892,7 @@ export default function ManagePage({
     </div>
   </div>
 
-  <Field label={getSecondaryNameLabel(productType)} optional>
+  <Field label={getSecondaryNameLabel(productType)}>
     <input
       value={name}
       onChange={(e) => setName(e.target.value)}
@@ -1902,7 +1901,7 @@ export default function ManagePage({
       required
     />
     <p className="mt-2 text-xs text-neutral-500">
-      Gerekirse kullanın.
+    Kısa bir başlık girin.
     </p>
   </Field>
 
@@ -2143,10 +2142,12 @@ export default function ManagePage({
             isOpen={openSection === "recovery"}
             onToggle={toggleSection}
             sectionRef={recoveryRef}
-          ><p className="text-sm text-neutral-600 text-center">
-            Bu bilgiler sadece size özel kurtarma ve erişim için kullanılır.
-          </p>
-            <div className="grid gap-4">
+          >
+            <p className="text-sm text-center text-neutral-600">
+              Bu bilgiler sadece size özel kurtarma ve erişim için kullanılır.
+            </p>
+
+            <div className="mt-4 grid gap-4">
               <div className="grid grid-cols-2 gap-3">
 
   {/* Telefon */}
@@ -2250,7 +2251,7 @@ export default function ManagePage({
                       </p>
                     </div>
 
-                    <div className="mt-3 grid grid-cols-2 gap-2">
+                    <div className="mt-2.5 grid grid-cols-2 gap-2">
                     <button
                       type="button"
                       onClick={() => void copyTransferLink()}
@@ -2341,7 +2342,7 @@ export default function ManagePage({
                   <button
                     type="button"
                     onClick={() => void loadLogs(code, token)}
-                    className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm font-medium transition hover:border-neutral-400 hover:bg-neutral-50"
+                    className="w-full rounded-2xl border border-neutral-300 bg-white px-3 py-2.5 text-sm font-medium transition hover:border-neutral-400 hover:bg-neutral-50"
                   >
                     Yenile
                   </button>
@@ -2350,7 +2351,7 @@ export default function ManagePage({
                     type="button"
                     onClick={() => void markAllAsRead()}
                     disabled={markingRead || unreadCount === 0}
-                    className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm font-medium transition hover:border-neutral-400 hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="w-full rounded-2xl border border-neutral-300 bg-white px-3 py-2.5 text-sm font-medium transition hover:border-neutral-400 hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     {markingRead ? "İşleniyor..." : "Tümünü okundu yap"}
                   </button>
@@ -2361,7 +2362,7 @@ export default function ManagePage({
   <input
     value={messageSearch}
     onChange={(e) => setMessageSearch(e.target.value)}
-    className="rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm text-neutral-900 outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
+    className="rounded-2xl border border-neutral-300 bg-white px-3 py-2.5 text-sm text-neutral-900 outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
     placeholder="Mesaj ara"
   />
 
@@ -2369,7 +2370,7 @@ export default function ManagePage({
         <select
           value={messageFilter}
           onChange={(e) => setMessageFilter(e.target.value as MessageFilter)}
-          className="rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm text-neutral-900 outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
+          className="rounded-2xl border border-neutral-300 bg-white px-3 py-2.5 text-sm text-neutral-900 outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
         >
           <option value="all">Tümü</option>
           <option value="unread">Okunmamış</option>
@@ -2381,7 +2382,7 @@ export default function ManagePage({
         <select
           value={messageSort}
           onChange={(e) => setMessageSort(e.target.value as MessageSort)}
-          className="rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm text-neutral-900 outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
+          className="rounded-2xl border border-neutral-300 bg-white px-3 py-2.5 text-sm text-neutral-900 outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
         >
           <option value="newest">En yeni</option>
           <option value="oldest">En eski</option>
@@ -2407,158 +2408,154 @@ export default function ManagePage({
                       actingLogId === log.id || readingLogId === log.id;
 
                     return (
-                      <div
-                        key={log.id}
-                        className="rounded-[1.25rem] border border-neutral-200 bg-white p-3 shadow-sm"
-                      >
-                        <div className="flex flex-wrap items-center gap-2">
+                    <div
+                      key={log.id}
+                      className="rounded-xl border border-neutral-200 bg-white p-2.5"
+                    >
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="rounded-full border border-neutral-300 bg-white px-3 py-1 text-xs text-neutral-700">
+                          {new Date(log.createdAt).toLocaleString("tr-TR")}
+                        </span>
+
+                        {Array.isArray(log.preferredContactMethods) &&
+                        log.preferredContactMethods.length > 0 ? (
                           <span className="rounded-full border border-neutral-300 bg-white px-3 py-1 text-xs text-neutral-700">
-                            {new Date(log.createdAt).toLocaleString("tr-TR")}
+                            {log.preferredContactMethods
+                              .map((method) => getMethodLabel(method))
+                              .join(", ")}
                           </span>
+                        ) : null}
 
-                          {Array.isArray(log.preferredContactMethods) &&
-                          log.preferredContactMethods.length > 0 ? (
-                            <span className="rounded-full border border-neutral-300 bg-white px-3 py-1 text-xs text-neutral-700">
-                              {log.preferredContactMethods
-                                .map((method) => getMethodLabel(method))
-                                .join(", ")}
-                            </span>
-                          ) : null}
+                        {isPinned ? (
+                          <span className="rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-xs font-medium text-sky-700">
+                            Sabitlendi
+                          </span>
+                        ) : null}
 
-                          {isPinned ? (
-                            <span className="rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-xs font-medium text-sky-700">
-                              Sabitlendi
-                            </span>
-                          ) : null}
+                        {isArchived ? (
+                          <span className="rounded-full border border-neutral-300 bg-neutral-100 px-3 py-1 text-xs font-medium text-neutral-700">
+                            Arşivde
+                          </span>
+                        ) : log.readAt ? (
+                          <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700">
+                            Okundu
+                          </span>
+                        ) : (
+                          <span className="rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-medium text-amber-700">
+                            Yeni
+                          </span>
+                        )}
+                      </div>
 
-                          {isArchived ? (
-                            <span className="rounded-full border border-neutral-300 bg-neutral-100 px-3 py-1 text-xs font-medium text-neutral-700">
-                              Arşivde
-                            </span>
-                          ) : log.readAt ? (
-                            <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700">
-                              Okundu
-                            </span>
-                          ) : (
-                            <span className="rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-medium text-amber-700">
-                              Yeni
-                            </span>
-                          )}
-                        </div>
-
-                        <div className="mt-3 grid gap-2">
-                          <div className="rounded-2xl border border-neutral-200 bg-neutral-50 px-3 py-3">
-                            <p className="text-[11px] uppercase tracking-[0.14em] text-neutral-500">
-                              Gönderen
-                            </p>
-                            <p className="mt-1 text-sm font-medium text-neutral-900">
-                              {log.senderName || "-"}
-                            </p>
-                          </div>
-
-                          <div className="grid gap-2 sm:grid-cols-2">
-                            <div className="rounded-2xl border border-neutral-200 bg-neutral-50 px-3 py-3">
-                              <p className="text-[11px] uppercase tracking-[0.14em] text-neutral-500">
-                                Telefon
-                              </p>
-                              <p className="mt-1 text-sm text-neutral-700">
-                                {maskPhone(log.senderPhone || "")}
-                              </p>
-                            </div>
-
-                            <div className="rounded-2xl border border-neutral-200 bg-neutral-50 px-3 py-3">
-                              <p className="text-[11px] uppercase tracking-[0.14em] text-neutral-500">
-                                E-posta
-                              </p>
-                              <p className="mt-1 break-all text-sm text-neutral-700">
-                                {maskEmail(log.senderEmail || "")}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="mt-3 rounded-2xl border border-neutral-200 bg-neutral-50 px-3 py-3">
+                      <div className="mt-2.5 grid gap-2">
+                        <div className="rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2.5">
                           <p className="text-[11px] uppercase tracking-[0.14em] text-neutral-500">
-                            Mesaj
+                            Gönderen
                           </p>
-                          <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-6 text-neutral-800">
-                            {log.message || "-"}
+                          <p className="mt-1 text-sm font-medium text-neutral-900">
+                            {log.senderName || "-"}
                           </p>
                         </div>
 
-                        <div className="mt-3 grid grid-cols-2 gap-2">
-                          {!log.readAt && !isArchived ? (
-                            <button
-                              type="button"
-                              onClick={() => void markSingleAsRead(log.id)}
-                              disabled={isBusy}
-                              className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm font-medium transition hover:border-neutral-400 hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-60"
-                            >
-                              {readingLogId === log.id
-                                ? "İşleniyor..."
-                                : "Okundu yap"}
-                            </button>
-                          ) : null}
+                        <div className="grid grid-cols-2 gap-2">
+                          <div className="rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2.5">
+                            <p className="text-[11px] uppercase tracking-[0.14em] text-neutral-500">
+                              Telefon
+                            </p>
+                            <p className="mt-1 text-sm text-neutral-700">
+                              {maskPhone(log.senderPhone || "")}
+                            </p>
+                          </div>
 
-                          {!isArchived ? (
-                            <button
-                              type="button"
-                              onClick={() => void runLogAction(log.id, "pin")}
-                              disabled={isBusy}
-                              className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm font-medium transition hover:border-neutral-400 hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-60"
-                            >
-                              {actingLogId === log.id
-                                ? "İşleniyor..."
-                                : isPinned
-                                  ? "Sabitlemeyi kaldır"
-                                  : "Sabitle"}
-                            </button>
-                          ) : null}
-
-                          {!isArchived ? (
-                            <button
-                              type="button"
-                              onClick={() => void runLogAction(log.id, "archive")}
-                              disabled={isBusy}
-                              className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm font-medium transition hover:border-neutral-400 hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-60"
-                            >
-                              {actingLogId === log.id ? "İşleniyor..." : "Arşivle"}
-                            </button>
-                          ) : null}
-
-                          {pendingDeleteId === log.id ? (
-                            <>
-                              <button
-                                type="button"
-                                onClick={() => void runLogAction(log.id, "delete")}
-                                disabled={isBusy}
-                                className="w-full rounded-2xl border border-red-300 bg-red-50 px-4 py-3 text-sm font-medium text-red-700 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
-                              >
-                                {actingLogId === log.id
-                                  ? "Siliniyor..."
-                                  : "Silmeyi onayla"}
-                              </button>
-
-                              <button
-                                type="button"
-                                onClick={() => setPendingDeleteId("")}
-                                className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm font-medium transition hover:border-neutral-400 hover:bg-neutral-50"
-                              >
-                                Vazgeç
-                              </button>
-                            </>
-                          ) : (
-                            <button
-                              type="button"
-                              onClick={() => setPendingDeleteId(log.id)}
-                              className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm font-medium transition hover:border-neutral-400 hover:bg-neutral-50"
-                            >
-                              Sil
-                            </button>
-                          )}
+                          <div className="rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2.5">
+                            <p className="text-[11px] uppercase tracking-[0.14em] text-neutral-500">
+                              E-posta
+                            </p>
+                            <p className="mt-1 break-all text-sm text-neutral-700">
+                              {maskEmail(log.senderEmail || "")}
+                            </p>
+                          </div>
                         </div>
                       </div>
-                    );
+
+                      <div className="mt-2.5 rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2.5">
+                        <p className="text-[11px] uppercase tracking-[0.14em] text-neutral-500">
+                          Mesaj
+                        </p>
+                        <p className="mt-1.5 whitespace-pre-wrap break-words text-sm leading-5 text-neutral-800">
+                          {log.message || "-"}
+                        </p>
+                      </div>
+
+                      <div className="mt-2.5 grid grid-cols-2 gap-2">
+                        {!log.readAt && !isArchived ? (
+                          <button
+                            type="button"
+                            onClick={() => void markSingleAsRead(log.id)}
+                            disabled={isBusy}
+                            className="w-full rounded-xl border border-neutral-300 bg-white px-3 py-2.5 text-sm font-medium transition hover:border-neutral-400 hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-60"
+                          >
+                            {readingLogId === log.id ? "İşleniyor..." : "Okundu yap"}
+                          </button>
+                        ) : null}
+
+                        {!isArchived ? (
+                          <button
+                            type="button"
+                            onClick={() => void runLogAction(log.id, "pin")}
+                            disabled={isBusy}
+                            className="w-full rounded-xl border border-neutral-300 bg-white px-3 py-2.5 text-sm font-medium transition hover:border-neutral-400 hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-60"
+                          >
+                            {actingLogId === log.id
+                              ? "İşleniyor..."
+                              : isPinned
+                                ? "Sabiti kaldır"
+                                : "Sabitle"}
+                          </button>
+                        ) : null}
+
+                        {!isArchived ? (
+                          <button
+                            type="button"
+                            onClick={() => void runLogAction(log.id, "archive")}
+                            disabled={isBusy}
+                            className="w-full rounded-xl border border-neutral-300 bg-white px-3 py-2.5 text-sm font-medium transition hover:border-neutral-400 hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-60"
+                          >
+                            {actingLogId === log.id ? "İşleniyor..." : "Arşivle"}
+                          </button>
+                        ) : null}
+
+                        {pendingDeleteId === log.id ? (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => void runLogAction(log.id, "delete")}
+                              disabled={isBusy}
+                              className="w-full rounded-xl border border-red-300 bg-red-50 px-3 py-2.5 text-sm font-medium text-red-700 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
+                            >
+                              {actingLogId === log.id ? "Siliniyor..." : "Onayla"}
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => setPendingDeleteId("")}
+                              className="w-full rounded-xl border border-neutral-300 bg-white px-3 py-2.5 text-sm font-medium transition hover:border-neutral-400 hover:bg-neutral-50"
+                            >
+                              Vazgeç
+                            </button>
+                          </>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => setPendingDeleteId(log.id)}
+                            className="w-full rounded-xl border border-neutral-300 bg-white px-3 py-2.5 text-sm font-medium transition hover:border-neutral-400 hover:bg-neutral-50"
+                          >
+                            Sil
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
                   })}
                 </div>
               )}
