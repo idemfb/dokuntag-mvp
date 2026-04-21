@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
-import { cancelTransferByManageToken, validateManageTokenAsync } from "@/lib/tags";
+import {
+  cancelTransferByManageTokenAsync,
+  validateManageTokenAsync
+} from "@/lib/tags";
 
 type Params = {
   params: Promise<{
@@ -15,10 +18,14 @@ export async function POST(request: Request, { params }: Params) {
     const token = searchParams.get("token") || "";
 
     if (!token) {
-      return NextResponse.json({ error: "Yönetim bağlantısı eksik." }, { status: 400 });
+      return NextResponse.json(
+        { error: "Yönetim bağlantısı eksik." },
+        { status: 400 }
+      );
     }
 
     const existing = await validateManageTokenAsync(normalizedCode, token);
+
     if (!existing) {
       return NextResponse.json(
         { error: "Yönetim bağlantısı geçersiz veya süresi dolmuş." },
@@ -26,7 +33,11 @@ export async function POST(request: Request, { params }: Params) {
       );
     }
 
-    const cancelled = cancelTransferByManageToken({ code: normalizedCode, manageToken: token });
+    const cancelled = await cancelTransferByManageTokenAsync({
+      code: normalizedCode,
+      manageToken: token
+    });
+
     if (!cancelled) {
       return NextResponse.json(
         { error: "İptal edilecek aktif devir bağlantısı bulunamadı." },
@@ -42,8 +53,14 @@ export async function POST(request: Request, { params }: Params) {
     });
   } catch (error) {
     console.error("TRANSFER_CANCEL_ERROR", error);
+
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Devir bağlantısı iptal edilemedi." },
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : "Devir bağlantısı iptal edilemedi."
+      },
       { status: 500 }
     );
   }

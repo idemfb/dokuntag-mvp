@@ -673,7 +673,9 @@ async function cleanupTransientStatesAsync() {
 export function readTags(): TagView[] {
   return cleanupTransientStates().map(mapProductToTagView);
 }
-
+export async function readTagsAsync(): Promise<TagView[]> {
+  return (await cleanupTransientStatesAsync()).map(mapProductToTagView);
+}
 export function getAllTags(): TagView[] {
   return readTags();
 }
@@ -1561,7 +1563,71 @@ export function createTransferByManageToken(input: {
     status: "inactive" as const
   };
 }
+export async function createTransferByManageTokenAsync(input: {
+  code: string;
+  manageToken: string;
+  expiresInHours?: number;
+}) {
+  const normalizedCode = normalizeCode(input.code);
+  const normalizedToken = String(input.manageToken || "").trim();
 
+  if (!normalizedCode || !normalizedToken) {
+    throw new Error("Geçersiz devir isteği.");
+  }
+
+  const products = await cleanupTransientStatesAsync();
+  const index = products.findIndex((item) => {
+    const itemCode = normalizeCode(
+      item.publicCode || (item as { code?: string }).code || ""
+    );
+
+    return (
+      itemCode === normalizedCode &&
+      String(item.manageToken || "").trim() === normalizedToken
+    );
+  });
+
+  if (index === -1) {
+    return null;
+  }
+
+  const now = new Date();
+  const expiresInHours =
+    typeof input.expiresInHours === "number" &&
+    Number.isFinite(input.expiresInHours) &&
+    input.expiresInHours > 0
+      ? input.expiresInHours
+      : 48;
+
+  const expiresAt = new Date(now.getTime() + expiresInHours * 60 * 60 * 1000);
+  const transferToken = crypto.randomUUID();
+  const current = products[index];
+
+  products[index] = {
+    ...current,
+    status: "inactive",
+    updatedAt: now.toISOString(),
+    transfer: {
+      token: transferToken,
+      status: "pending",
+      createdAt: now.toISOString(),
+      expiresAt: expiresAt.toISOString(),
+      fromManageToken: current.manageToken
+    }
+  };
+
+  await saveProductsAsync(products);
+
+  return {
+    success: true,
+    code: products[index].publicCode,
+    transferToken,
+    transferPath: `/transfer/${transferToken}`,
+    transferLink: `http://localhost:3000/transfer/${transferToken}`,
+    expiresAt: expiresAt.toISOString(),
+    status: "inactive" as const
+  };
+}
 export function getTransferByToken(token: string) {
   const normalizedToken = String(token || "").trim();
   if (!normalizedToken) return null;
@@ -1889,7 +1955,59 @@ export function cancelTransferByManageToken(input: {
     status: "active" as const
   };
 }
+export async function cancelTransferByManageTokenAsync(input: {
+  code: string;
+  manageToken: string;
+}) {
+  const normalizedCode = normalizeCode(input.code);
+  const normalizedToken = String(input.manageToken || "").trim();
 
+  if (!normalizedCode || !normalizedToken) {
+    throw new Error("Geçersiz iptal isteği.");
+  }
+
+  const products = await cleanupTransientStatesAsync();
+  const index = products.findIndex((item) => {
+    const itemCode = normalizeCode(
+      item.publicCode || (item as { code?: string }).code || ""
+    );
+
+    return (
+      itemCode === normalizedCode &&
+      String(item.manageToken || "").trim() === normalizedToken
+    );
+  });
+
+  if (index === -1) {
+    return null;
+  }
+
+  const current = products[index];
+  if (!current.transfer?.token) {
+    return null;
+  }
+
+  const now = new Date().toISOString();
+
+  products[index] = {
+    ...current,
+    status: "active",
+    updatedAt: now,
+    transfer: {
+      ...current.transfer,
+      status: "cancelled",
+      cancelledAt: now
+    }
+  };
+
+  await saveProductsAsync(products);
+
+  return {
+    success: true,
+    code: products[index].publicCode,
+    status: "active" as const
+  };
+}
 export function recoverManageAccess(input: {
   code: string;
   phone?: string;

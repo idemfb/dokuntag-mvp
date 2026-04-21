@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
-import { createTransferByManageToken, validateManageToken } from "@/lib/tags";
+import {
+  createTransferByManageTokenAsync,
+  validateManageTokenAsync
+} from "@/lib/tags";
 
 type Params = {
   params: Promise<{
@@ -24,7 +27,7 @@ export async function POST(request: Request, { params }: Params) {
       );
     }
 
-    const existing = validateManageToken(normalizedCode, token);
+    const existing = await validateManageTokenAsync(normalizedCode, token);
 
     if (!existing) {
       return NextResponse.json(
@@ -33,7 +36,7 @@ export async function POST(request: Request, { params }: Params) {
       );
     }
 
-    const created = createTransferByManageToken({
+    const created = await createTransferByManageTokenAsync({
       code: normalizedCode,
       manageToken: token,
       expiresInHours

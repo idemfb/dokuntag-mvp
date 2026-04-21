@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { findTagByCode, readTags } from "@/lib/tags";
+import { findTagByCodeAsync, readTagsAsync } from "@/lib/tags";
 import { isMailConfigured, sendOwnerNotification } from "@/lib/mailer";
 import {
   addNotifyLog,
@@ -62,11 +62,11 @@ function getClientIp(request: Request) {
   return "unknown";
 }
 
-function shouldShowOwnerNameInEmail(ownerEmail: string) {
+async function shouldShowOwnerNameInEmail(ownerEmail: string) {
   const normalizedOwnerEmail = normalizeEmail(ownerEmail);
   if (!normalizedOwnerEmail) return false;
 
-  const allTags = readTags();
+  const allTags = await readTagsAsync();
 
   const sameOwnerCount = allTags.filter((tag) => {
     return normalizeEmail(tag.profile.email) === normalizedOwnerEmail;
@@ -105,15 +105,21 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Kod zorunludur." }, { status: 400 });
     }
 
-    const tag = findTagByCode(code);
+    const tag = await findTagByCodeAsync(code);
 
     if (!tag) {
-      return NextResponse.json({ error: "Etiket bulunamadı." }, { status: 404 });
+      return NextResponse.json(
+        { error: "Etiket bulunamadı." },
+        { status: 404 }
+      );
     }
 
     if (tag.status === "inactive") {
       return NextResponse.json(
-        { error: "Bu ürün şu an aktif değil. İletişim geçici olarak kapatılmıştır." },
+        {
+          error:
+            "Bu ürün şu an aktif değil. İletişim geçici olarak kapatılmıştır."
+        },
         { status: 400 }
       );
     }
@@ -185,7 +191,10 @@ export async function POST(request: Request) {
     }
 
     if (!message || message.length < 5) {
-      return NextResponse.json({ error: "Mesaj çok kısa." }, { status: 400 });
+      return NextResponse.json(
+        { error: "Mesaj çok kısa." },
+        { status: 400 }
+      );
     }
 
     if (message.length > 1000) {
@@ -205,7 +214,8 @@ export async function POST(request: Request) {
     if (!isMailConfigured()) {
       return NextResponse.json(
         {
-          error: "Mail sistemi hazır değil. RESEND_API_KEY ve EMAIL_FROM gerekli."
+          error:
+            "Mail sistemi hazır değil. RESEND_API_KEY ve EMAIL_FROM gerekli."
         },
         { status: 500 }
       );
@@ -248,7 +258,9 @@ export async function POST(request: Request) {
       message
     });
 
-    const showOwnerNameInEmail = shouldShowOwnerNameInEmail(tag.profile.email);
+    const showOwnerNameInEmail = await shouldShowOwnerNameInEmail(
+      tag.profile.email
+    );
     const itemName = getString(tag.profile.petName || "");
     const tagName = getString(tag.profile.name || "");
     const ownerName = getString(tag.profile.ownerName || "");
