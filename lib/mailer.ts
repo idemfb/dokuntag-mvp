@@ -433,7 +433,9 @@ export async function sendRecoveryMagicLinkEmail(input: {
       ? "Dokuntag yönetim bağlantısı doğrulama linki"
       : "Dokuntag ürünlerim giriş linki";
 
-  const expiresText = new Date(input.expiresAt).toLocaleString("tr-TR");
+  const expiresText = new Date(input.expiresAt).toLocaleString("tr-TR", {
+  timeZone: "Europe/Istanbul"
+});
 
   const title =
     input.entryType === "recover"

@@ -10,7 +10,7 @@ type Params = {
   }>;
 };
 
-type ProductType = "pet" | "item" | "key" | "person";
+type ProductType = "pet" | "item" | "key" | "person" | "other";
 type ProductSubtype =
   | "cat"
   | "dog"
@@ -39,7 +39,16 @@ const PRODUCT_SUBTYPE_OPTIONS: Record<ProductType, ProductSubtype[]> = {
   pet: ["cat", "dog", "bird", "pet_other"],
   key: ["house_key", "car_key", "office_key", "key_other"],
   person: ["girl_child", "boy_child", "woman", "man", "elder", "person_other"],
-  item: ["bag", "wallet", "luggage", "phone_item", "tablet", "headphones", "item_other"]
+  item: [
+    "bag",
+    "wallet",
+    "luggage",
+    "phone_item",
+    "tablet",
+    "headphones",
+    "item_other"
+  ],
+  other: ["item_other"]
 };
 
 const ALERT_OPTIONS_BY_TYPE: Record<ProductType, string[]> = {
@@ -67,31 +76,63 @@ const ALERT_OPTIONS_BY_TYPE: Record<ProductType, string[]> = {
     "Sağlık durumu için bilgi verin",
     "Kaybolursa lütfen haber verin",
     "Ödül verilecektir"
+  ],
+  other: [
+    "Acil bana ulaşın",
+    "Lütfen benimle iletişime geçin",
+    "Önemli bilgi var",
+    "Ödül verilecektir"
   ]
 };
 
-
-function normalizeProductSubtype(productType: ProductType, value: unknown): ProductSubtype | "" {
+function normalizeProductSubtype(
+  productType: ProductType,
+  value: unknown
+): ProductSubtype | "" {
   if (typeof value !== "string" || !value.trim()) return "";
   const normalized = value.trim() as ProductSubtype;
-  return PRODUCT_SUBTYPE_OPTIONS[productType].includes(normalized) ? normalized : "";
+  return PRODUCT_SUBTYPE_OPTIONS[productType].includes(normalized)
+    ? normalized
+    : "";
 }
 
 function getString(value: unknown) {
   return typeof value === "string" ? value.trim() : "";
 }
 
+function normalizeEmail(value: unknown) {
+  return getString(value).toLowerCase();
+}
+
+function normalizePhone(value: unknown) {
+  return getString(value).replace(/[^0-9]/g, "");
+}
+
 function normalizeProductType(value: unknown): ProductType {
-  if (value === "pet" || value === "item" || value === "key" || value === "person") {
+  if (
+    value === "pet" ||
+    value === "item" ||
+    value === "key" ||
+    value === "person" ||
+    value === "other"
+  ) {
     return value;
   }
   return "item";
 }
 
-function normalizeStatus(value: unknown, fallback: TagStatus = "active"): TagStatus {
+function normalizeStatus(
+  value: unknown,
+  fallback: TagStatus = "active"
+): TagStatus {
   if (value === "inactive") return "inactive";
   if (value === "active") return "active";
   return fallback;
+}
+
+function isValidEmail(value: string) {
+  if (!value) return false;
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 }
 
 export async function GET(request: Request, { params }: Params) {
@@ -128,15 +169,16 @@ export async function GET(request: Request, { params }: Params) {
       );
     }
 
+    const resolvedProductType = updated.productType || "item";
     const managePath = `/manage/${updated.code}?token=${updated.manageToken}`;
 
     return NextResponse.json({
       code: updated.code,
-      productType: updated.productType || "item",
+      productType: resolvedProductType,
       productSubtype: updated.productSubtype || "",
       profile: updated.profile,
       alerts: updated.alerts,
-      alertOptions: ALERT_OPTIONS_BY_TYPE[updated.productType || "item"],
+      alertOptions: ALERT_OPTIONS_BY_TYPE[resolvedProductType],
       visibility: updated.visibility,
       contactOptions: {
         allowDirectCall: Boolean(updated.contactOptions?.allowDirectCall),
@@ -200,17 +242,20 @@ export async function POST(request: Request, { params }: Params) {
     const body = await request.json();
 
     const productType = normalizeProductType(body.productType);
-    const productSubtype = normalizeProductSubtype(productType, body.productSubtype);
+    const productSubtype = normalizeProductSubtype(
+      productType,
+      body.productSubtype
+    );
     const allowedAlerts = ALERT_OPTIONS_BY_TYPE[productType];
 
-    const name = getString(body.name || body.tagName);
-    const ownerName = getString(body.ownerName);
-    const phone = getString(body.phone);
-    const email = getString(body.email);
-    const city = getString(body.city);
-    const addressDetail = getString(body.addressDetail);
-    const distinctiveFeature = getString(body.distinctiveFeature);
     const petName = getString(body.petName || body.name || body.tagName);
+    const name = petName;
+    const ownerName = getString(body.ownerName);
+    const phone = normalizePhone(body.phone);
+    const email = normalizeEmail(body.email);
+    const city = productType === "key" ? "" : getString(body.city);
+    const addressDetail = "";
+    const distinctiveFeature = getString(body.distinctiveFeature);
     const note = getString(body.note);
 
     const alerts = Array.isArray(body.alerts)
@@ -220,24 +265,28 @@ export async function POST(request: Request, { params }: Params) {
         )
       : [];
 
-    const rawVisibility = {
-      showName: Boolean(body.visibility?.showName),
-      showPhone: Boolean(body.visibility?.showPhone),
-      showEmail: Boolean(body.visibility?.showEmail),
-      showCity: Boolean(body.visibility?.showCity),
-      showAddressDetail: Boolean(body.visibility?.showAddressDetail),
-      showPetName: Boolean(body.visibility?.showPetName),
-      showNote: Boolean(body.visibility?.showNote)
-    };
-
     const rawContactOptions = {
-      allowDirectCall: Boolean(body.contactOptions?.allowDirectCall),
-      allowDirectWhatsapp: Boolean(body.contactOptions?.allowDirectWhatsapp)
+      allowDirectCall: Boolean(body.contactOptions?.allowDirectCall && phone),
+      allowDirectWhatsapp: Boolean(
+        body.contactOptions?.allowDirectWhatsapp &&
+          body.contactOptions?.allowDirectCall &&
+          phone
+      )
     };
 
     const recovery = {
-      phone: getString(body.recovery?.phone),
-      email: getString(body.recovery?.email)
+      phone: normalizePhone(body.recovery?.phone),
+      email: normalizeEmail(body.recovery?.email)
+    };
+
+    const rawVisibility = {
+      showName: Boolean(body.visibility?.showName),
+      showPhone: Boolean(body.visibility?.showPhone && rawContactOptions.allowDirectCall && phone),
+      showEmail: false,
+      showCity: Boolean(body.visibility?.showCity && city),
+      showAddressDetail: false,
+      showPetName: Boolean(body.visibility?.showPetName),
+      showNote: Boolean(body.visibility?.showNote && note)
     };
 
     const nextStatus = normalizeStatus(
@@ -245,9 +294,30 @@ export async function POST(request: Request, { params }: Params) {
       existing.status === "inactive" ? "inactive" : "active"
     );
 
-    if (!name) {
+    if (!petName) {
       return NextResponse.json(
-        { error: "İsim / etiket adı zorunludur." },
+        { error: "İsim zorunludur." },
+        { status: 400 }
+      );
+    }
+
+    if (!recovery.email) {
+      return NextResponse.json(
+        { error: "Kurtarma e-postası zorunludur." },
+        { status: 400 }
+      );
+    }
+
+    if (!isValidEmail(recovery.email)) {
+      return NextResponse.json(
+        { error: "Geçerli bir kurtarma e-postası girin." },
+        { status: 400 }
+      );
+    }
+
+    if (email && !isValidEmail(email)) {
+      return NextResponse.json(
+        { error: "Geçerli bir iletişim e-postası girin." },
         { status: 400 }
       );
     }
@@ -255,13 +325,6 @@ export async function POST(request: Request, { params }: Params) {
     if (!phone && !email) {
       return NextResponse.json(
         { error: "Telefon veya e-posta zorunlu." },
-        { status: 400 }
-      );
-    }
-
-    if (!petName) {
-      return NextResponse.json(
-        { error: "Ürün adı zorunludur." },
         { status: 400 }
       );
     }

@@ -101,7 +101,7 @@ function getPrimaryNameLabel(productType: ProductType) {
 }
 
 function getOwnerNameLabel(productType: ProductType) {
-  if (productType === "person") return "Yakını / sorumlusu";
+  if (productType === "person") return "Yakını";
   return "Sahibi";
 }
 
@@ -278,12 +278,12 @@ function GuideStep({
   text: string;
 }) {
   return (
-    <div className="rounded-[1.5rem] border border-neutral-200 bg-white p-4 shadow-sm">
+    <div className="rounded-[1.5rem] border border-neutral-200 bg-white px-4 py-4">
       <div className="inline-flex rounded-full border border-neutral-300 bg-neutral-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-neutral-600">
         {step}
       </div>
       <h3 className="mt-3 text-sm font-semibold text-neutral-900">{title}</h3>
-      <p className="mt-2 text-sm leading-6 text-neutral-600">{text}</p>
+      <p className="mt-1.5 text-sm leading-6 text-neutral-600">{text}</p>
     </div>
   );
 }
@@ -456,6 +456,7 @@ export default function SetupPage() {
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+
     setLoading(true);
     setError("");
 
@@ -488,7 +489,7 @@ export default function SetupPage() {
   }
 
   return (
-    <main className="min-h-screen bg-neutral-100 px-4 py-8 text-neutral-900 sm:px-5 sm:py-10">
+    <main className="min-h-screen bg-[linear-gradient(180deg,#fbfbfa_0%,#fdfdfc_55%,#ffffff_100%)] px-4 py-8 text-neutral-900 sm:px-5 sm:py-10">
       <div className="mx-auto max-w-3xl">
         <div className="mb-6">
           <a
@@ -503,11 +504,12 @@ export default function SetupPage() {
           <p className="mt-4 text-sm uppercase tracking-[0.24em] text-neutral-500">
             Dokuntag Setup
           </p>
-          <h1 className="mt-2 text-3xl font-semibold tracking-tight">
+          <h1 className="mt-2 text-3xl font-semibold tracking-tight text-neutral-900">
             İlk kurulum
           </h1>
           <p className="mt-3 max-w-xl text-sm leading-6 text-neutral-600">
-            Bilgileri doldurun ve kurulumu tamamlayın.
+            Bilgileri doldurun ve kurulumu tamamlayın. Sonrasında size özel
+            yönetim bağlantınız oluşur.
           </p>
         </div>
 
@@ -520,7 +522,7 @@ export default function SetupPage() {
               3 adımda kurulum
             </h2>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-neutral-600">
-              İlk kez kurulum yapıyorsanız aşağıdaki sırayla ilerleyin. Kaydettikten sonra size özel yönetim bağlantınız oluşur.
+              Kısa bilgileri girin, erişim tercihlerini seçin ve kurulumu tamamlayın.
             </p>
           </div>
 
@@ -528,23 +530,24 @@ export default function SetupPage() {
             <div className="grid gap-3 sm:grid-cols-3">
               <GuideStep
                 step="1. Adım"
-                title="Ürün bilgilerini girin"
+                title="Temel bilgileri girin"
                 text="Kod, ürün tipi ve ana isim gibi temel bilgileri doldurun."
               />
               <GuideStep
                 step="2. Adım"
-                title="İletişim ve görünürlüğü seçin"
+                title="İletişim tercihlerini seçin"
                 text="Hangi bilgilerin görüneceğini ve size nasıl ulaşılacağını belirleyin."
               />
               <GuideStep
                 step="3. Adım"
                 title="Kurulumu tamamlayın"
-                text="Kaydettikten sonra yönetim bağlantınızı saklayın. Sonraki düzenlemeler oradan yapılır."
+                text="Kaydettikten sonra size özel yönetim bağlantınız oluşur."
               />
             </div>
 
             <div className="mt-4 rounded-[1.5rem] border border-blue-200 bg-blue-50 px-4 py-4 text-sm leading-6 text-blue-900">
-              İpucu: Kısa başlık alanı yalnızca ana isimden farklıysa görünür. Telefon, e-posta ve not gibi alanları ister açabilir ister gizli tutabilirsiniz.
+              İpucu: Kısa başlık yalnızca ana isimden farklıysa kullanılır. Telefon,
+              e-posta ve not gibi alanları ister açabilir ister gizli tutabilirsiniz.
             </div>
           </div>
         </section>

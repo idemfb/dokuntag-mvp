@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 
-type ProductType = "pet" | "item" | "key" | "person";
+type ProductType = "pet" | "item" | "key" | "person" | "other";
 type ProductSubtype =
   | "cat"
   | "dog"
@@ -64,7 +64,8 @@ const PRODUCT_SUBTYPE_OPTIONS: Record<
     { value: "tablet", label: "Tablet" },
     { value: "headphones", label: "Kulaklık" },
     { value: "item_other", label: "Diğer" }
-  ]
+  ],
+  other: [{ value: "item_other", label: "Diğer" }]
 };
 
 const ALERT_OPTIONS_BY_TYPE: Record<ProductType, string[]> = {
@@ -91,6 +92,12 @@ const ALERT_OPTIONS_BY_TYPE: Record<ProductType, string[]> = {
     "Acil yakınıma ulaşın",
     "Sağlık durumu için bilgi verin",
     "Kaybolursa lütfen haber verin",
+    "Ödül verilecektir"
+  ],
+  other: [
+    "Acil bana ulaşın",
+    "Lütfen benimle iletişime geçin",
+    "Önemli bilgi var",
     "Ödül verilecektir"
   ]
 };
@@ -280,8 +287,9 @@ function getSubtypeLabel(productType: ProductType, value: ProductSubtype | "") {
 
 function getProductTypeLabel(productType: ProductType) {
   if (productType === "pet") return "Evcil hayvan";
-  if (productType === "item") return "Ürün";
+  if (productType === "item") return "Eşya";
   if (productType === "key") return "Anahtar";
+  if (productType === "other") return "Diğer";
   return "Birey";
 }
 
@@ -289,20 +297,15 @@ function getPrimaryNameLabel(productType: ProductType) {
   if (productType === "pet") return "Evcil hayvan adı";
   if (productType === "person") return "Kişi adı";
   if (productType === "key") return "Anahtar adı";
-  return "Ürün adı";
+  if (productType === "other") return "Ad / başlık";
+  return "Eşya adı";
 }
 
 function getOwnerNameLabel(productType: ProductType) {
-  if (productType === "person") return "Yakını / sorumlusu";
+  if (productType === "person") return "Yakını";
   return "Sahibi";
 }
 
-function getSecondaryNameLabel(productType: ProductType) {
-  if (productType === "pet") return "Etiket başlığı";
-  if (productType === "person") return "Profil başlığı";
-  if (productType === "key") return "Etiket / kısa başlık";
-  return "Etiket / kısa başlık";
-}
 
 function getMethodLabel(method: ContactMethod) {
   if (method === "whatsapp") return "WhatsApp";
@@ -595,6 +598,7 @@ export default function ManagePage({
   const [allowDirectWhatsapp, setAllowDirectWhatsapp] = useState(false);
   const [recoveryPhone, setRecoveryPhone] = useState("");
   const [recoveryEmail, setRecoveryEmail] = useState("");
+  const [recoveryEmailConfirm, setRecoveryEmailConfirm] = useState("");
   const [useRecoveryPhoneAsContact, setUseRecoveryPhoneAsContact] =
     useState(false);
   const [useRecoveryEmailAsContact, setUseRecoveryEmailAsContact] =
@@ -651,7 +655,16 @@ export default function ManagePage({
   useEffect(() => {
     params.then((resolved) => setCode(resolved.code));
   }, [params]);
-
+useEffect(() => {
+  if (productType === "key") {
+    if (city) {
+      setCity("");
+    }
+    if (showCity) {
+      setShowCity(false);
+    }
+  }
+}, [productType, city, showCity]);
   useEffect(() => {
     if (typeof window === "undefined") return;
     const url = new URL(window.location.href);
@@ -698,7 +711,8 @@ export default function ManagePage({
         setError("");
         setSuccess("");
 
-        const res = await fetch(
+        
+      const res = await fetch(
           `/api/manage/${code}?token=${encodeURIComponent(token)}`,
           { cache: "no-store" }
         );
@@ -777,6 +791,7 @@ export default function ManagePage({
         setAllowDirectWhatsapp(nextAllowDirectWhatsapp);
         setRecoveryPhone(nextRecoveryPhone);
         setRecoveryEmail(nextRecoveryEmail);
+        setRecoveryEmailConfirm(nextRecoveryEmail);
         setUseRecoveryPhoneAsContact(nextUseRecoveryPhoneAsContact);
         setUseRecoveryEmailAsContact(nextUseRecoveryEmailAsContact);
         setManageLink(manageData.manageLink || "");
@@ -863,6 +878,16 @@ export default function ManagePage({
     setEmail(recoveryEmail.trim());
   }, [useRecoveryEmailAsContact, recoveryEmail]);
 
+useEffect(() => {
+  if (productType === "key") {
+    if (city) {
+      setCity("");
+    }
+    if (showCity) {
+      setShowCity(false);
+    }
+  }
+}, [productType, city, showCity]);
   useEffect(() => {
     if (!city.trim() && showCity) {
       setShowCity(false);
@@ -1003,7 +1028,7 @@ export default function ManagePage({
       productType,
       productSubtype,
       status,
-      name,
+      name: petName,
       ownerName,
       phone,
       email,
@@ -1058,7 +1083,7 @@ export default function ManagePage({
   const isDirty = Boolean(initialSnapshot) && currentSnapshot !== initialSnapshot;
 
   const displayPrimaryName = useMemo(() => {
-    return petName.trim() || "İsimsiz ürün";
+    return petName.trim() || "İsimsiz profil";
   }, [petName]);
 
   useEffect(() => {
@@ -1219,7 +1244,7 @@ export default function ManagePage({
           productType,
           productSubtype,
           status: "inactive",
-          name,
+          name: petName,
           ownerName,
           phone: useRecoveryPhoneAsContact ? recoveryPhone : phone,
           email: useRecoveryEmailAsContact ? recoveryEmail : email,
@@ -1290,7 +1315,7 @@ export default function ManagePage({
           productType,
           productSubtype,
           status: "active",
-          name,
+          name: petName,
           ownerName,
           phone: useRecoveryPhoneAsContact ? recoveryPhone : phone,
           email: useRecoveryEmailAsContact ? recoveryEmail : email,
@@ -1442,7 +1467,7 @@ export default function ManagePage({
           body: JSON.stringify({
             productType,
             productSubtype,
-            name,
+            name: petName,
             ownerName,
             phone: useRecoveryPhoneAsContact ? recoveryPhone : phone,
             email: useRecoveryEmailAsContact ? recoveryEmail : email,
@@ -1492,7 +1517,7 @@ export default function ManagePage({
         productType,
         productSubtype,
         status: resolvedStatus,
-        name,
+        name: petName,
         ownerName,
         phone: useRecoveryPhoneAsContact ? recoveryPhone : phone,
         email: useRecoveryEmailAsContact ? recoveryEmail : email,
@@ -1537,7 +1562,24 @@ export default function ManagePage({
       setSaving(true);
       setError("");
       setSuccess("");
+      if (!petName.trim()) {
+  throw new Error("İsim zorunludur.");
+}
 
+if (!recoveryEmail.trim()) {
+  throw new Error("Kurtarma e-postası zorunludur.");
+}
+
+if (!recoveryEmailConfirm.trim()) {
+  throw new Error("Kurtarma e-postasını tekrar yazın.");
+}
+
+if (
+  recoveryEmail.trim().toLowerCase() !==
+  recoveryEmailConfirm.trim().toLowerCase()
+) {
+  throw new Error("Kurtarma e-postaları aynı olmalıdır.");
+}
       const res = await fetch(
         `/api/manage/${code}?token=${encodeURIComponent(token)}`,
         {
@@ -1548,7 +1590,7 @@ export default function ManagePage({
           body: JSON.stringify({
             productType,
             productSubtype,
-            name,
+            name: petName,
             ownerName,
             phone: useRecoveryPhoneAsContact ? recoveryPhone : phone,
             email: useRecoveryEmailAsContact ? recoveryEmail : email,
@@ -1604,7 +1646,7 @@ export default function ManagePage({
           productType,
           productSubtype,
           status: resolvedStatus,
-          name,
+          name: petName,
           ownerName,
           phone: useRecoveryPhoneAsContact ? recoveryPhone : phone,
           email: useRecoveryEmailAsContact ? recoveryEmail : email,
@@ -1765,7 +1807,7 @@ export default function ManagePage({
                     onClick={() => openAndScrollToSection("contact")}
                   />
                   <SectionNavButton
-                    label="Kurtarma"
+                    label="Hesap Kurtarma"
                     isActive={openSection === "recovery"}
                     onClick={() => openAndScrollToSection("recovery")}
                   />
@@ -1798,11 +1840,11 @@ export default function ManagePage({
           </div>
         ) : null}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form noValidate onSubmit={handleSubmit} className="space-y-4">
           <SectionCard
             id="basic"
-            title="Ürün bilgileri"
-            description="Ürün ve profil bilgilerini düzenleyin."
+            title="Profil bilgileri"
+            description="Görünen temel bilgileri buradan düzenleyin."
             isOpen={openSection === "basic"}
             onToggle={toggleSection}
             sectionRef={basicRef}
@@ -1810,7 +1852,7 @@ export default function ManagePage({
             
             <div className="grid gap-4">
   <div className="grid grid-cols-2 gap-3">
-    <Field label="Ürün tipi">
+    <Field label="Profil Türü">
       <select
         value={productType}
         onChange={(e) => setProductType(e.target.value as ProductType)}
@@ -1819,7 +1861,8 @@ export default function ManagePage({
         <option value="item">Eşya</option>
         <option value="key">Anahtar</option>
         <option value="pet">Evcil hayvan</option>
-        <option value="person">Kişi</option>
+        <option value="person">Birey</option>
+        <option value="other">Diğer</option>
       </select>
     </Field>
 
@@ -1891,19 +1934,6 @@ export default function ManagePage({
       />
     </div>
   </div>
-
-  <Field label={getSecondaryNameLabel(productType)}>
-    <input
-      value={name}
-      onChange={(e) => setName(e.target.value)}
-      className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm text-neutral-900 outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
-      placeholder="Kısa başlık"
-      required
-    />
-    <p className="mt-2 text-xs text-neutral-500">
-    Kısa bir başlık girin.
-    </p>
-  </Field>
 
   <div className="grid gap-4 sm:grid-cols-2">
     <Field label="Not" optional>
@@ -1991,6 +2021,8 @@ export default function ManagePage({
                         setUseRecoveryPhoneAsContact(checked);
                         if (checked) {
                           setPhone(recoveryPhone.trim());
+                        } else {
+                          setPhone("");
                         }
                       }}
                     />
@@ -2031,6 +2063,8 @@ export default function ManagePage({
                         setUseRecoveryEmailAsContact(checked);
                         if (checked) {
                           setEmail(recoveryEmail.trim());
+                        } else {
+                          setEmail("");
                         }
                       }}
                     />
@@ -2092,7 +2126,12 @@ export default function ManagePage({
                   <select
                     value={city}
                     onChange={(e) => setCity(e.target.value)}
-                    className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm text-neutral-900 outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
+                    disabled={productType === "key"}
+                    className={`w-full rounded-2xl border px-4 py-3 text-sm outline-none transition focus:ring-2 ${
+                      productType === "key"
+                        ? "cursor-not-allowed border-neutral-200 bg-neutral-100 text-neutral-400"
+                        : "border-neutral-300 bg-white text-neutral-900 focus:border-neutral-500 focus:ring-neutral-200"
+                    }`}
                   >
                     <option value="">Seçiniz</option>
                     {TURKIYE_CITIES.map((item) => (
@@ -2103,16 +2142,16 @@ export default function ManagePage({
                   </select>
                   <div className="mt-3 flex flex-wrap gap-2">
                     <InlineToggle
-                      checked={showCity}
-                      disabled={!city.trim()}
-                      label="Şehir görünsün"
-                      onChange={setShowCity}
-                    />
+                    checked={showCity}
+                    disabled={!city.trim() || productType === "key"}
+                    label="Şehir görünsün"
+                    onChange={setShowCity}
+                  />
                   </div>
                   {productType === "key" ? (
                     <p className="mt-2 text-xs leading-5 text-amber-700">
                       Anahtar ürünlerinde konum paylaşımı güvenlik riski
-                      oluşturabilir. Gerekmedikçe şehir bilgisini kapalı tutun.
+                      oluşturabilir. Bu yüzden şehir bilgisi kapalı tutulmuştur.
                     </p>
                   ) : null}
                 </Field>
@@ -2137,7 +2176,7 @@ export default function ManagePage({
 
           <SectionCard
             id="recovery"
-            title="Kurtarma ve bağlantılar"
+            title="Hesap Kurtarma ve bağlantılar"
             description="Yedek iletişim ve bağlantıları burada yönetin."
             isOpen={openSection === "recovery"}
             onToggle={toggleSection}
@@ -2149,45 +2188,63 @@ export default function ManagePage({
 
             <div className="mt-4 grid gap-4">
               <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="mb-2 block text-center text-sm font-medium text-neutral-700">
+                    Kurtarma telefonu
+                  </label>
 
-  {/* Telefon */}
-  <div>
-    <label className="block text-sm font-medium text-neutral-700 text-center mb-2">
-      Kurtarma telefonu
-    </label>
+                  <input
+                    value={recoveryPhone}
+                    onChange={(e) =>
+                      setRecoveryPhone(e.target.value.replace(/[^0-9]/g, ""))
+                    }
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    className="w-full rounded-2xl border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
+                    placeholder="05xxxxxxxxx"
+                  />
+                </div>
 
-    <input
-      value={recoveryPhone}
-      onChange={(e) =>
-        setRecoveryPhone(e.target.value.replace(/[^0-9]/g, ""))
-      }
-      inputMode="numeric"
-      pattern="[0-9]*"
-      className="w-full rounded-2xl border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
-      placeholder="05xxxxxxxxx"
-    />
+                <div>
+                  <label className="mb-2 block text-center text-sm font-medium text-neutral-700">
+                    Kurtarma e-posta
+                  </label>
 
-    </div>
+                  <input
+                    type="email"
+                    value={recoveryEmail}
+                    onChange={(e) => setRecoveryEmail(e.target.value.trim())}
+                    className={`w-full rounded-2xl border px-4 py-3 text-sm outline-none transition focus:ring-2 ${
+                      error.toLowerCase().includes("kurtarma")
+                        ? "border-red-300 bg-red-50/40 focus:border-red-400 focus:ring-red-100"
+                        : "border-neutral-300 bg-white focus:border-neutral-500 focus:ring-neutral-200"
+                    }`}
+                    placeholder="ornek@mail.com"
+                  />
+                </div>
+              </div>
 
-  {/* Email */}
-  <div>
-    <label className="block text-sm font-medium text-neutral-700 text-center mb-2">
-      Kurtarma e-posta
-    </label>
+              <div>
+                <label className="mb-2 block text-center text-sm font-medium text-neutral-700">
+                  Kurtarma e-posta tekrar
+                </label>
 
-    <input
-      type="email"
-      value={recoveryEmail}
-      onChange={(e) => setRecoveryEmail(e.target.value)}
-      className="w-full rounded-2xl border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
-      placeholder="ornek@mail.com"
-    />
-    
-  </div>
-<p className="col-span-2 text-xs text-neutral-500 text-center">
-  Gerekirse iletişim bilgisi olarak da kullanılabilir
-</p>
-</div>
+                <input
+                  type="email"
+                  value={recoveryEmailConfirm}
+                  onChange={(e) => setRecoveryEmailConfirm(e.target.value.trim())}
+                  className={`w-full rounded-2xl border px-4 py-3 text-sm outline-none transition focus:ring-2 ${
+                    error.toLowerCase().includes("kurtarma")
+                      ? "border-red-300 bg-red-50/40 focus:border-red-400 focus:ring-red-100"
+                      : "border-neutral-300 bg-white focus:border-neutral-500 focus:ring-neutral-200"
+                  }`}
+                  placeholder="ornek@mail.com"
+                />
+
+                <p className="mt-2 text-center text-xs text-neutral-500">
+                  Yanlış yazımı önlemek için kurtarma e-postasını iki kez girin.
+                </p>
+              </div>
 
               <div className="rounded-[1.5rem] border border-neutral-200 bg-neutral-50 px-4 py-4">
                 <div className="grid gap-3">

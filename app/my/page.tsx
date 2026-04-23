@@ -21,12 +21,12 @@ function GuideStep({
   text: string;
 }) {
   return (
-    <div className="rounded-[1.5rem] border border-neutral-200 bg-white p-4 shadow-sm">
+    <div className="rounded-[1.5rem] border border-neutral-200 bg-white px-4 py-4">
       <div className="inline-flex rounded-full border border-neutral-300 bg-neutral-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-neutral-600">
         {step}
       </div>
       <h3 className="mt-3 text-sm font-semibold text-neutral-900">{title}</h3>
-      <p className="mt-2 text-sm leading-6 text-neutral-600">{text}</p>
+      <p className="mt-1.5 text-sm leading-6 text-neutral-600">{text}</p>
     </div>
   );
 }
@@ -76,12 +76,12 @@ export default function MyPage() {
   }
 
   return (
-    <main className="min-h-screen bg-neutral-50 px-4 py-10 text-neutral-900">
-      <div className="mx-auto max-w-4xl space-y-6">
+    <main className="min-h-screen bg-[linear-gradient(180deg,#fbfbfa_0%,#fdfdfc_55%,#ffffff_100%)] px-4 py-8 text-neutral-900 sm:px-5 sm:py-10">
+      <div className="mx-auto max-w-4xl space-y-5">
         <section className="overflow-hidden rounded-[2rem] border border-neutral-200 bg-white shadow-sm">
-          <div className="border-b border-neutral-200 bg-gradient-to-br from-white via-neutral-50 to-neutral-100/80 px-6 py-7">
+          <div className="border-b border-neutral-200 bg-gradient-to-br from-white via-neutral-50 to-neutral-100/80 px-6 py-6 sm:px-7">
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <div className="text-sm text-neutral-500">Ürün yönetimi</div>
+              <span className="text-sm text-neutral-500">Ürünlerim</span>
 
               <a
                 href={mainSiteUrl}
@@ -97,31 +97,32 @@ export default function MyPage() {
               Dokuntag
             </p>
 
-            <h1 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">
-              Ürünlerim
+            <h1 className="mt-2 text-3xl font-semibold tracking-tight text-neutral-900 sm:text-4xl">
+              Güvenli giriş
             </h1>
 
             <p className="mt-3 max-w-2xl text-sm leading-6 text-neutral-600">
-              Kurtarma e-posta adresinizi girin. Mailinize gönderilen güvenli bağlantı ile ürünlerinizi belirli bir süre boyunca görüntüleyip yönetebilirsiniz.
+              Recovery e-posta adresinizi girin. Gönderilen güvenli bağlantı ile
+              ürünlerinizi sınırlı süre boyunca görüntüleyip yönetebilirsiniz.
             </p>
           </div>
 
-          <div className="px-6 py-6">
+          <div className="px-6 py-5 sm:px-7 sm:py-6">
             <div className="grid gap-3 sm:grid-cols-3">
               <GuideStep
                 step="1. Adım"
-                title="Recovery e-postanızı girin"
-                text="Ürünlerinize bağlı kurtarma e-posta adresinizi yazın."
+                title="E-postanızı girin"
+                text="Ürünlerinize bağlı recovery e-posta adresini yazın."
               />
               <GuideStep
                 step="2. Adım"
-                title="Maildeki linki açın"
-                text="Sisteme uygunsa tek kullanımlık ve süreli güvenli giriş bağlantısı gönderilir."
+                title="Maildeki bağlantıyı açın"
+                text="Tek kullanımlık ve süreli güvenli giriş bağlantısı gönderilir."
               />
               <GuideStep
                 step="3. Adım"
-                title="Ürünlerinizi görün"
-                text="Doğrulamadan sonra bu e-postaya bağlı tüm ürünler tek ekranda listelenir."
+                title="Ürünlerinizi yönetin"
+                text="Bağlı ürünleriniz tek ekranda listelenir ve yönetilebilir."
               />
             </div>
 
@@ -137,7 +138,7 @@ export default function MyPage() {
               </div>
             ) : null}
 
-            <form onSubmit={handleSubmit} className="mt-5 max-w-xl space-y-4">
+            <form onSubmit={handleSubmit} className="mt-5 max-w-xl space-y-3">
               <div>
                 <label className="mb-2 block text-sm font-medium text-neutral-900">
                   Recovery e-postası
@@ -155,14 +156,14 @@ export default function MyPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="rounded-2xl bg-neutral-900 px-5 py-3 text-sm font-medium text-white transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex min-h-12 items-center justify-center rounded-2xl bg-neutral-900 px-5 py-3 text-sm font-medium text-white transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {loading ? "Gönderiliyor..." : "Güvenli giriş bağlantısı gönder"}
               </button>
             </form>
 
-            <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm leading-6 text-amber-800">
-              Güvenlik nedeniyle ürünler artık yalnızca doğrulanmış e-posta bağlantısı ile görüntülenebilir.
+            <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm leading-6 text-amber-800">
+              Güvenlik nedeniyle ürünler yalnızca doğrulanmış e-posta bağlantısı ile görüntülenebilir.
             </div>
           </div>
         </section>

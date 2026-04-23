@@ -233,22 +233,17 @@ export async function PUT(req: NextRequest, context: RouteContext) {
       );
     }
 
-    if (!phone) {
-      return NextResponse.json(
-        { ok: false, error: "İletişim telefonu zorunludur." },
-        { status: 400 }
-      );
-    }
+    
 
-    if (!recoveryPhone && !recoveryEmail) {
-      return NextResponse.json(
-        {
-          ok: false,
-          error: "Kurtarma için telefon veya e-posta alanlarından en az biri zorunludur."
-        },
-        { status: 400 }
-      );
-    }
+        if (!recoveryEmail) {
+          return NextResponse.json(
+            {
+              ok: false,
+              error: "Kurtarma e-postası zorunludur."
+            },
+            { status: 400 }
+          );
+        }
 
     if (recoveryEmail && !isValidEmail(recoveryEmail)) {
       return NextResponse.json(
@@ -267,7 +262,9 @@ export async function PUT(req: NextRequest, context: RouteContext) {
       );
     }
 
-    const contactEmail = useRecoveryEmailAsContact ? recoveryEmail : recoveryEmail || "";
+    const contactEmail = useRecoveryEmailAsContact
+  ? recoveryEmail
+  : normalizeEmail((body as { email?: unknown }).email);
     const allowDirectCall = Boolean(body.allowPhone && phone);
     const allowDirectWhatsapp = Boolean(body.allowWhatsapp && allowDirectCall && phone);
 
@@ -298,7 +295,7 @@ export async function PUT(req: NextRequest, context: RouteContext) {
       visibility: {
         showName: Boolean(body.showName ?? true),
         showPhone: Boolean(body.showPhone && allowDirectCall && phone),
-        showEmail: false,
+        showEmail: Boolean(contactEmail),
         showCity: Boolean(body.showCity && city),
         showAddressDetail: false,
         showPetName: Boolean(body.showPetName ?? true),

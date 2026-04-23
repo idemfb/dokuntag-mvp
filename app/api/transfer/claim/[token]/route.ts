@@ -8,49 +8,85 @@ type Params = {
   }>;
 };
 
-type ProductType = "pet" | "item" | "key" | "person";
+type ProductType = "pet" | "item" | "key" | "person" | "other";
 type ProductSubtype =
   | "cat"
   | "dog"
   | "bird"
-  | "house-key"
-  | "car-key"
-  | "office-key"
-  | "girl"
-  | "boy"
+  | "pet_other"
+  | "house_key"
+  | "car_key"
+  | "office_key"
+  | "key_other"
+  | "girl_child"
+  | "boy_child"
   | "woman"
   | "man"
   | "elder"
+  | "person_other"
   | "bag"
   | "wallet"
   | "luggage"
-  | "phone"
+  | "phone_item"
   | "tablet"
   | "headphones"
-  | "other";
+  | "item_other";
 
 function getString(value: unknown) {
   return typeof value === "string" ? value.trim() : "";
 }
 
+function normalizeEmail(value: unknown) {
+  return getString(value).toLowerCase();
+}
+
+function normalizePhone(value: unknown) {
+  return getString(value).replace(/[^0-9]/g, "");
+}
+
 function normalizeProductType(value: unknown): ProductType {
-  if (value === "pet" || value === "item" || value === "key" || value === "person") {
+  if (
+    value === "pet" ||
+    value === "item" ||
+    value === "key" ||
+    value === "person" ||
+    value === "other"
+  ) {
     return value;
   }
   return "item";
 }
 
 const PRODUCT_SUBTYPE_OPTIONS: Record<ProductType, ProductSubtype[]> = {
-  pet: ["cat", "dog", "bird", "other"],
-  key: ["house-key", "car-key", "office-key", "other"],
-  person: ["girl", "boy", "woman", "man", "elder", "other"],
-  item: ["bag", "wallet", "luggage", "phone", "tablet", "headphones", "other"]
+  pet: ["cat", "dog", "bird", "pet_other"],
+  key: ["house_key", "car_key", "office_key", "key_other"],
+  person: ["girl_child", "boy_child", "woman", "man", "elder", "person_other"],
+  item: [
+    "bag",
+    "wallet",
+    "luggage",
+    "phone_item",
+    "tablet",
+    "headphones",
+    "item_other"
+  ],
+  other: ["item_other"]
 };
 
-function normalizeProductSubtype(value: unknown, productType: ProductType): ProductSubtype | "" {
+function normalizeProductSubtype(
+  value: unknown,
+  productType: ProductType
+): ProductSubtype | "" {
   if (typeof value !== "string") return "";
   const normalized = value.trim() as ProductSubtype;
-  return PRODUCT_SUBTYPE_OPTIONS[productType].includes(normalized) ? normalized : "";
+  return PRODUCT_SUBTYPE_OPTIONS[productType].includes(normalized)
+    ? normalized
+    : "";
+}
+
+function isValidEmail(value: string) {
+  if (!value) return false;
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 }
 
 export async function GET(request: Request, { params }: Params) {
@@ -69,6 +105,7 @@ export async function GET(request: Request, { params }: Params) {
       success: true,
       code: transfer.code,
       productType: transfer.productType,
+      productSubtype: transfer.productSubtype || "",
       currentProfile: transfer.currentProfile,
       transfer: transfer.transfer
     });
@@ -93,27 +130,31 @@ export async function POST(request: Request, { params }: Params) {
     const body = await request.json();
 
     const productType = normalizeProductType(body.productType);
-    const productSubtype = normalizeProductSubtype(body.productSubtype, productType);
-    const tagName = getString(body.name || body.tagName);
-    const ownerName = getString(body.ownerName);
-    const phone = getString(body.phone);
-    const email = getString(body.email);
-    const city = getString(body.city);
-    const addressDetail = getString(body.addressDetail);
-    const distinctiveFeature = getString(body.distinctiveFeature);
+    const productSubtype = normalizeProductSubtype(
+      body.productSubtype,
+      productType
+    );
     const petName = getString(body.petName || body.name || body.tagName);
+    const tagName = petName;
+    const ownerName = getString(body.ownerName);
+    const phone = normalizePhone(body.phone);
+    const email = normalizeEmail(body.email);
+    const city = productType === "key" ? "" : getString(body.city);
+    const addressDetail = "";
+    const distinctiveFeature = "";
     const note = getString(body.note);
-    const recoveryPhone = getString(body.recovery?.phone);
-    const recoveryEmail = getString(body.recovery?.email);
+    const recoveryPhone = normalizePhone(body.recovery?.phone);
+    const recoveryEmail = normalizeEmail(body.recovery?.email);
+    const recoveryEmailConfirm = normalizeEmail(body.recovery?.emailConfirm);
 
     const visibility = {
       showName: Boolean(body.visibility?.showName),
-      showPhone: Boolean(body.visibility?.showPhone),
-      showEmail: Boolean(body.visibility?.showEmail),
-      showCity: Boolean(body.visibility?.showCity),
+      showPhone: Boolean(body.visibility?.showPhone && phone),
+      showEmail: false,
+      showCity: Boolean(body.visibility?.showCity && city),
       showAddressDetail: false,
       showPetName: Boolean(body.visibility?.showPetName),
-      showNote: Boolean(body.visibility?.showNote)
+      showNote: Boolean(body.visibility?.showNote && note)
     };
 
     const contactOptions = {
@@ -124,16 +165,9 @@ export async function POST(request: Request, { params }: Params) {
         Boolean(phone)
     };
 
-    if (!tagName) {
-      return NextResponse.json(
-        { error: "İsim / etiket adı zorunludur." },
-        { status: 400 }
-      );
-    }
-
     if (!petName) {
       return NextResponse.json(
-        { error: "Ürün adı / kişi adı zorunludur." },
+        { error: "İsim zorunludur." },
         { status: 400 }
       );
     }
@@ -145,9 +179,37 @@ export async function POST(request: Request, { params }: Params) {
       );
     }
 
-    if (!recoveryPhone && !recoveryEmail) {
+    if (!recoveryEmail) {
       return NextResponse.json(
-        { error: "Kurtarma için en az bir bilgi girilmelidir." },
+        { error: "Kurtarma e-postası zorunludur." },
+        { status: 400 }
+      );
+    }
+
+    if (!recoveryEmailConfirm) {
+      return NextResponse.json(
+        { error: "Kurtarma e-postasını tekrar yazın." },
+        { status: 400 }
+      );
+    }
+
+    if (recoveryEmail !== recoveryEmailConfirm) {
+      return NextResponse.json(
+        { error: "Kurtarma e-postaları aynı olmalıdır." },
+        { status: 400 }
+      );
+    }
+
+    if (!isValidEmail(recoveryEmail)) {
+      return NextResponse.json(
+        { error: "Geçerli bir kurtarma e-postası girin." },
+        { status: 400 }
+      );
+    }
+
+    if (email && !isValidEmail(email)) {
+      return NextResponse.json(
+        { error: "Geçerli bir iletişim e-postası girin." },
         { status: 400 }
       );
     }

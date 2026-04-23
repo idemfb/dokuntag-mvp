@@ -11,17 +11,16 @@ function normalizeEmail(value: unknown) {
   return typeof value === "string" ? value.trim().toLowerCase() : "";
 }
 
-function getBaseUrl(request: NextRequest) {
+function getBaseUrl() {
   const envBaseUrl =
     process.env.NEXT_PUBLIC_BASE_URL?.trim() ||
-    process.env.NEXT_PUBLIC_SITE_URL?.trim() ||
-    "";
+    process.env.NEXT_PUBLIC_SITE_URL?.trim();
 
-  if (envBaseUrl) {
-    return envBaseUrl.replace(/\/+$/, "");
+  if (!envBaseUrl) {
+    throw new Error("BASE_URL tanımlı değil");
   }
 
-  return request.nextUrl.origin.replace(/\/+$/, "");
+  return envBaseUrl.replace(/\/+$/, "");
 }
 
 function getClientIp(request: NextRequest) {
@@ -99,7 +98,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (session) {
-      const baseUrl = getBaseUrl(request);
+      const baseUrl = getBaseUrl();
       const verifyLink = `${baseUrl}/my/list?token=${encodeURIComponent(
         session.token
       )}`;

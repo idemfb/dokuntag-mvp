@@ -2,11 +2,34 @@
 
 import { use, useEffect, useMemo, useState } from "react";
 
-type ProductType = "pet" | "item" | "key" | "person";
+type ProductType = "pet" | "item" | "key" | "person" | "other";
 type TransferStatus = "pending" | "used" | "expired" | "cancelled";
 
+type ProductSubtype =
+  | "cat"
+  | "dog"
+  | "bird"
+  | "pet_other"
+  | "house_key"
+  | "car_key"
+  | "office_key"
+  | "key_other"
+  | "girl_child"
+  | "boy_child"
+  | "woman"
+  | "man"
+  | "elder"
+  | "person_other"
+  | "bag"
+  | "wallet"
+  | "luggage"
+  | "phone_item"
+  | "tablet"
+  | "headphones"
+  | "item_other";
+
 type ProductSubtypeOption = {
-  value: string;
+  value: ProductSubtype;
   label: string;
 };
 
@@ -14,7 +37,7 @@ type TransferApiResponse = {
   success?: boolean;
   code?: string;
   productType?: ProductType;
-  productSubtype?: string;
+  productSubtype?: ProductSubtype | "";
   currentProfile?: {
     name?: string;
     ownerName?: string;
@@ -45,126 +68,44 @@ type TransferClaimResponse = {
   error?: string;
 };
 
-const CITY_OPTIONS = [
-  "Adana",
-  "Adıyaman",
-  "Afyonkarahisar",
-  "Ağrı",
-  "Aksaray",
-  "Amasya",
-  "Ankara",
-  "Antalya",
-  "Ardahan",
-  "Artvin",
-  "Aydın",
-  "Balıkesir",
-  "Bartın",
-  "Batman",
-  "Bayburt",
-  "Bilecik",
-  "Bingöl",
-  "Bitlis",
-  "Bolu",
-  "Burdur",
-  "Bursa",
-  "Çanakkale",
-  "Çankırı",
-  "Çorum",
-  "Denizli",
-  "Diyarbakır",
-  "Düzce",
-  "Edirne",
-  "Elazığ",
-  "Erzincan",
-  "Erzurum",
-  "Eskişehir",
-  "Gaziantep",
-  "Giresun",
-  "Gümüşhane",
-  "Hakkâri",
-  "Hatay",
-  "Iğdır",
-  "Isparta",
-  "İstanbul",
-  "İzmir",
-  "Kahramanmaraş",
-  "Karabük",
-  "Karaman",
-  "Kars",
-  "Kastamonu",
-  "Kayseri",
-  "Kilis",
-  "Kırıkkale",
-  "Kırklareli",
-  "Kırşehir",
-  "Kocaeli",
-  "Konya",
-  "Kütahya",
-  "Malatya",
-  "Manisa",
-  "Mardin",
-  "Mersin",
-  "Muğla",
-  "Muş",
-  "Nevşehir",
-  "Niğde",
-  "Ordu",
-  "Osmaniye",
-  "Rize",
-  "Sakarya",
-  "Samsun",
-  "Siirt",
-  "Sinop",
-  "Sivas",
-  "Şanlıurfa",
-  "Şırnak",
-  "Tekirdağ",
-  "Tokat",
-  "Trabzon",
-  "Tunceli",
-  "Uşak",
-  "Van",
-  "Yalova",
-  "Yozgat",
-  "Zonguldak"
-] as const;
-
 const SUBTYPE_OPTIONS: Record<ProductType, ProductSubtypeOption[]> = {
   pet: [
     { value: "cat", label: "Kedi" },
     { value: "dog", label: "Köpek" },
     { value: "bird", label: "Kuş" },
-    { value: "other", label: "Diğer" }
+    { value: "pet_other", label: "Diğer" }
   ],
   key: [
-    { value: "home-key", label: "Ev anahtarı" },
-    { value: "car-key", label: "Araba anahtarı" },
-    { value: "office-key", label: "Ofis anahtarı" },
-    { value: "other", label: "Diğer" }
+    { value: "house_key", label: "Ev anahtarı" },
+    { value: "car_key", label: "Araba anahtarı" },
+    { value: "office_key", label: "Ofis anahtarı" },
+    { value: "key_other", label: "Diğer" }
   ],
   person: [
-    { value: "girl-child", label: "Kız çocuk" },
-    { value: "boy-child", label: "Erkek çocuk" },
+    { value: "girl_child", label: "Kız çocuk" },
+    { value: "boy_child", label: "Erkek çocuk" },
     { value: "woman", label: "Kadın" },
     { value: "man", label: "Erkek" },
-    { value: "elderly", label: "Yaşlı" },
-    { value: "other", label: "Diğer" }
+    { value: "elder", label: "Yaşlı" },
+    { value: "person_other", label: "Diğer" }
   ],
   item: [
     { value: "bag", label: "Çanta" },
     { value: "wallet", label: "Cüzdan" },
-    { value: "suitcase", label: "Valiz" },
-    { value: "phone", label: "Telefon" },
+    { value: "luggage", label: "Valiz" },
+    { value: "phone_item", label: "Telefon" },
     { value: "tablet", label: "Tablet" },
     { value: "headphones", label: "Kulaklık" },
-    { value: "other", label: "Diğer" }
-  ]
+    { value: "item_other", label: "Diğer" }
+  ],
+  other: [{ value: "item_other", label: "Diğer" }]
 };
 
 function getProductTypeLabel(productType: ProductType) {
   if (productType === "pet") return "Evcil hayvan";
   if (productType === "key") return "Anahtar";
-  if (productType === "person") return "Kişi";
+  if (productType === "person") return "Birey";
+  if (productType === "other") return "Diğer";
   return "Eşya";
 }
 
@@ -172,32 +113,20 @@ function getPrimaryNameLabel(productType: ProductType) {
   if (productType === "pet") return "Evcil hayvan adı";
   if (productType === "person") return "Kişi adı";
   if (productType === "key") return "Anahtar adı";
-  return "Ürün adı";
+  if (productType === "other") return "Ad / başlık";
+  return "Eşya adı";
 }
 
 function getOwnerNameLabel(productType: ProductType) {
-  if (productType === "person") return "Yakını / sorumlusu";
+  if (productType === "person") return "Yakını";
   return "Sahibi";
-}
-
-function getSecondaryNameLabel(productType: ProductType) {
-  if (productType === "pet") return "Etiket başlığı";
-  if (productType === "person") return "Profil başlığı";
-  return "Etiket / kısa başlık";
-}
-
-function getDistinctiveFeaturePlaceholder(productType: ProductType) {
-  if (productType === "pet") return "Örn: sağ kulağında beyaz leke, mavi tasma";
-  if (productType === "key") return "Örn: kırmızı anahtarlık, metal halka";
-  if (productType === "person") return "Örn: mavi mont, siyah sırt çantası";
-  return "Örn: siyah çanta, köşesi hafif çizik";
 }
 
 function getSubtypeLabel(productType: ProductType) {
   if (productType === "pet") return "Tür";
   if (productType === "key") return "Anahtar türü";
   if (productType === "person") return "Kategori";
-  return "Eşya türü";
+  return "Kategori";
 }
 
 function normalizePhone(value: string) {
@@ -206,6 +135,11 @@ function normalizePhone(value: string) {
 
 function normalizeEmail(value: string) {
   return String(value || "").trim().toLowerCase();
+}
+
+function isValidEmail(value: string) {
+  if (!value) return false;
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 }
 
 function formatDate(value?: string) {
@@ -220,15 +154,48 @@ function formatDate(value?: string) {
   }).format(date);
 }
 
-function SectionTitle({ title, description }: { title: string; description?: string }) {
-  return (
-    <div>
-      <h2 className="text-lg font-semibold tracking-tight text-neutral-900">{title}</h2>
-      {description ? (
-        <p className="mt-1 text-sm leading-6 text-neutral-600">{description}</p>
-      ) : null}
-    </div>
-  );
+function getTheme(productType: ProductType) {
+  switch (productType) {
+    case "pet":
+      return {
+        wrapper:
+          "border-emerald-200 bg-[linear-gradient(180deg,#f4fbf7_0%,#ffffff_100%)]",
+        badge: "border-emerald-200 bg-emerald-50 text-emerald-700"
+      };
+    case "key":
+      return {
+        wrapper:
+          "border-amber-200 bg-[linear-gradient(180deg,#fffaf1_0%,#ffffff_100%)]",
+        badge: "border-amber-200 bg-amber-50 text-amber-700"
+      };
+    case "person":
+      return {
+        wrapper:
+          "border-blue-200 bg-[linear-gradient(180deg,#f5f9ff_0%,#ffffff_100%)]",
+        badge: "border-blue-200 bg-blue-50 text-blue-700"
+      };
+    case "other":
+      return {
+        wrapper:
+          "border-violet-200 bg-[linear-gradient(180deg,#faf7ff_0%,#ffffff_100%)]",
+        badge: "border-violet-200 bg-violet-50 text-violet-700"
+      };
+    default:
+      return {
+        wrapper:
+          "border-neutral-200 bg-[linear-gradient(180deg,#fafafa_0%,#ffffff_100%)]",
+        badge: "border-neutral-200 bg-neutral-50 text-neutral-700"
+      };
+  }
+}
+
+function getMainSiteUrl() {
+  const value =
+    process.env.NEXT_PUBLIC_MAIN_SITE_URL?.trim() ||
+    process.env.NEXT_PUBLIC_SITE_URL?.trim() ||
+    "https://dokuntag.com";
+
+  return value.replace(/\/+$/, "");
 }
 
 export default function TransferPage({
@@ -238,6 +205,7 @@ export default function TransferPage({
 }) {
   const resolvedParams = use(params);
   const token = resolvedParams.token;
+  const mainSiteUrl = getMainSiteUrl();
 
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -246,27 +214,20 @@ export default function TransferPage({
   const [loaded, setLoaded] = useState<TransferApiResponse | null>(null);
 
   const [productType, setProductType] = useState<ProductType>("item");
-  const [productSubtype, setProductSubtype] = useState("");
-  const [tagName, setTagName] = useState("");
+  const [productSubtype, setProductSubtype] = useState<ProductSubtype | "">("");
   const [ownerName, setOwnerName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
-  const [city, setCity] = useState("");
-  const [distinctiveFeature, setDistinctiveFeature] = useState("");
   const [petName, setPetName] = useState("");
   const [note, setNote] = useState("");
   const [recoveryPhone, setRecoveryPhone] = useState("");
   const [recoveryEmail, setRecoveryEmail] = useState("");
+  const [recoveryEmailConfirm, setRecoveryEmailConfirm] = useState("");
 
-  const [useRecoveryPhoneAsContact, setUseRecoveryPhoneAsContact] = useState(false);
-  const [useRecoveryEmailAsContact, setUseRecoveryEmailAsContact] = useState(false);
-
-  const [showName, setShowName] = useState(true);
-  const [showPhone, setShowPhone] = useState(false);
-  const [showEmail, setShowEmail] = useState(false);
-  const [showCity, setShowCity] = useState(false);
-  const [showPetName, setShowPetName] = useState(true);
-  const [showNote, setShowNote] = useState(false);
+  const [useRecoveryPhoneAsContact, setUseRecoveryPhoneAsContact] =
+    useState(false);
+  const [useRecoveryEmailAsContact, setUseRecoveryEmailAsContact] =
+    useState(false);
 
   const [allowDirectCall, setAllowDirectCall] = useState(false);
   const [allowDirectWhatsapp, setAllowDirectWhatsapp] = useState(false);
@@ -275,6 +236,13 @@ export default function TransferPage({
     () => SUBTYPE_OPTIONS[productType] ?? [],
     [productType]
   );
+
+  const theme = getTheme(productType);
+  const recoveryEmailError =
+    Boolean(error) &&
+    (error.toLowerCase().includes("kurtarma e-postası") ||
+      error.toLowerCase().includes("kurtarma e-postaları") ||
+      error.toLowerCase().includes("tekrar yazın"));
 
   useEffect(() => {
     let cancelled = false;
@@ -297,7 +265,7 @@ export default function TransferPage({
         if (!cancelled) {
           setLoaded(data);
           setProductType(data.productType || "item");
-          setProductSubtype(String(data.productSubtype || ""));
+          setProductSubtype((data.productSubtype || "") as ProductSubtype | "");
         }
       } catch (err) {
         if (!cancelled) {
@@ -318,7 +286,9 @@ export default function TransferPage({
   }, [token]);
 
   useEffect(() => {
-    const hasSubtype = allowedSubtypeOptions.some((item) => item.value === productSubtype);
+    const hasSubtype = allowedSubtypeOptions.some(
+      (item) => item.value === productSubtype
+    );
     if (!hasSubtype && productSubtype) {
       setProductSubtype("");
     }
@@ -326,35 +296,32 @@ export default function TransferPage({
 
   useEffect(() => {
     if (useRecoveryPhoneAsContact) {
-      setPhone(normalizePhone(recoveryPhone));
+      const normalized = normalizePhone(recoveryPhone);
+      if (phone !== normalized) {
+        setPhone(normalized);
+      }
+    } else if (phone && phone === normalizePhone(recoveryPhone)) {
+      setPhone("");
     }
-  }, [recoveryPhone, useRecoveryPhoneAsContact]);
+  }, [recoveryPhone, useRecoveryPhoneAsContact, phone]);
 
   useEffect(() => {
     if (useRecoveryEmailAsContact) {
-      setEmail(normalizeEmail(recoveryEmail));
+      const normalized = normalizeEmail(recoveryEmail);
+      if (email !== normalized) {
+        setEmail(normalized);
+      }
+    } else if (email && email === normalizeEmail(recoveryEmail)) {
+      setEmail("");
     }
-  }, [recoveryEmail, useRecoveryEmailAsContact]);
+  }, [recoveryEmail, useRecoveryEmailAsContact, email]);
 
   useEffect(() => {
     if (!phone) {
       setAllowDirectCall(false);
       setAllowDirectWhatsapp(false);
-      setShowPhone(false);
     }
   }, [phone]);
-
-  useEffect(() => {
-    if (!city) {
-      setShowCity(false);
-    }
-  }, [city]);
-
-  useEffect(() => {
-    if (!note) {
-      setShowNote(false);
-    }
-  }, [note]);
 
   const transferStatus = loaded?.transfer?.status;
   const expiresAtText = formatDate(loaded?.transfer?.expiresAt);
@@ -367,12 +334,45 @@ export default function TransferPage({
       setError("");
       setSuccess("");
 
+      const normalizedPetName = petName.trim();
+      const normalizedRecoveryEmail = normalizeEmail(recoveryEmail);
+      const normalizedRecoveryEmailConfirm = normalizeEmail(recoveryEmailConfirm);
+      const normalizedRecoveryPhone = normalizePhone(recoveryPhone);
+
       const resolvedPhone = useRecoveryPhoneAsContact
-        ? normalizePhone(recoveryPhone)
+        ? normalizedRecoveryPhone
         : normalizePhone(phone);
       const resolvedEmail = useRecoveryEmailAsContact
-        ? normalizeEmail(recoveryEmail)
+        ? normalizedRecoveryEmail
         : normalizeEmail(email);
+
+      if (!normalizedPetName) {
+        throw new Error("İsim zorunludur.");
+      }
+
+      if (!normalizedRecoveryEmail) {
+        throw new Error("Kurtarma e-postası zorunludur.");
+      }
+
+      if (!normalizedRecoveryEmailConfirm) {
+        throw new Error("Kurtarma e-postasını tekrar yazın.");
+      }
+
+      if (normalizedRecoveryEmail !== normalizedRecoveryEmailConfirm) {
+        throw new Error("Kurtarma e-postaları aynı olmalıdır.");
+      }
+
+      if (!isValidEmail(normalizedRecoveryEmail)) {
+        throw new Error("Geçerli bir kurtarma e-postası girin.");
+      }
+
+      if (resolvedEmail && !isValidEmail(resolvedEmail)) {
+        throw new Error("Geçerli bir iletişim e-postası girin.");
+      }
+
+      if (!resolvedPhone && !resolvedEmail) {
+        throw new Error("Telefon veya e-posta alanlarından en az biri zorunludur.");
+      }
 
       const res = await fetch(`/api/transfer/claim/${token}`, {
         method: "POST",
@@ -382,31 +382,33 @@ export default function TransferPage({
         body: JSON.stringify({
           productType,
           productSubtype,
-          name: tagName,
-          ownerName,
+          name: normalizedPetName,
+          ownerName: ownerName.trim(),
           phone: resolvedPhone,
           email: resolvedEmail,
-          city,
-          distinctiveFeature,
-          petName,
-          note,
+          city: "",
+          distinctiveFeature: "",
+          petName: normalizedPetName,
+          note: note.trim(),
           visibility: {
-            showName,
-            showPhone,
-            showEmail,
-            showCity,
+            showName: true,
+            showPhone: Boolean(resolvedPhone),
+            showEmail: false,
+            showCity: false,
             showAddressDetail: false,
-            showPetName,
-            showNote
+            showPetName: true,
+            showNote: Boolean(note.trim())
           },
           contactOptions: {
             allowDirectCall: Boolean(allowDirectCall && resolvedPhone),
-            allowDirectWhatsapp:
-              Boolean(allowDirectWhatsapp && allowDirectCall && resolvedPhone)
+            allowDirectWhatsapp: Boolean(
+              allowDirectWhatsapp && allowDirectCall && resolvedPhone
+            )
           },
           recovery: {
-            phone: normalizePhone(recoveryPhone),
-            email: normalizeEmail(recoveryEmail)
+            phone: normalizedRecoveryPhone,
+            email: normalizedRecoveryEmail,
+            emailConfirm: normalizedRecoveryEmailConfirm
           }
         })
       });
@@ -434,8 +436,8 @@ export default function TransferPage({
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-neutral-100 px-4 py-10">
-        <div className="mx-auto max-w-2xl rounded-[2rem] border border-neutral-200 bg-white p-6 shadow-sm">
+      <main className="min-h-screen bg-[#f5f5f3] px-4 py-8">
+        <div className="mx-auto max-w-md rounded-[1.5rem] border border-neutral-200 bg-white px-4 py-5 shadow-sm">
           <p className="text-sm text-neutral-600">Yükleniyor...</p>
         </div>
       </main>
@@ -444,13 +446,28 @@ export default function TransferPage({
 
   if (error && !loaded) {
     return (
-      <main className="min-h-screen bg-neutral-100 px-4 py-10">
-        <div className="mx-auto max-w-2xl rounded-[2rem] border border-red-200 bg-white p-6 shadow-sm">
-          <p className="text-sm uppercase tracking-[0.24em] text-red-500">Dokuntag Devir</p>
-          <h1 className="mt-2 text-2xl font-semibold text-red-800">
-            Devir bağlantısı kullanılamıyor
-          </h1>
-          <p className="mt-3 text-sm leading-6 text-red-700">{error}</p>
+      <main className="min-h-screen bg-[#f5f5f3] px-4 py-8">
+        <div className="mx-auto max-w-md space-y-3">
+          <div className="flex items-center justify-between gap-3 px-1">
+            <a
+              href={mainSiteUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="text-sm text-neutral-500 transition hover:text-neutral-900 hover:underline"
+            >
+              ← Dokuntag ana sayfa
+            </a>
+          </div>
+
+          <section className="rounded-[1.5rem] border border-red-200 bg-white px-4 py-4 shadow-sm">
+            <p className="text-xs uppercase tracking-[0.18em] text-red-500">
+              Dokuntag Devir
+            </p>
+            <h1 className="mt-1.5 text-2xl font-semibold tracking-tight text-red-800">
+              Devir bağlantısı kullanılamıyor
+            </h1>
+            <p className="mt-2.5 text-sm leading-6 text-red-700">{error}</p>
+          </section>
         </div>
       </main>
     );
@@ -458,36 +475,78 @@ export default function TransferPage({
 
   if (transferStatus && transferStatus !== "pending") {
     return (
-      <main className="min-h-screen bg-neutral-100 px-4 py-10">
-        <div className="mx-auto max-w-2xl rounded-[2rem] border border-amber-200 bg-white p-6 shadow-sm">
-          <p className="text-sm uppercase tracking-[0.24em] text-amber-600">Dokuntag Devir</p>
-          <h1 className="mt-2 text-2xl font-semibold text-neutral-900">
-            Bu bağlantı artık kullanılamaz
-          </h1>
-          <p className="mt-3 text-sm leading-6 text-neutral-700">Durum: {transferStatus}</p>
+      <main className="min-h-screen bg-[#f5f5f3] px-4 py-8">
+        <div className="mx-auto max-w-md space-y-3">
+          <div className="flex items-center justify-between gap-3 px-1">
+            <a
+              href={mainSiteUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="text-sm text-neutral-500 transition hover:text-neutral-900 hover:underline"
+            >
+              ← Dokuntag ana sayfa
+            </a>
+          </div>
+
+          <section className="rounded-[1.5rem] border border-amber-200 bg-white px-4 py-4 shadow-sm">
+            <p className="text-xs uppercase tracking-[0.18em] text-amber-600">
+              Dokuntag Devir
+            </p>
+            <h1 className="mt-1.5 text-2xl font-semibold tracking-tight text-neutral-900">
+              Bu bağlantı artık kullanılamaz
+            </h1>
+            <p className="mt-2.5 text-sm leading-6 text-neutral-700">
+              Durum: {transferStatus}
+            </p>
+          </section>
         </div>
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen bg-neutral-100 px-4 py-10 text-neutral-900">
-      <div className="mx-auto max-w-2xl space-y-5">
-        <section className="rounded-[2rem] border border-neutral-200 bg-white p-6 shadow-sm">
-          <p className="text-sm uppercase tracking-[0.24em] text-neutral-500">Dokuntag Devir</p>
-          <h1 className="mt-2 text-3xl font-semibold tracking-tight">Ürünü üzerinize alın</h1>
-          <p className="mt-3 text-sm leading-6 text-neutral-600">
-            Bu bağlantı ile ürünün yeni sahibi olarak kendi bilgilerinizi tanımlayabilirsiniz.
+    <main className="min-h-screen bg-[#f5f5f3] px-4 py-4 text-neutral-900">
+      <div className="mx-auto max-w-md space-y-3">
+        <div className="flex items-center justify-between gap-3 px-1">
+          <a
+            href={mainSiteUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="text-sm text-neutral-500 transition hover:text-neutral-900 hover:underline"
+          >
+            ← Dokuntag ana sayfa
+          </a>
+        </div>
+
+        <section
+          className={`rounded-[1.5rem] border px-4 py-4 shadow-sm ${theme.wrapper}`}
+        >
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-xs uppercase tracking-[0.18em] text-neutral-400">
+                Dokuntag Devir
+              </p>
+              <h1 className="mt-1.5 text-2xl font-semibold tracking-tight">
+                Hızlı devir kurulumu
+              </h1>
+            </div>
+
+            <span
+              className={`rounded-full border px-3 py-1 text-xs font-medium ${theme.badge}`}
+            >
+              {getProductTypeLabel(productType)}
+            </span>
+          </div>
+
+          <p className="mt-2.5 text-sm leading-6 text-neutral-600">
+            Ürünü üzerinize alın, bilgilerinizi girin ve yeni yönetim erişiminizi oluşturun.
           </p>
 
-          <div className="mt-5 flex flex-wrap gap-2">
-            <span className="rounded-full border border-neutral-300 bg-white px-3 py-1 text-xs font-medium text-neutral-700">
+          <div className="mt-3 flex flex-wrap gap-2">
+            <span className="rounded-full border border-white/70 bg-white/80 px-3 py-1 text-xs font-medium text-neutral-700">
               Kod: {loaded?.code || "-"}
             </span>
-            <span className="rounded-full border border-neutral-300 bg-white px-3 py-1 text-xs font-medium text-neutral-700">
-              Tip: {getProductTypeLabel(productType)}
-            </span>
-            <span className="rounded-full border border-neutral-300 bg-white px-3 py-1 text-xs font-medium text-neutral-700">
+            <span className="rounded-full border border-white/70 bg-white/80 px-3 py-1 text-xs font-medium text-neutral-700">
               Son kullanım: {expiresAtText}
             </span>
           </div>
@@ -506,270 +565,188 @@ export default function TransferPage({
         ) : null}
 
         <form
+          noValidate
           onSubmit={handleSubmit}
-          className="rounded-[2rem] border border-neutral-200 bg-white p-6 shadow-sm"
+          className="rounded-[1.5rem] border border-neutral-200 bg-white px-4 py-4 shadow-sm"
         >
-          <div className="grid gap-6">
-            <SectionTitle
-              title="Temel bilgiler"
-              description="Ürün size geçtiğinde herkese açık profilde kullanılacak ana bilgileri belirleyin."
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-2">
+
+  <select
+    value={productType}
+    onChange={(e) => setProductType(e.target.value as ProductType)}
+    className="min-w-0 rounded-2xl border border-neutral-300 bg-white px-3 py-2.5 text-sm truncate"
+  >
+    <option value="item">Eşya</option>
+    <option value="key">Anahtar</option>
+    <option value="pet">Evcil hayvan</option>
+    <option value="person">Birey</option>
+    <option value="other">Diğer</option>
+  </select>
+
+  <input
+    value={petName}
+    onChange={(e) => setPetName(e.target.value)}
+    placeholder={getPrimaryNameLabel(productType)}
+    className="min-w-0 rounded-2xl border border-neutral-300 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
+    required
+  />
+
+</div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(normalizeEmail(e.target.value))}
+                placeholder="İletişim e-postası"
+                disabled={useRecoveryEmailAsContact}
+                className="min-w-0 rounded-2xl border border-neutral-300 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200 disabled:cursor-not-allowed disabled:bg-neutral-100"
+              />
+
+              <input
+                value={phone}
+                onChange={(e) => setPhone(normalizePhone(e.target.value))}
+                placeholder="İletişim telefonu"
+                disabled={useRecoveryPhoneAsContact}
+                className="min-w-0 rounded-2xl border border-neutral-300 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200 disabled:cursor-not-allowed disabled:bg-neutral-100"
+              />
+            </div>
+
+            <textarea
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder="Kısa not"
+              className="min-h-[76px] w-full rounded-2xl border border-neutral-300 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
             />
 
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div>
-                <label className="mb-2 block text-sm font-medium">Ürün tipi</label>
-                <select
-                  value={productType}
-                  onChange={(e) => setProductType(e.target.value as ProductType)}
-                  className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none"
-                >
-                  <option value="item">Eşya</option>
-                  <option value="key">Anahtar</option>
-                  <option value="pet">Evcil hayvan</option>
-                  <option value="person">Kişi</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="mb-2 block text-sm font-medium">{getSubtypeLabel(productType)}</label>
-                <select
-                  value={productSubtype}
-                  onChange={(e) => setProductSubtype(e.target.value)}
-                  className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none"
-                >
-                  <option value="">Seçmek istemiyorum</option>
-                  {allowedSubtypeOptions.map((item) => (
-                    <option key={`${productType}-${item.value}`} value={item.value}>
-                      {item.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <div>
-              <label className="mb-2 block text-sm font-medium">
-                {getSecondaryNameLabel(productType)}
-              </label>
-              <input
-                value={tagName}
-                onChange={(e) => setTagName(e.target.value)}
-                className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none"
-                placeholder="Örn: Defne'nin anahtarı"
-                required
-              />
-            </div>
-
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div>
-                <label className="mb-2 block text-sm font-medium">
-                  {getPrimaryNameLabel(productType)}
-                </label>
-                <input
-                  value={petName}
-                  onChange={(e) => setPetName(e.target.value)}
-                  className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none"
-                  placeholder="Ana görünen isim"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="mb-2 block text-sm font-medium">
-                  {getOwnerNameLabel(productType)}
-                </label>
-                <input
-                  value={ownerName}
-                  onChange={(e) => setOwnerName(e.target.value)}
-                  className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none"
-                  placeholder="İsteğe bağlı"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="mb-2 block text-sm font-medium">Ayırt edici özellik</label>
-              <input
-                value={distinctiveFeature}
-                onChange={(e) => setDistinctiveFeature(e.target.value)}
-                className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none"
-                placeholder={getDistinctiveFeaturePlaceholder(productType)}
-              />
-            </div>
-
-            <div>
-              <label className="mb-2 block text-sm font-medium">Not</label>
-              <textarea
-                value={note}
-                onChange={(e) => setNote(e.target.value)}
-                className="min-h-[120px] w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none"
-                placeholder="İsterseniz ek bilgi yazabilirsiniz."
-              />
-            </div>
-
-            <SectionTitle
-              title="İletişim bilgileri"
-              description="Ürün size geçtiğinde bulunacak kişi size bu bilgiler üzerinden ulaşabilir."
-            />
-
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div>
-                <label className="mb-2 block text-sm font-medium">İletişim telefonu</label>
-                <input
-                  value={phone}
-                  onChange={(e) => setPhone(normalizePhone(e.target.value))}
-                  disabled={useRecoveryPhoneAsContact}
-                  className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none disabled:bg-neutral-100"
-                  placeholder="05xxxxxxxxx"
-                />
-              </div>
-
-              <div>
-                <label className="mb-2 block text-sm font-medium">İletişim e-postası</label>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(normalizeEmail(e.target.value))}
-                  disabled={useRecoveryEmailAsContact}
-                  className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none disabled:bg-neutral-100"
-                  placeholder="ornek@mail.com"
-                />
-              </div>
-            </div>
-
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div>
-                <label className="mb-2 block text-sm font-medium">Kurtarma telefonu</label>
-                <input
-                  value={recoveryPhone}
-                  onChange={(e) => setRecoveryPhone(normalizePhone(e.target.value))}
-                  className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none"
-                  placeholder="05xxxxxxxxx"
-                />
-                <label className="mt-3 flex items-center gap-2 text-sm text-neutral-700">
-                  <input
-                    type="checkbox"
-                    checked={useRecoveryPhoneAsContact}
-                    onChange={(e) => setUseRecoveryPhoneAsContact(e.target.checked)}
-                  />
-                  Kurtarma telefonunu iletişim telefonu olarak kullan
-                </label>
-              </div>
-
-              <div>
-                <label className="mb-2 block text-sm font-medium">Kurtarma e-postası</label>
-                <input
-                  type="email"
-                  value={recoveryEmail}
-                  onChange={(e) => setRecoveryEmail(normalizeEmail(e.target.value))}
-                  className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none"
-                  placeholder="ornek@mail.com"
-                />
-                <label className="mt-3 flex items-center gap-2 text-sm text-neutral-700">
-                  <input
-                    type="checkbox"
-                    checked={useRecoveryEmailAsContact}
-                    onChange={(e) => setUseRecoveryEmailAsContact(e.target.checked)}
-                  />
-                  Kurtarma e-postasını iletişim maili olarak kullan
-                </label>
-              </div>
-            </div>
-
-            <div>
-              <label className="mb-2 block text-sm font-medium">Şehir</label>
-              <select
-                value={city}
-                onChange={(e) => setCity(e.target.value)}
-                className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none"
-              >
-                <option value="">Seçmek istemiyorum</option>
-                {CITY_OPTIONS.map((item) => (
-                  <option key={item} value={item}>
-                    {item}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4">
-              <p className="text-sm font-medium text-amber-900">Adres bilgisi güvenlik için sistemde paylaşılmaz</p>
-              <p className="mt-2 text-sm leading-6 text-amber-800">
-                Bu bilgi size özeldir. Adres göstermek isterseniz bunu not alanına manuel olarak yazmanız gerekir.
+            <div className="rounded-[1.35rem] border border-neutral-200 bg-neutral-50 px-3 py-3">
+              <p className="text-sm font-medium text-neutral-900">
+                Hesap kurtarma
               </p>
-            </div>
+              <p className="mt-1 text-xs leading-5 text-neutral-500">
+                Yönetim erişimini tekrar alabilmeniz için kurtarma e-postası iki kez
+                aynı şekilde girilmelidir.
+              </p>
 
-            <div className="rounded-2xl border border-neutral-200 bg-neutral-50 p-4">
-              <p className="text-sm font-medium text-neutral-900">Herkese açık bilgiler</p>
-              <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                <label className="flex items-center gap-2 text-sm">
-                  <input type="checkbox" checked={showName} onChange={(e) => setShowName(e.target.checked)} />
-                  Sahip adı görünsün
-                </label>
-                <label className="flex items-center gap-2 text-sm">
+              <div className="mt-2.5 grid grid-cols-2 gap-2">
+                <div className="min-w-0">
                   <input
-                    type="checkbox"
-                    checked={showPhone}
-                    onChange={(e) => setShowPhone(e.target.checked)}
-                    disabled={!phone && !useRecoveryPhoneAsContact}
+                    type="email"
+                    value={recoveryEmail}
+                    onChange={(e) =>
+                      setRecoveryEmail(normalizeEmail(e.target.value))
+                    }
+                    placeholder="Kurtarma e-postası"
+                    className={`w-full min-w-0 rounded-2xl border bg-white px-3 py-2.5 text-sm outline-none transition focus:ring-2 ${
+                      recoveryEmailError
+                        ? "border-red-300 bg-red-50/40 focus:border-red-400 focus:ring-red-100"
+                        : "border-neutral-300 focus:border-neutral-500 focus:ring-neutral-200"
+                    }`}
                   />
-                  Telefon görünsün
-                </label>
-                <label className="flex items-center gap-2 text-sm">
+
                   <input
-                    type="checkbox"
-                    checked={showEmail}
-                    onChange={(e) => setShowEmail(e.target.checked)}
-                    disabled={!email && !useRecoveryEmailAsContact}
+                    type="email"
+                    value={recoveryEmailConfirm}
+                    onChange={(e) =>
+                      setRecoveryEmailConfirm(normalizeEmail(e.target.value))
+                    }
+                    placeholder="Kurtarma e-postasını tekrar yazın"
+                    className={`mt-2 w-full min-w-0 rounded-2xl border bg-white px-3 py-2.5 text-sm outline-none transition focus:ring-2 ${
+                      recoveryEmailError
+                        ? "border-red-300 bg-red-50/40 focus:border-red-400 focus:ring-red-100"
+                        : "border-neutral-300 focus:border-neutral-500 focus:ring-neutral-200"
+                    }`}
                   />
-                  E-posta görünsün
-                </label>
-                <label className="flex items-center gap-2 text-sm">
-                  <input type="checkbox" checked={showCity} onChange={(e) => setShowCity(e.target.checked)} disabled={!city} />
-                  Şehir görünsün
-                </label>
-                <label className="flex items-center gap-2 text-sm">
-                  <input type="checkbox" checked={showPetName} onChange={(e) => setShowPetName(e.target.checked)} />
-                  Ana isim görünsün
-                </label>
-                <label className="flex items-center gap-2 text-sm">
-                  <input type="checkbox" checked={showNote} onChange={(e) => setShowNote(e.target.checked)} disabled={!note} />
-                  Not görünsün
-                </label>
+
+                  <label className="mt-1.5 inline-flex items-center gap-2 text-xs text-neutral-700">
+                    <input
+                      type="checkbox"
+                      checked={useRecoveryEmailAsContact}
+                      onChange={(e) =>
+                        setUseRecoveryEmailAsContact(e.target.checked)
+                      }
+                    />
+                    İletişim için kullan
+                  </label>
+                </div>
+
+                <div className="min-w-0">
+                  <input
+                    value={recoveryPhone}
+                    onChange={(e) =>
+                      setRecoveryPhone(normalizePhone(e.target.value))
+                    }
+                    placeholder="Kurtarma telefonu"
+                    className="w-full min-w-0 rounded-2xl border border-neutral-300 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
+                  />
+                  <div className="mt-2 space-y-1">
+  <label className="flex items-center gap-2 text-xs">
+    <input
+      type="checkbox"
+      checked={allowDirectCall}
+      onChange={(e) => setAllowDirectCall(e.target.checked)}
+      disabled={!recoveryPhone}
+    />
+    Telefon açılsın
+  </label>
+
+  <label className="flex items-center gap-2 text-xs">
+    <input
+      type="checkbox"
+      checked={allowDirectWhatsapp}
+      onChange={(e) => setAllowDirectWhatsapp(e.target.checked)}
+      disabled={!allowDirectCall || !recoveryPhone}
+    />
+    WhatsApp açılsın
+  </label>
+</div>
+                  <label className="mt-1.5 inline-flex items-center gap-2 text-xs text-neutral-700">
+                    <input
+                      type="checkbox"
+                      checked={useRecoveryPhoneAsContact}
+                      onChange={(e) =>
+                        setUseRecoveryPhoneAsContact(e.target.checked)
+                      }
+                    />
+                    İletişim için kullan
+                  </label>
+                </div>
               </div>
             </div>
 
-            <div className="rounded-2xl border border-neutral-200 bg-neutral-50 p-4">
-              <p className="text-sm font-medium text-neutral-900">Hızlı iletişim</p>
-              <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                <label className="flex items-center gap-2 text-sm">
-                  <input
-                    type="checkbox"
-                    checked={allowDirectCall}
-                    onChange={(e) => setAllowDirectCall(e.target.checked)}
-                    disabled={!phone && !useRecoveryPhoneAsContact}
-                  />
-                  Telefonla ulaşılabilsin
-                </label>
-                <label className="flex items-center gap-2 text-sm">
-                  <input
-                    type="checkbox"
-                    checked={allowDirectWhatsapp}
-                    onChange={(e) => setAllowDirectWhatsapp(e.target.checked)}
-                    disabled={!allowDirectCall || (!phone && !useRecoveryPhoneAsContact)}
-                  />
-                  WhatsApp açılsın
-                </label>
-              </div>
-            </div>
-
+            
             <button
               type="submit"
               disabled={submitting}
-              className="rounded-2xl bg-neutral-900 px-5 py-4 text-sm font-medium text-white disabled:opacity-60"
+              className="w-full rounded-2xl bg-neutral-900 px-4 py-3 text-sm font-medium text-white transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {submitting ? "Tamamlanıyor..." : "Devri tamamla"}
+              {submitting ? "Devir tamamlanıyor..." : "Devri tamamla"}
+              
             </button>
+            <section className="rounded-[1.5rem] border border-neutral-200 bg-white px-4 py-4 shadow-sm">
+  <p className="text-sm font-medium text-neutral-900">
+    Dokuntag ile örnek profil ve kullanım akışını inceleyin.
+  </p>
+
+  <div className="mt-3 grid grid-cols-2 gap-2">
+    <button
+      type="button"
+      onClick={() => window.location.href = "/demo"}
+      className="rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm"
+    >
+      Demo sayfası
+    </button>
+
+    <button
+      type="button"
+      onClick={() => window.location.href = "/how-it-works"}
+      className="rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm"
+    >
+      Nasıl çalışır
+    </button>
+  </div>
+</section>
           </div>
         </form>
       </div>
