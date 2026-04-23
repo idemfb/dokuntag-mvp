@@ -1,6 +1,6 @@
 import { verifyRecoverySessionTokenAsync } from "@/lib/tags";
 
-type ProductType = "pet" | "item" | "key" | "person";
+type ProductType = "pet" | "item" | "key" | "person" | "other";
 type TagStatus = "unclaimed" | "active" | "inactive";
 
 function getMainSiteUrl() {
