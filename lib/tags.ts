@@ -1,6 +1,6 @@
-import { readDB, readDBAsync, writeDB, writeDBAsync } from "@/lib/db";
+﻿import { readDB, readDBAsync, writeDB, writeDBAsync } from "@/lib/db";
 
-export type ProductType = "pet" | "item" | "key" | "person" | "other";
+export type ProductType = "pet" | "item" | "key" | "person" | "other" | "other";
 export type TagStatus = "unclaimed" | "active" | "inactive";
 export type TransferStatus = "pending" | "used" | "expired" | "cancelled";
 export type RecoveryEntryType = "my" | "recover";
@@ -1507,7 +1507,7 @@ export function createTransferByManageToken(input: {
   const normalizedToken = String(input.manageToken || "").trim();
 
   if (!normalizedCode || !normalizedToken) {
-    throw new Error("Geçersiz devir isteği.");
+    throw new Error("GeÃ§ersiz devir isteÄŸi.");
   }
 
   const products = cleanupTransientStates();
@@ -1572,7 +1572,7 @@ export async function createTransferByManageTokenAsync(input: {
   const normalizedToken = String(input.manageToken || "").trim();
 
   if (!normalizedCode || !normalizedToken) {
-    throw new Error("Geçersiz devir isteği.");
+    throw new Error("GeÃ§ersiz devir isteÄŸi.");
   }
 
   const products = await cleanupTransientStatesAsync();
@@ -1709,7 +1709,7 @@ export async function getTransferByTokenAsync(token: string) {
 export function claimTransfer(input: ClaimTransferInput) {
   const normalizedToken = String(input.transferToken || "").trim();
   if (!normalizedToken) {
-    throw new Error("Geçersiz devir bağlantısı.");
+    throw new Error("GeÃ§ersiz devir baÄŸlantÄ±sÄ±.");
   }
 
   const products = cleanupTransientStates();
@@ -1807,7 +1807,7 @@ export function claimTransfer(input: ClaimTransferInput) {
 export async function claimTransferAsync(input: ClaimTransferInput) {
   const normalizedToken = String(input.transferToken || "").trim();
   if (!normalizedToken) {
-    throw new Error("Geçersiz devir bağlantısı.");
+    throw new Error("GeÃ§ersiz devir baÄŸlantÄ±sÄ±.");
   }
 
   const products = await cleanupTransientStatesAsync();
@@ -1910,7 +1910,7 @@ export function cancelTransferByManageToken(input: {
   const normalizedToken = String(input.manageToken || "").trim();
 
   if (!normalizedCode || !normalizedToken) {
-    throw new Error("Geçersiz iptal isteği.");
+    throw new Error("GeÃ§ersiz iptal isteÄŸi.");
   }
 
   const products = cleanupTransientStates();
@@ -1963,7 +1963,7 @@ export async function cancelTransferByManageTokenAsync(input: {
   const normalizedToken = String(input.manageToken || "").trim();
 
   if (!normalizedCode || !normalizedToken) {
-    throw new Error("Geçersiz iptal isteği.");
+    throw new Error("GeÃ§ersiz iptal isteÄŸi.");
   }
 
   const products = await cleanupTransientStatesAsync();
@@ -2511,3 +2511,4 @@ export function runFullCleanup() {
     count: nextProducts.length
   };
 }
+

@@ -1,4 +1,4 @@
-import { verifyRecoverySessionTokenAsync } from "@/lib/tags";
+﻿import { verifyRecoverySessionTokenAsync } from "@/lib/tags";
 
 type ProductType = "pet" | "item" | "key" | "person" | "other";
 type TagStatus = "unclaimed" | "active" | "inactive";
@@ -16,6 +16,7 @@ function getProductTypeLabel(productType: ProductType) {
   if (productType === "pet") return "Evcil hayvan";
   if (productType === "key") return "Anahtar";
   if (productType === "person") return "Birey";
+  if (productType === "other") return "Diğer";
   return "Eşya";
 }
 
@@ -44,14 +45,14 @@ function getRemainingTimeText(expiresAt: string) {
 
   const totalMinutes = Math.ceil(diff / (1000 * 60));
 
-  if (totalMinutes <= 0) return "Süre doldu";
-  if (totalMinutes < 60) return `${totalMinutes} dakika kaldı`;
+  if (totalMinutes <= 0) return "SÃ¼re doldu";
+  if (totalMinutes < 60) return `${totalMinutes} dakika kaldÄ±`;
 
   const hours = Math.floor(totalMinutes / 60);
   const minutes = totalMinutes % 60;
 
-  if (minutes === 0) return `${hours} saat kaldı`;
-  return `${hours} saat ${minutes} dakika kaldı`;
+  if (minutes === 0) return `${hours} saat kaldÄ±`;
+  return `${hours} saat ${minutes} dakika kaldÄ±`;
 }
 
 function EmptyState({
@@ -79,7 +80,7 @@ function EmptyState({
             href="/my"
             className="rounded-2xl bg-neutral-900 px-4 py-3 text-sm font-medium text-white transition hover:bg-neutral-800"
           >
-            Ürünlerim girişine dön
+            ÃœrÃ¼nlerim giriÅŸine dÃ¶n
           </a>
 
           <a
@@ -112,8 +113,8 @@ export default async function MyListPage({
       <main className="min-h-screen bg-[linear-gradient(180deg,#fbfbfa_0%,#fdfdfc_55%,#ffffff_100%)] px-4 py-10 text-neutral-900">
         <div className="mx-auto max-w-3xl space-y-6">
           <EmptyState
-            title="Bağlantı eksik"
-            text="Güvenli giriş bağlantısında gerekli bilgi bulunamadı. E-postanızdaki bağlantıyı yeniden açın."
+            title="BaÄŸlantÄ± eksik"
+            text="GÃ¼venli giriÅŸ baÄŸlantÄ±sÄ±nda gerekli bilgi bulunamadÄ±. E-postanÄ±zdaki baÄŸlantÄ±yÄ± yeniden aÃ§Ä±n."
           />
         </div>
       </main>
@@ -127,8 +128,8 @@ export default async function MyListPage({
       <main className="min-h-screen bg-[linear-gradient(180deg,#fbfbfa_0%,#fdfdfc_55%,#ffffff_100%)] px-4 py-10 text-neutral-900">
         <div className="mx-auto max-w-3xl space-y-6">
           <EmptyState
-            title="Bağlantı geçersiz"
-            text="Bu bağlantı bulunamadı veya artık kullanılamıyor. Yeni bir güvenli giriş bağlantısı istemeniz gerekir."
+            title="BaÄŸlantÄ± geÃ§ersiz"
+            text="Bu baÄŸlantÄ± bulunamadÄ± veya artÄ±k kullanÄ±lamÄ±yor. Yeni bir gÃ¼venli giriÅŸ baÄŸlantÄ±sÄ± istemeniz gerekir."
           />
         </div>
       </main>
@@ -140,8 +141,8 @@ export default async function MyListPage({
       <main className="min-h-screen bg-[linear-gradient(180deg,#fbfbfa_0%,#fdfdfc_55%,#ffffff_100%)] px-4 py-10 text-neutral-900">
         <div className="mx-auto max-w-3xl space-y-6">
           <EmptyState
-            title="Bağlantının süresi doldu"
-            text="Bu bağlantının süresi dolmuş. Ürünlerim sayfasından yeni bir giriş bağlantısı isteyebilirsiniz."
+            title="BaÄŸlantÄ±nÄ±n sÃ¼resi doldu"
+            text="Bu baÄŸlantÄ±nÄ±n sÃ¼resi dolmuÅŸ. ÃœrÃ¼nlerim sayfasÄ±ndan yeni bir giriÅŸ baÄŸlantÄ±sÄ± isteyebilirsiniz."
           />
         </div>
       </main>
@@ -153,8 +154,8 @@ export default async function MyListPage({
       <main className="min-h-screen bg-[linear-gradient(180deg,#fbfbfa_0%,#fdfdfc_55%,#ffffff_100%)] px-4 py-10 text-neutral-900">
         <div className="mx-auto max-w-3xl space-y-6">
           <EmptyState
-            title="Bağlantı artık kullanılamıyor"
-            text="Bu bağlantı artık geçerli değil. Ürünlerim sayfasından yeni bir güvenli giriş bağlantısı isteyebilirsiniz."
+            title="BaÄŸlantÄ± artÄ±k kullanÄ±lamÄ±yor"
+            text="Bu baÄŸlantÄ± artÄ±k geÃ§erli deÄŸil. ÃœrÃ¼nlerim sayfasÄ±ndan yeni bir gÃ¼venli giriÅŸ baÄŸlantÄ±sÄ± isteyebilirsiniz."
           />
         </div>
       </main>
@@ -171,7 +172,7 @@ export default async function MyListPage({
                 href="/my"
                 className="text-sm text-neutral-500 transition hover:text-neutral-900 hover:underline"
               >
-                ← Ürünlerim girişine dön
+                â† ÃœrÃ¼nlerim giriÅŸine dÃ¶n
               </a>
 
               <a
@@ -189,17 +190,17 @@ export default async function MyListPage({
             </p>
 
             <h1 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">
-              Ürünlerim
+              ÃœrÃ¼nlerim
             </h1>
 
             <p className="mt-3 max-w-2xl text-sm leading-6 text-neutral-600">
-              Bu güvenli bağlantı ile erişebileceğiniz ürünler aşağıda listelenmiştir.
+              Bu gÃ¼venli baÄŸlantÄ± ile eriÅŸebileceÄŸiniz Ã¼rÃ¼nler aÅŸaÄŸÄ±da listelenmiÅŸtir.
             </p>
           </div>
 
           <div className="px-6 py-6">
             <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-4 text-sm leading-6 text-emerald-800">
-              Erişim doğrulandı. Aşağıdaki ürünler aynı e-posta adresine bağlıdır.
+              EriÅŸim doÄŸrulandÄ±. AÅŸaÄŸÄ±daki Ã¼rÃ¼nler aynÄ± e-posta adresine baÄŸlÄ±dÄ±r.
             </div>
 
             <div className="mt-4 grid gap-3 md:grid-cols-2">
@@ -209,9 +210,9 @@ export default async function MyListPage({
               </div>
 
               <div className="rounded-2xl border border-blue-200 bg-blue-50 px-4 py-4 text-sm leading-6 text-blue-900">
-                <div>Bu giriş bağlantısı sınırlı süreyle kullanılabilir.</div>
+                <div>Bu giriÅŸ baÄŸlantÄ±sÄ± sÄ±nÄ±rlÄ± sÃ¼reyle kullanÄ±labilir.</div>
                 <div className="mt-1 font-medium">
-                  Kalan süre: {getRemainingTimeText(session.expiresAt)}
+                  Kalan sÃ¼re: {getRemainingTimeText(session.expiresAt)}
                 </div>
               </div>
             </div>
@@ -255,7 +256,7 @@ export default async function MyListPage({
                   )}&code=${encodeURIComponent(item.code)}`}
                   className="inline-flex w-full items-center justify-center rounded-lg bg-neutral-900 px-3 py-2 text-xs font-medium text-white transition hover:bg-neutral-800"
                 >
-                  Yönet
+                  YÃ¶net
                 </a>
               </div>
             </article>
@@ -263,10 +264,11 @@ export default async function MyListPage({
         </section>
 
         <div className="mx-auto max-w-4xl rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm leading-6 text-amber-800">
-          Bu bağlantı süre dolana kadar bağlı ürünleriniz arasında geçiş yapabilir.
-          Süre dolduğunda Ürünlerim sayfasından yeni giriş bağlantısı isteyebilirsiniz.
+          Bu baÄŸlantÄ± sÃ¼re dolana kadar baÄŸlÄ± Ã¼rÃ¼nleriniz arasÄ±nda geÃ§iÅŸ yapabilir.
+          SÃ¼re dolduÄŸunda ÃœrÃ¼nlerim sayfasÄ±ndan yeni giriÅŸ baÄŸlantÄ±sÄ± isteyebilirsiniz.
         </div>
       </div>
     </main>
   );
 }
+

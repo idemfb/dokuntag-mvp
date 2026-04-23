@@ -126,6 +126,7 @@ function getSubtypeLabel(productType: ProductType) {
   if (productType === "pet") return "Tür";
   if (productType === "key") return "Anahtar türü";
   if (productType === "person") return "Kategori";
+  if (productType === "other") return "Diğer";
   return "Kategori";
 }
 

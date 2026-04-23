@@ -15,6 +15,8 @@ type SetupForm = {
   recoveryEmail: string;
   useRecoveryPhoneForContact: boolean;
   useRecoveryEmailForContact: boolean;
+  allowDirectCall: boolean;
+  allowDirectWhatsapp: boolean;
 };
 
 type Props = {

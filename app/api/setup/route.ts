@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
+﻿import { NextRequest, NextResponse } from "next/server";
 import { findTagByCode, upsertTag } from "@/lib/tags";
 
-type ProductType = "pet" | "item" | "key" | "person";
+type ProductType = "pet" | "item" | "key" | "person" | "other" | "other";
 
 type SetupBody = {
   code?: string;
@@ -29,30 +29,35 @@ type SetupBody = {
 
 const ALERT_OPTIONS_BY_TYPE: Record<ProductType, string[]> = {
   pet: [
-    "Acil bana ulaşın",
-    "Hayvanım hasta",
+    "Acil bana ulaÅŸÄ±n",
+    "HayvanÄ±m hasta",
     "Alerjisi var",
-    "Ürkek / yaklaşmayın",
-    "Ödül verilecektir"
+    "Ãœrkek / yaklaÅŸmayÄ±n",
+    "Ã–dÃ¼l verilecektir"
   ],
   item: [
-    "Acil bana ulaşın",
-    "Lütfen benimle iletişime geçin",
-    "İçinde önemli eşya var",
-    "Ödül verilecektir"
+    "Acil bana ulaÅŸÄ±n",
+    "LÃ¼tfen benimle iletiÅŸime geÃ§in",
+    "Ä°Ã§inde Ã¶nemli eÅŸya var",
+    "Ã–dÃ¼l verilecektir"
   ],
   key: [
-    "Acil bana ulaşın",
-    "Lütfen benimle iletişime geçin",
-    "Önemli anahtar",
-    "Ödül verilecektir"
+    "Acil bana ulaÅŸÄ±n",
+    "LÃ¼tfen benimle iletiÅŸime geÃ§in",
+    "Ã–nemli anahtar",
+    "Ã–dÃ¼l verilecektir"
   ],
   person: [
-    "Acil yakınıma ulaşın",
-    "Sağlık durumu için bilgi verin",
-    "Kaybolursa lütfen haber verin",
-    "Ödül verilecektir"
-  ]
+    "Acil yakÄ±nÄ±ma ulaÅŸÄ±n",
+    "SaÄŸlÄ±k durumu iÃ§in bilgi verin",
+    "Kaybolursa lÃ¼tfen haber verin",
+    "Ã–dÃ¼l verilecektir"
+  ],
+  other: [
+  "Acil bana ulaşın",
+  "Lütfen benimle iletişime geçin",
+  "Önemli bilgi var"
+]
 };
 
 function normalizeProductType(value: unknown): ProductType {
@@ -102,7 +107,7 @@ export async function POST(req: NextRequest) {
 
     if (!existing) {
       return NextResponse.json(
-        { ok: false, error: "Bu kod sistemde bulunamadı." },
+        { ok: false, error: "Bu kod sistemde bulunamadÄ±." },
         { status: 404 }
       );
     }
@@ -112,7 +117,7 @@ export async function POST(req: NextRequest) {
         {
           ok: false,
           error:
-            "Bu ürün zaten aktif. Eğer size aitse kurtarma veya ürünlerim alanından yönetim erişimi alabilirsiniz."
+            "Bu Ã¼rÃ¼n zaten aktif. EÄŸer size aitse kurtarma veya Ã¼rÃ¼nlerim alanÄ±ndan yÃ¶netim eriÅŸimi alabilirsiniz."
         },
         { status: 409 }
       );
@@ -173,3 +178,4 @@ export async function POST(req: NextRequest) {
     );
   }
 }
+
