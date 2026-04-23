@@ -105,7 +105,6 @@ export async function GET(request: Request, { params }: Params) {
       success: true,
       code: transfer.code,
       productType: transfer.productType,
-      productSubtype: transfer.productSubtype || "",
       currentProfile: transfer.currentProfile,
       transfer: transfer.transfer
     });
