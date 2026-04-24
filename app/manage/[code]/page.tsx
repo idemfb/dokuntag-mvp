@@ -1939,16 +1939,16 @@ if (
     </span>
 
     <button
-      type="button"
-      onClick={handleSubmit}
-      disabled={saving}
-      className="shrink-0 rounded-xl bg-neutral-900 px-3 py-2 text-xs font-semibold text-white transition hover:bg-neutral-800 disabled:opacity-50"
-    >
-      {saving ? "Kaydediliyor..." : "Kaydet"}
-    </button>
+  type="submit"
+  form="manage-form"
+  disabled={saving}
+  className="shrink-0 rounded-xl bg-neutral-900 px-3 py-2 text-xs font-semibold text-white transition hover:bg-neutral-800 disabled:opacity-50"
+>
+  {saving ? "Kaydediliyor..." : "Kaydet"}
+</button>
   </div>
 ) : null} 
-        <form noValidate onSubmit={handleSubmit} className="space-y-4">
+        <form id="manage-form" noValidate onSubmit={handleSubmit} className="space-y-4">
           <SectionCard
             id="basic"
             title="Profil bilgileri"
