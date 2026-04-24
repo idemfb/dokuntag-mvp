@@ -550,7 +550,7 @@ function Field({
   return (
     <div>
       <div className="mb-2 flex items-center gap-2">
-        <label className="min-w-0 truncate text-sm font-medium text-neutral-900">
+        <label className="text-sm font-medium text-neutral-900 leading-tight">
           {label}
         </label>
         {optional ? (
@@ -1997,7 +1997,7 @@ if (
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <div className="mb-2 flex min-h-[44px] items-center justify-between gap-2">
-                    <label className="min-w-0 truncate text-sm font-medium text-neutral-900">
+                    <label className="text-sm font-medium text-neutral-900 leading-tight">
                       {getPrimaryNameLabel(productType)}
                     </label>
 
@@ -2019,7 +2019,7 @@ if (
 
                 <div>
                   <div className="mb-2 flex min-h-[44px] items-center justify-between gap-2">
-                    <label className="min-w-0 truncate text-sm font-medium text-neutral-900">
+                    <label className="text-sm font-medium text-neutral-900 leading-tight">
                       {getOwnerNameLabel(productType)}
                     </label>
 
@@ -2067,7 +2067,7 @@ if (
 
                 <div>
                   <div className="mb-2 flex items-center gap-2">
-                    <label className="min-w-0 truncate text-sm font-medium text-neutral-900">
+                    <label className="text-sm font-medium text-neutral-900 leading-tight">
                       Hızlı notlar
                     </label>
                     <span className="text-xs text-neutral-400">Opsiyonel</span>
