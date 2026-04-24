@@ -126,8 +126,23 @@ function getSubtypeLabel(productType: ProductType) {
   if (productType === "pet") return "Tür";
   if (productType === "key") return "Anahtar türü";
   if (productType === "person") return "Kategori";
-  if (productType === "other") return "Diğer";
   return "Kategori";
+}
+
+function getHeaderDescription(productType: ProductType) {
+  if (productType === "pet") {
+    return "Evcil hayvanı devralmak için temel bilgileri girin ve yeni yönetim erişiminizi oluşturun.";
+  }
+
+  if (productType === "person") {
+    return "Bu profili devralarak ihtiyaç halinde size veya yakınınıza ulaşılmasını sağlayabilirsiniz.";
+  }
+
+  if (productType === "key") {
+    return "Anahtarı devralmak için adres paylaşmadan güvenli iletişim bilgilerinizi girin.";
+  }
+
+  return "Ürünü devralmak için temel bilgileri girin ve yeni yönetim erişiminizi oluşturun.";
 }
 
 function normalizePhone(value: string) {
@@ -218,17 +233,10 @@ export default function TransferPage({
   const [productSubtype, setProductSubtype] = useState<ProductSubtype | "">("");
   const [ownerName, setOwnerName] = useState("");
   const [phone, setPhone] = useState("");
-  const [email, setEmail] = useState("");
   const [petName, setPetName] = useState("");
   const [note, setNote] = useState("");
-  const [recoveryPhone, setRecoveryPhone] = useState("");
   const [recoveryEmail, setRecoveryEmail] = useState("");
   const [recoveryEmailConfirm, setRecoveryEmailConfirm] = useState("");
-
-  const [useRecoveryPhoneAsContact, setUseRecoveryPhoneAsContact] =
-    useState(false);
-  const [useRecoveryEmailAsContact, setUseRecoveryEmailAsContact] =
-    useState(false);
 
   const [allowDirectCall, setAllowDirectCall] = useState(false);
   const [allowDirectWhatsapp, setAllowDirectWhatsapp] = useState(false);
@@ -290,32 +298,11 @@ export default function TransferPage({
     const hasSubtype = allowedSubtypeOptions.some(
       (item) => item.value === productSubtype
     );
+
     if (!hasSubtype && productSubtype) {
       setProductSubtype("");
     }
   }, [allowedSubtypeOptions, productSubtype]);
-
-  useEffect(() => {
-    if (useRecoveryPhoneAsContact) {
-      const normalized = normalizePhone(recoveryPhone);
-      if (phone !== normalized) {
-        setPhone(normalized);
-      }
-    } else if (phone && phone === normalizePhone(recoveryPhone)) {
-      setPhone("");
-    }
-  }, [recoveryPhone, useRecoveryPhoneAsContact, phone]);
-
-  useEffect(() => {
-    if (useRecoveryEmailAsContact) {
-      const normalized = normalizeEmail(recoveryEmail);
-      if (email !== normalized) {
-        setEmail(normalized);
-      }
-    } else if (email && email === normalizeEmail(recoveryEmail)) {
-      setEmail("");
-    }
-  }, [recoveryEmail, useRecoveryEmailAsContact, email]);
 
   useEffect(() => {
     if (!phone) {
@@ -336,16 +323,9 @@ export default function TransferPage({
       setSuccess("");
 
       const normalizedPetName = petName.trim();
+      const normalizedPhone = normalizePhone(phone);
       const normalizedRecoveryEmail = normalizeEmail(recoveryEmail);
       const normalizedRecoveryEmailConfirm = normalizeEmail(recoveryEmailConfirm);
-      const normalizedRecoveryPhone = normalizePhone(recoveryPhone);
-
-      const resolvedPhone = useRecoveryPhoneAsContact
-        ? normalizedRecoveryPhone
-        : normalizePhone(phone);
-      const resolvedEmail = useRecoveryEmailAsContact
-        ? normalizedRecoveryEmail
-        : normalizeEmail(email);
 
       if (!normalizedPetName) {
         throw new Error("İsim zorunludur.");
@@ -367,14 +347,6 @@ export default function TransferPage({
         throw new Error("Geçerli bir kurtarma e-postası girin.");
       }
 
-      if (resolvedEmail && !isValidEmail(resolvedEmail)) {
-        throw new Error("Geçerli bir iletişim e-postası girin.");
-      }
-
-      if (!resolvedPhone && !resolvedEmail) {
-        throw new Error("Telefon veya e-posta alanlarından en az biri zorunludur.");
-      }
-
       const res = await fetch(`/api/transfer/claim/${token}`, {
         method: "POST",
         headers: {
@@ -385,15 +357,15 @@ export default function TransferPage({
           productSubtype,
           name: normalizedPetName,
           ownerName: ownerName.trim(),
-          phone: resolvedPhone,
-          email: resolvedEmail,
+          phone: normalizedPhone,
+          email: normalizedRecoveryEmail,
           city: "",
           distinctiveFeature: "",
           petName: normalizedPetName,
           note: note.trim(),
           visibility: {
-            showName: true,
-            showPhone: Boolean(resolvedPhone),
+            showName: Boolean(ownerName.trim()),
+            showPhone: Boolean(normalizedPhone),
             showEmail: false,
             showCity: false,
             showAddressDetail: false,
@@ -401,13 +373,11 @@ export default function TransferPage({
             showNote: Boolean(note.trim())
           },
           contactOptions: {
-            allowDirectCall: Boolean(allowDirectCall && resolvedPhone),
-            allowDirectWhatsapp: Boolean(
-              allowDirectWhatsapp && allowDirectCall && resolvedPhone
-            )
+            allowDirectCall: Boolean(allowDirectCall && normalizedPhone),
+            allowDirectWhatsapp: Boolean(allowDirectWhatsapp && normalizedPhone)
           },
           recovery: {
-            phone: normalizedRecoveryPhone,
+            phone: "",
             email: normalizedRecoveryEmail,
             emailConfirm: normalizedRecoveryEmailConfirm
           }
@@ -507,7 +477,7 @@ export default function TransferPage({
 
   return (
     <main className="min-h-screen bg-[#f5f5f3] px-4 py-4 text-neutral-900">
-      <div className="mx-auto max-w-md space-y-3">
+      <div className="mx-auto max-w-md space-y-2 md:space-y-3">
         <div className="flex items-center justify-between gap-3 px-1">
           <a
             href={mainSiteUrl}
@@ -520,7 +490,7 @@ export default function TransferPage({
         </div>
 
         <section
-          className={`rounded-[1.5rem] border px-4 py-4 shadow-sm ${theme.wrapper}`}
+          className={`rounded-[1.5rem] border px-4 py-3.5 shadow-sm ${theme.wrapper}`}
         >
           <div className="flex items-start justify-between gap-3">
             <div>
@@ -528,29 +498,45 @@ export default function TransferPage({
                 Dokuntag Devir
               </p>
               <h1 className="mt-1.5 text-2xl font-semibold tracking-tight">
-                Hızlı devir kurulumu
+                Hızlı Devir Kurulumu 
               </h1>
             </div>
 
-            <span
-              className={`rounded-full border px-3 py-1 text-xs font-medium ${theme.badge}`}
-            >
-              {getProductTypeLabel(productType)}
-            </span>
+            
           </div>
 
-          <p className="mt-2.5 text-sm leading-6 text-neutral-600">
-            Ürünü üzerinize alın, bilgilerinizi girin ve yeni yönetim erişiminizi oluşturun.
+          <p className="mt-2 text-sm leading-6 text-neutral-600">
+            {getHeaderDescription(productType)}
           </p>
 
-          <div className="mt-3 flex flex-wrap gap-2">
-            <span className="rounded-full border border-white/70 bg-white/80 px-3 py-1 text-xs font-medium text-neutral-700">
-              Kod: {loaded?.code || "-"}
-            </span>
-            <span className="rounded-full border border-white/70 bg-white/80 px-3 py-1 text-xs font-medium text-neutral-700">
-              Son kullanım: {expiresAtText}
-            </span>
-          </div>
+          <div className="mt-3 grid grid-cols-3 gap-2">
+  <span
+    className={`min-w-0 text-center truncate rounded-full border px-2 py-1 text-xs font-medium ${theme.badge}`}
+  >
+    Kod: {loaded?.code || "-"}
+  </span>
+
+  <span
+    className={`min-w-0 text-center truncate rounded-full border px-2 py-1 text-xs font-medium ${theme.badge}`}
+  >
+    {getProductTypeLabel(productType)}
+  </span>
+
+  <span
+    className={`min-w-0 text-center truncate rounded-full border px-2 py-1 text-xs font-medium ${theme.badge}`}
+  >
+    {expiresAtText}
+  </span>
+</div>
+        </section>
+
+        <section className="rounded-[1.35rem] border border-blue-200 bg-blue-50 px-3 py-3">
+          <p className="text-sm font-medium text-blue-950">
+            Bu sayfa hızlı kurulum içindir
+          </p>
+          <p className="mt-0.5 text-xs leading-5 text-blue-900">
+            İsterseniz daha sonra yönetim sayfasından detayları ekleyebilirsiniz.
+          </p>
         </section>
 
         {success ? (
@@ -570,184 +556,178 @@ export default function TransferPage({
           onSubmit={handleSubmit}
           className="rounded-[1.5rem] border border-neutral-200 bg-white px-4 py-4 shadow-sm"
         >
-          <div className="space-y-3">
+          <div className="space-y-2 md:space-y-2.5">
             <div className="grid grid-cols-2 gap-2">
+              <select
+                value={productType}
+                onChange={(e) => setProductType(e.target.value as ProductType)}
+                className="min-w-0 truncate rounded-2xl border border-neutral-300 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
+              >
+                <option value="item">Eşya</option>
+                <option value="key">Anahtar</option>
+                <option value="pet">Evcil hayvan</option>
+                <option value="person">Birey</option>
+                <option value="other">Diğer</option>
+              </select>
 
-  <select
-    value={productType}
-    onChange={(e) => setProductType(e.target.value as ProductType)}
-    className="min-w-0 rounded-2xl border border-neutral-300 bg-white px-3 py-2.5 text-sm truncate"
-  >
-    <option value="item">Eşya</option>
-    <option value="key">Anahtar</option>
-    <option value="pet">Evcil hayvan</option>
-    <option value="person">Birey</option>
-    <option value="other">Diğer</option>
-  </select>
-
-  <input
-    value={petName}
-    onChange={(e) => setPetName(e.target.value)}
-    placeholder={getPrimaryNameLabel(productType)}
-    className="min-w-0 rounded-2xl border border-neutral-300 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
-    required
-  />
-
-</div>
+              <select
+                value={productSubtype}
+                onChange={(e) =>
+                  setProductSubtype(e.target.value as ProductSubtype | "")
+                }
+                className="min-w-0 truncate rounded-2xl border border-neutral-300 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
+              >
+                <option value="">{getSubtypeLabel(productType)}</option>
+                {allowedSubtypeOptions.map((item) => (
+                  <option key={item.value} value={item.value}>
+                    {item.label}
+                  </option>
+                ))}
+              </select>
+            </div>
 
             <div className="grid grid-cols-2 gap-2">
               <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(normalizeEmail(e.target.value))}
-                placeholder="İletişim e-postası"
-                disabled={useRecoveryEmailAsContact}
-                className="min-w-0 rounded-2xl border border-neutral-300 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200 disabled:cursor-not-allowed disabled:bg-neutral-100"
+                value={petName}
+                onChange={(e) => setPetName(e.target.value)}
+                placeholder={getPrimaryNameLabel(productType)}
+                className="min-w-0 rounded-2xl border border-neutral-300 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
+                required
               />
 
               <input
-                value={phone}
-                onChange={(e) => setPhone(normalizePhone(e.target.value))}
-                placeholder="İletişim telefonu"
-                disabled={useRecoveryPhoneAsContact}
-                className="min-w-0 rounded-2xl border border-neutral-300 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200 disabled:cursor-not-allowed disabled:bg-neutral-100"
+                value={ownerName}
+                onChange={(e) => setOwnerName(e.target.value)}
+                placeholder={getOwnerNameLabel(productType)}
+                className="min-w-0 rounded-2xl border border-neutral-300 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
               />
             </div>
+
+            <section className="rounded-[1.35rem] border border-neutral-200 bg-neutral-50 px-3 py-3">
+              <p className="text-sm font-medium text-neutral-900">
+                İletişim telefonu
+              </p>
+              <p className="mt-0.5 text-xs leading-5 text-neutral-500">
+                Telefon, bulan kişinin size hızlıca ulaşabilmesi içindir. Arama ve WhatsApp seçeneklerini siz belirlersiniz.
+              </p>
+
+            <div className="grid grid-cols-[1.25fr_1fr_1fr] gap-2">
+  <input
+    value={phone}
+    onChange={(e) => setPhone(normalizePhone(e.target.value))}
+    placeholder="İletişim telefonu"
+    inputMode="tel"
+    className="min-w-0 rounded-2xl border border-neutral-300 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
+  />
+
+  <button
+    type="button"
+    disabled={!phone}
+    onClick={() => setAllowDirectCall((prev) => !prev)}
+    className={`rounded-2xl border px-2 py-2.5 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${
+      allowDirectCall && phone
+        ? "border-blue-900 bg-blue-900 text-white"
+        : "border-neutral-300 bg-white text-neutral-700 hover:border-neutral-400"
+    }`}
+  >
+    Telefon
+  </button>
+
+  <button
+    type="button"
+    disabled={!phone}
+    onClick={() => setAllowDirectWhatsapp((prev) => !prev)}
+    className={`rounded-2xl border px-2 py-2.5 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${
+      allowDirectWhatsapp && phone
+        ? "border-green-600 bg-green-600 text-white"
+        : "border-neutral-300 bg-white text-neutral-700 hover:border-neutral-400"
+    }`}
+  >
+    WhatsApp
+  </button>
+</div>
+            </section>
 
             <textarea
               value={note}
               onChange={(e) => setNote(e.target.value)}
-              placeholder="Kısa not"
-              className="min-h-[76px] w-full rounded-2xl border border-neutral-300 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
+              placeholder="Kısa not veya ayırt edici özellik gibi bilgileri girebilirsiniz. (isteğe bağlı)"
+              className="min-h-[72px] w-full rounded-2xl border border-neutral-300 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
             />
-
             <div className="rounded-[1.35rem] border border-neutral-200 bg-neutral-50 px-3 py-3">
               <p className="text-sm font-medium text-neutral-900">
                 Hesap kurtarma
               </p>
               <p className="mt-1 text-xs leading-5 text-neutral-500">
-                Yönetim erişimini tekrar alabilmeniz için kurtarma e-postası iki kez
-                aynı şekilde girilmelidir.
+                Bu e-posta kimseye gösterilmez. Yönetim erişimi ve sistem
+                bildirimleri için kullanılır.
               </p>
 
               <div className="mt-2.5 grid grid-cols-2 gap-2">
-                <div className="min-w-0">
-                  <input
-                    type="email"
-                    value={recoveryEmail}
-                    onChange={(e) =>
-                      setRecoveryEmail(normalizeEmail(e.target.value))
-                    }
-                    placeholder="Kurtarma e-postası"
-                    className={`w-full min-w-0 rounded-2xl border bg-white px-3 py-2.5 text-sm outline-none transition focus:ring-2 ${
-                      recoveryEmailError
-                        ? "border-red-300 bg-red-50/40 focus:border-red-400 focus:ring-red-100"
-                        : "border-neutral-300 focus:border-neutral-500 focus:ring-neutral-200"
-                    }`}
-                  />
+                <input
+                  type="email"
+                  value={recoveryEmail}
+                  onChange={(e) => setRecoveryEmail(normalizeEmail(e.target.value))}
+                  placeholder="Kurtarma e-postası"
+                  className={`min-w-0 rounded-2xl border bg-white px-3 py-2.5 text-sm outline-none transition focus:ring-2 ${
+                    recoveryEmailError
+                      ? "border-red-300 bg-red-50/40 focus:border-red-400 focus:ring-red-100"
+                      : "border-neutral-300 focus:border-neutral-500 focus:ring-neutral-200"
+                  }`}
+                />
 
-                  <input
-                    type="email"
-                    value={recoveryEmailConfirm}
-                    onChange={(e) =>
-                      setRecoveryEmailConfirm(normalizeEmail(e.target.value))
-                    }
-                    placeholder="Kurtarma e-postasını tekrar yazın"
-                    className={`mt-2 w-full min-w-0 rounded-2xl border bg-white px-3 py-2.5 text-sm outline-none transition focus:ring-2 ${
-                      recoveryEmailError
-                        ? "border-red-300 bg-red-50/40 focus:border-red-400 focus:ring-red-100"
-                        : "border-neutral-300 focus:border-neutral-500 focus:ring-neutral-200"
-                    }`}
-                  />
-
-                  <label className="mt-1.5 inline-flex items-center gap-2 text-xs text-neutral-700">
-                    <input
-                      type="checkbox"
-                      checked={useRecoveryEmailAsContact}
-                      onChange={(e) =>
-                        setUseRecoveryEmailAsContact(e.target.checked)
-                      }
-                    />
-                    İletişim için kullan
-                  </label>
-                </div>
-
-                <div className="min-w-0">
-                  <input
-                    value={recoveryPhone}
-                    onChange={(e) =>
-                      setRecoveryPhone(normalizePhone(e.target.value))
-                    }
-                    placeholder="Kurtarma telefonu"
-                    className="w-full min-w-0 rounded-2xl border border-neutral-300 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
-                  />
-                  <div className="mt-2 space-y-1">
-  <label className="flex items-center gap-2 text-xs">
-    <input
-      type="checkbox"
-      checked={allowDirectCall}
-      onChange={(e) => setAllowDirectCall(e.target.checked)}
-      disabled={!recoveryPhone}
-    />
-    Telefon açılsın
-  </label>
-
-  <label className="flex items-center gap-2 text-xs">
-    <input
-      type="checkbox"
-      checked={allowDirectWhatsapp}
-      onChange={(e) => setAllowDirectWhatsapp(e.target.checked)}
-      disabled={!allowDirectCall || !recoveryPhone}
-    />
-    WhatsApp açılsın
-  </label>
-</div>
-                  <label className="mt-1.5 inline-flex items-center gap-2 text-xs text-neutral-700">
-                    <input
-                      type="checkbox"
-                      checked={useRecoveryPhoneAsContact}
-                      onChange={(e) =>
-                        setUseRecoveryPhoneAsContact(e.target.checked)
-                      }
-                    />
-                    İletişim için kullan
-                  </label>
-                </div>
+                <input
+                  type="email"
+                  value={recoveryEmailConfirm}
+                  onChange={(e) =>
+                    setRecoveryEmailConfirm(normalizeEmail(e.target.value))
+                  }
+                  placeholder="E-postayı tekrar yazın"
+                  className={`min-w-0 rounded-2xl border bg-white px-3 py-2.5 text-sm outline-none transition focus:ring-2 ${
+                    recoveryEmailError
+                      ? "border-red-300 bg-red-50/40 focus:border-red-400 focus:ring-red-100"
+                      : "border-neutral-300 focus:border-neutral-500 focus:ring-neutral-200"
+                  }`}
+                />
               </div>
             </div>
 
-            
+
             <button
               type="submit"
               disabled={submitting}
               className="w-full rounded-2xl bg-neutral-900 px-4 py-3 text-sm font-medium text-white transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {submitting ? "Devir tamamlanıyor..." : "Devri tamamla"}
-              
             </button>
-            <section className="rounded-[1.5rem] border border-neutral-200 bg-white px-4 py-4 shadow-sm">
-  <p className="text-sm font-medium text-neutral-900">
-    Dokuntag ile örnek profil ve kullanım akışını inceleyin.
-  </p>
 
-  <div className="mt-3 grid grid-cols-2 gap-2">
-    <button
-      type="button"
-      onClick={() => window.location.href = "/demo"}
-      className="rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm"
-    >
-      Demo sayfası
-    </button>
+            <section className="rounded-[1.5rem] border border-neutral-200 bg-white px-4 py-3 shadow-sm">
+              <p className="text-sm font-medium text-neutral-900">
+                Dokuntag ile örnek profil ve kullanım akışını inceleyin.
+              </p>
 
-    <button
-      type="button"
-      onClick={() => window.location.href = "/how-it-works"}
-      className="rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm"
-    >
-      Nasıl çalışır
-    </button>
-  </div>
-</section>
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    window.location.href = "/demo";
+                  }}
+                  className="rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm"
+                >
+                  Demo sayfası
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    window.location.href = "/how-it-works";
+                  }}
+                  className="rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm"
+                >
+                  Nasıl çalışır
+                </button>
+              </div>
+            </section>
           </div>
         </form>
       </div>

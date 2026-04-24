@@ -412,34 +412,36 @@ export default function SetupPage({ params }: Props) {
                 Hızlı kurulum
               </h1>
             </div>
- <span className={`rounded-full border px-3 py-1 text-xs font-medium ${theme.badge}`}>
-  Kod • {code || "-"}
-</span>
-            <span
-              className={`rounded-full border px-3 py-1 text-xs font-medium ${theme.badge}`}
-            >
-              {getProductTypeLabel(form.productType)}
-            </span>
-            
+
           </div>
 
           <p className="mt-2 text-sm leading-6 text-neutral-600">
             {getHeaderDescription(form.productType)}
           </p>
 
-          <div className="mt-3 flex justify-end">
-          
-          </div>
+          <div className="mt-3 grid grid-cols-2 gap-2">
+  <span
+    className={`min-w-0 text-center truncate rounded-full border px-2 py-1 text-xs font-medium ${theme.badge}`}
+  >
+    Kod • {code || "-"}
+  </span>
+
+  <span
+    className={`min-w-0 text-center truncate rounded-full border px-2 py-1 text-xs font-medium ${theme.badge}`}
+  >
+    {getProductTypeLabel(form.productType)}
+  </span>
+</div>
         </section>
 
-        <section className="rounded-[1.35rem] border border-blue-200 bg-blue-50 px-3 py-3">
-          <p className="text-sm font-medium text-blue-950">
-            Bu sayfa hızlı kurulum içindir
-          </p>
-          <p className="mt-0.5 text-xs leading-5 text-blue-900">
-            İsterseniz daha sonra yönetim sayfasından detayları ekleyebilirsiniz.
-          </p>
-        </section>
+     <section className="my-1.5 rounded-[1.35rem] border border-blue-200 bg-blue-50 px-3 py-4">
+  <p className="text-sm font-medium text-blue-950">
+    Bu sayfa hızlı kurulum içindir
+  </p>
+  <p className="mt-1.5 text-xs leading-5 text-blue-900">
+    İsterseniz daha sonra yönetim sayfasından detayları ekleyebilirsiniz.
+  </p>
+</section>
 
         <form
           noValidate
@@ -509,54 +511,41 @@ export default function SetupPage({ params }: Props) {
                 Telefon, bulan kişinin size hızlıca ulaşabilmesi içindir. Arama ve WhatsApp seçeneklerini siz belirlersiniz.
               </p>
 
-              <div className="mt-2 grid grid-cols-2 gap-1.5">
-                <input
-                  value={form.phone}
-                  onChange={(e) =>
-                    update("phone", normalizePhone(e.target.value))
-                  }
-                  placeholder="05xxxxxxxxx"
-                  className="min-w-0 rounded-2xl border border-neutral-300 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
-                />
+              <div className="grid grid-cols-[1.25fr_1fr_1fr] gap-2">
+              <input
+                value={form.phone}
+                onChange={(e) => update("phone", normalizePhone(e.target.value))}
+                placeholder="İletişim telefonu"
+                inputMode="tel"
+                className="min-w-0 rounded-2xl border border-neutral-300 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
+              />
 
-                <div className="grid grid-cols-2 gap-1.5">
-                  <button
-                    type="button"
-                    disabled={!form.phone}
-                    onClick={() => {
-                      const next = !form.allowDirectCall;
-                      update("allowDirectCall", next);
-                     
-                    }}
-                    className={`rounded-2xl border px-3 py-2.5 text-xs font-medium transition ${
-                      form.allowDirectCall
-                        ? "border-blue-600 bg-blue-600 text-white shadow-sm"
-                        : form.phone
-                          ? "border-neutral-300 bg-white text-neutral-600 hover:border-blue-200 hover:bg-blue-50"
-                          : "cursor-not-allowed border-neutral-200 bg-neutral-100 text-neutral-400"
-                    }`}
-                  >
-                  Telefon
-                  </button>
+              <button
+                type="button"
+                disabled={!form.phone}
+                onClick={() => update("allowDirectCall", !form.allowDirectCall)}
+                className={`rounded-2xl border px-2 py-2.5 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${
+                  form.allowDirectCall && form.phone
+                    ? "border-blue-900 bg-blue-900 text-white"
+                    : "border-neutral-300 bg-white text-neutral-700 hover:border-neutral-400"
+                }`}
+              >
+                Telefon
+              </button>
 
-                  <button
-                    type="button"
-                    disabled={!form.phone}
-                    onClick={() =>
-                      update("allowDirectWhatsapp", !form.allowDirectWhatsapp)
-                    }
-                    className={`rounded-2xl border px-3 py-2.5 text-xs font-medium transition ${
-                      form.allowDirectWhatsapp
-                        ? "border-green-600 bg-green-600 text-white shadow-sm"
-                        : form.phone
-                        ? "border-neutral-300 bg-white text-neutral-700 hover:border-emerald-300 hover:bg-emerald-50"
-                        : "cursor-not-allowed border-neutral-200 bg-neutral-100 text-neutral-400"
-                    }`}
-                  >
-                    WhatsApp
-                  </button>
-                </div>
-              </div>
+              <button
+                type="button"
+                disabled={!form.phone}
+                onClick={() => update("allowDirectWhatsapp", !form.allowDirectWhatsapp)}
+                className={`rounded-2xl border px-2 py-2.5 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${
+                  form.allowDirectWhatsapp && form.phone
+                    ? "border-green-600 bg-green-600 text-white"
+                    : "border-neutral-300 bg-white text-neutral-700 hover:border-neutral-400"
+                }`}
+              >
+                WhatsApp
+              </button>
+            </div>
             </section>
 
             <textarea

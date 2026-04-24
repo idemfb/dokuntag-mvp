@@ -1153,5 +1153,63 @@
       "email"
     ],
     "message": "çömnbvcxz"
+  },
+  {
+    "id": "2e076598-455a-4623-b40f-4901091c4538",
+    "tagCode": "TEST02",
+    "senderFingerprint": "6e1215e9debb986e2dfe55bf18e20df43337e4161588cd183157d40580fdaceb",
+    "ip": "::1",
+    "createdAt": "2026-04-24T10:50:17.642Z",
+    "readAt": "",
+    "pinnedAt": "",
+    "archivedAt": "",
+    "deletedAt": "",
+    "senderName": "ahmet",
+    "senderPhone": "05063509722",
+    "senderEmail": "i.dem@hotmail.com",
+    "preferredContactMethods": [
+      "email"
+    ],
+    "message": "buldum"
+  },
+  {
+    "id": "6266e2e1-8549-4ae0-ad3d-fd0f8c1f28ec",
+    "tagCode": "TEST02",
+    "senderFingerprint": "eb2653617f6a447499e7221695382b86d23f045a54447f4ba59523c771480964",
+    "ip": "::1",
+    "createdAt": "2026-04-24T10:50:47.829Z",
+    "readAt": "",
+    "pinnedAt": "",
+    "archivedAt": "",
+    "deletedAt": "",
+    "senderName": "murat",
+    "senderPhone": "05515551553",
+    "senderEmail": "i.dem@hotmail.com",
+    "preferredContactMethods": [
+      "phone",
+      "whatsapp",
+      "email"
+    ],
+    "message": "mesaj deneme"
+  },
+  {
+    "id": "84214b36-aeba-40fe-b01d-5db0a9b88700",
+    "tagCode": "HNX7KH",
+    "senderFingerprint": "0f39e352cf6a68910664462086ad4adebbb85537d293d50ba7ecc85b5b269738",
+    "ip": "::1",
+    "createdAt": "2026-04-24T14:09:05.924Z",
+    "readAt": "",
+    "pinnedAt": "",
+    "archivedAt": "",
+    "deletedAt": "",
+    "senderName": "idem",
+    "senderPhone": "05063509722",
+    "senderEmail": "i.dem@hotmail.com",
+    "preferredContactMethods": [
+      "phone",
+      "whatsapp",
+      "email"
+    ],
+    "message": "mesaj kartı deneme"
   }
 ]

@@ -307,9 +307,104 @@ function getOwnerNameLabel(productType: ProductType) {
 }
 
 
+function getManageTheme(productType: ProductType) {
+  if (productType === "pet") {
+    return {
+      wrapper:
+        "border-emerald-200 bg-[linear-gradient(180deg,#f4fbf7_0%,#ffffff_100%)]",
+      badge: "border-emerald-200 bg-emerald-50 text-emerald-700"
+    };
+  }
+
+  if (productType === "key") {
+    return {
+      wrapper:
+        "border-amber-200 bg-[linear-gradient(180deg,#fffaf1_0%,#ffffff_100%)]",
+      badge: "border-amber-200 bg-amber-50 text-amber-700"
+    };
+  }
+
+  if (productType === "person") {
+    return {
+      wrapper:
+        "border-blue-200 bg-[linear-gradient(180deg,#f5f9ff_0%,#ffffff_100%)]",
+      badge: "border-blue-200 bg-blue-50 text-blue-700"
+    };
+  }
+
+  if (productType === "other") {
+    return {
+      wrapper:
+        "border-violet-200 bg-[linear-gradient(180deg,#faf7ff_0%,#ffffff_100%)]",
+      badge: "border-violet-200 bg-violet-50 text-violet-700"
+    };
+  }
+
+  return {
+    wrapper:
+      "border-neutral-200 bg-[linear-gradient(180deg,#fafafa_0%,#ffffff_100%)]",
+    badge: "border-neutral-200 bg-neutral-50 text-neutral-700"
+  };
+}
+
+function PhoneIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-4 w-4 fill-current" aria-hidden="true">
+      <path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1C10.61 21 3 13.39 3 4c0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.24.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2Z" />
+    </svg>
+  );
+}
+
+function WhatsAppIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-4 w-4 fill-current" aria-hidden="true">
+      <path d="M19.05 4.94A9.86 9.86 0 0 0 12.03 2C6.57 2 2.13 6.44 2.13 11.9c0 1.75.46 3.46 1.33 4.97L2 22l5.28-1.38a9.86 9.86 0 0 0 4.74 1.21h.01c5.46 0 9.9-4.44 9.9-9.9a9.82 9.82 0 0 0-2.88-6.99Zm-7.02 15.22h-.01a8.2 8.2 0 0 1-4.18-1.14l-.3-.18-3.13.82.84-3.05-.2-.31a8.18 8.18 0 0 1-1.26-4.4c0-4.53 3.69-8.22 8.24-8.22a8.15 8.15 0 0 1 5.82 2.42 8.16 8.16 0 0 1 2.4 5.81c0 4.54-3.69 8.23-8.22 8.23Zm4.51-6.16c-.25-.13-1.49-.73-1.72-.81-.23-.09-.4-.13-.57.12-.17.25-.66.81-.8.98-.15.17-.29.19-.54.06-.25-.13-1.04-.38-1.99-1.22-.74-.66-1.24-1.47-1.39-1.72-.15-.25-.02-.38.11-.51.11-.11.25-.29.38-.44.13-.15.17-.25.25-.42.08-.17.04-.31-.02-.44-.06-.13-.57-1.37-.78-1.88-.2-.49-.41-.42-.57-.43h-.48c-.17 0-.44.06-.67.31-.23.25-.88.86-.88 2.09s.9 2.42 1.03 2.59c.13.17 1.77 2.7 4.28 3.79.6.26 1.07.42 1.43.53.6.19 1.14.16 1.57.1.48-.07 1.49-.61 1.7-1.2.21-.59.21-1.1.15-1.2-.06-.1-.23-.17-.48-.29Z" />
+    </svg>
+  );
+}
+
+function IconToggle({
+  checked,
+  disabled,
+  label,
+  tone,
+  icon,
+  onChange
+}: {
+  checked: boolean;
+  disabled?: boolean;
+  label: string;
+  tone: "phone" | "whatsapp";
+  icon: React.ReactNode;
+  onChange: (value: boolean) => void;
+}) {
+  const activeClass =
+    tone === "whatsapp"
+      ? "border-[#25D366] bg-[#25D366] text-white shadow-sm hover:bg-[#1ebe5d]"
+      : "border-neutral-900 bg-neutral-900 text-white shadow-sm hover:bg-neutral-800";
+
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={() => onChange(!checked)}
+      className={`inline-flex min-w-0 items-center justify-center gap-1.5 rounded-2xl border px-2.5 py-3 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${
+        checked
+          ? activeClass
+          : "border-neutral-300 bg-white text-neutral-700 hover:border-neutral-400 hover:bg-neutral-50"
+      }`}
+      title={label}
+    >
+      {icon}
+      <span className="hidden sm:inline">{label}</span>
+    </button>
+  );
+}
+
+
 function getMethodLabel(method: ContactMethod) {
   if (method === "whatsapp") return "WhatsApp";
-  if (method === "phone") return "Telefon / SMS";
+  if (method === "phone") return "Telefon";
   return "E-posta";
 }
 
@@ -518,7 +613,9 @@ function SectionNavButton({
       className={`inline-flex w-full items-center justify-center gap-2 rounded-2xl border px-4 py-3 text-sm font-medium transition ${
         isActive
           ? "border-neutral-900 bg-neutral-900 text-white shadow-sm"
-          : "border-neutral-300 bg-white text-neutral-700 hover:border-neutral-400 hover:bg-neutral-50"
+          : badge !== undefined
+            ? "border-amber-300 bg-amber-50 text-amber-900 hover:border-amber-400 hover:bg-amber-100"
+            : "border-neutral-300 bg-white text-neutral-700 hover:border-neutral-400 hover:bg-neutral-50"
       }`}
     >
       <span>{label}</span>
@@ -527,7 +624,7 @@ function SectionNavButton({
           className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${
             isActive
               ? "bg-white/15 text-white"
-              : "border border-neutral-200 bg-neutral-50 text-neutral-600"
+              : "border border-amber-200 bg-white text-amber-800"
           }`}
         >
           {badge}
@@ -734,7 +831,7 @@ useEffect(() => {
         const nextName = manageData.profile.name || "";
         const nextOwnerName = manageData.profile.ownerName || "";
         const nextPhone = manageData.profile.phone || "";
-        const nextEmail = manageData.profile.email || "";
+        const nextEmail = manageData.recovery?.email || manageData.profile.email || "";
         const nextCity = manageData.profile.city || "";
         const nextAddressDetail = manageData.profile.addressDetail || "";
         const nextDistinctiveFeature =
@@ -758,15 +855,10 @@ useEffect(() => {
         const nextAllowDirectWhatsapp = Boolean(
           manageData.contactOptions?.allowDirectWhatsapp
         );
-        const nextRecoveryPhone = manageData.recovery?.phone || "";
+        const nextRecoveryPhone = "";
         const nextRecoveryEmail = manageData.recovery?.email || "";
-        const nextUseRecoveryPhoneAsContact =
-          Boolean(nextRecoveryPhone) &&
-          nextPhone.trim() === nextRecoveryPhone.trim();
-        const nextUseRecoveryEmailAsContact =
-          Boolean(nextRecoveryEmail) &&
-          nextEmail.trim().toLocaleLowerCase("tr-TR") ===
-            nextRecoveryEmail.trim().toLocaleLowerCase("tr-TR");
+        const nextUseRecoveryPhoneAsContact = false;
+        const nextUseRecoveryEmailAsContact = false;
 
         setProductType(nextProductType);
         setProductSubtype(nextProductSubtype);
@@ -789,11 +881,11 @@ useEffect(() => {
         setShowNote(nextShowNote);
         setAllowDirectCall(nextAllowDirectCall);
         setAllowDirectWhatsapp(nextAllowDirectWhatsapp);
-        setRecoveryPhone(nextRecoveryPhone);
+        setRecoveryPhone("");
         setRecoveryEmail(nextRecoveryEmail);
         setRecoveryEmailConfirm(nextRecoveryEmail);
-        setUseRecoveryPhoneAsContact(nextUseRecoveryPhoneAsContact);
-        setUseRecoveryEmailAsContact(nextUseRecoveryEmailAsContact);
+        setUseRecoveryPhoneAsContact(false);
+        setUseRecoveryEmailAsContact(false);
         setManageLink(manageData.manageLink || "");
 
         const activeTransfer =
@@ -851,32 +943,27 @@ useEffect(() => {
   }, [code, token]);
 
   useEffect(() => {
-    if (!allowDirectCall && showPhone) {
+    if (!allowDirectCall && !allowDirectWhatsapp && showPhone) {
       setShowPhone(false);
     }
-  }, [allowDirectCall, showPhone]);
+  }, [allowDirectCall, allowDirectWhatsapp, showPhone]);
 
   useEffect(() => {
-    if (allowDirectCall && phone.trim()) {
+    if ((allowDirectCall || allowDirectWhatsapp) && phone.trim()) {
       setShowPhone(true);
     }
-  }, [allowDirectCall, phone]);
-
+  }, [allowDirectCall, allowDirectWhatsapp, phone]);
   useEffect(() => {
-    if (!allowDirectCall && allowDirectWhatsapp) {
+    if (!phone.trim()) {
+      setAllowDirectCall(false);
       setAllowDirectWhatsapp(false);
+      setShowPhone(false);
     }
-  }, [allowDirectCall, allowDirectWhatsapp]);
+  }, [phone]);
 
-  useEffect(() => {
-    if (!useRecoveryPhoneAsContact) return;
-    setPhone(recoveryPhone.trim());
-  }, [useRecoveryPhoneAsContact, recoveryPhone]);
 
-  useEffect(() => {
-    if (!useRecoveryEmailAsContact) return;
-    setEmail(recoveryEmail.trim());
-  }, [useRecoveryEmailAsContact, recoveryEmail]);
+
+
 
 useEffect(() => {
   if (productType === "key") {
@@ -995,7 +1082,7 @@ useEffect(() => {
       items.push({ label: "Kategori", value: subtypeLabel });
     }
 
-    if (showPhone && allowDirectCall && phone.trim()) {
+    if (phone.trim() && (allowDirectCall || allowDirectWhatsapp)) {
       items.push({ label: "Telefon", value: phone.trim() });
     }
 
@@ -1015,7 +1102,8 @@ useEffect(() => {
     showName,
     showPhone,
     showCity,
-    allowDirectCall
+    allowDirectCall,
+    allowDirectWhatsapp
   ]);
 
   const publicPreviewNote = useMemo(() => {
@@ -1047,10 +1135,10 @@ useEffect(() => {
       showNote,
       allowDirectCall,
       allowDirectWhatsapp,
-      recoveryPhone,
+      recoveryPhone: "",
       recoveryEmail,
-      useRecoveryPhoneAsContact,
-      useRecoveryEmailAsContact
+      useRecoveryPhoneAsContact: false,
+      useRecoveryEmailAsContact: false
     });
   }, [
     productType,
@@ -1085,6 +1173,8 @@ useEffect(() => {
   const displayPrimaryName = useMemo(() => {
     return petName.trim() || "İsimsiz profil";
   }, [petName]);
+
+  const manageTheme = useMemo(() => getManageTheme(productType), [productType]);
 
   useEffect(() => {
     if (!isDirty) return;
@@ -1246,8 +1336,8 @@ useEffect(() => {
           status: "inactive",
           name: petName,
           ownerName,
-          phone: useRecoveryPhoneAsContact ? recoveryPhone : phone,
-          email: useRecoveryEmailAsContact ? recoveryEmail : email,
+          phone,
+          email: recoveryEmail,
           city,
           addressDetail,
           distinctiveFeature,
@@ -1263,10 +1353,10 @@ useEffect(() => {
           showNote,
           allowDirectCall,
           allowDirectWhatsapp,
-          recoveryPhone,
+          recoveryPhone: "",
           recoveryEmail,
-          useRecoveryPhoneAsContact,
-          useRecoveryEmailAsContact
+          useRecoveryPhoneAsContact: false,
+          useRecoveryEmailAsContact: false
         })
       );
 
@@ -1317,8 +1407,8 @@ useEffect(() => {
           status: "active",
           name: petName,
           ownerName,
-          phone: useRecoveryPhoneAsContact ? recoveryPhone : phone,
-          email: useRecoveryEmailAsContact ? recoveryEmail : email,
+          phone,
+          email: recoveryEmail,
           city,
           addressDetail,
           distinctiveFeature,
@@ -1334,10 +1424,10 @@ useEffect(() => {
           showNote,
           allowDirectCall,
           allowDirectWhatsapp,
-          recoveryPhone,
+          recoveryPhone: "",
           recoveryEmail,
-          useRecoveryPhoneAsContact,
-          useRecoveryEmailAsContact
+          useRecoveryPhoneAsContact: false,
+          useRecoveryEmailAsContact: false
         })
       );
     } catch (err) {
@@ -1469,8 +1559,8 @@ useEffect(() => {
             productSubtype,
             name: petName,
             ownerName,
-            phone: useRecoveryPhoneAsContact ? recoveryPhone : phone,
-            email: useRecoveryEmailAsContact ? recoveryEmail : email,
+            phone,
+            email: recoveryEmail,
             city,
             addressDetail,
             distinctiveFeature,
@@ -1492,7 +1582,7 @@ useEffect(() => {
               allowDirectWhatsapp
             },
             recovery: {
-              phone: recoveryPhone,
+              phone: "",
               email: recoveryEmail
             }
           })
@@ -1519,8 +1609,8 @@ useEffect(() => {
         status: resolvedStatus,
         name: petName,
         ownerName,
-        phone: useRecoveryPhoneAsContact ? recoveryPhone : phone,
-        email: useRecoveryEmailAsContact ? recoveryEmail : email,
+        phone,
+        email: recoveryEmail,
         city,
         addressDetail,
         distinctiveFeature,
@@ -1536,10 +1626,10 @@ useEffect(() => {
         showNote,
         allowDirectCall,
         allowDirectWhatsapp,
-        recoveryPhone,
+        recoveryPhone: "",
         recoveryEmail,
-        useRecoveryPhoneAsContact,
-        useRecoveryEmailAsContact
+        useRecoveryPhoneAsContact: false,
+        useRecoveryEmailAsContact: false
       });
 
       setInitialSnapshot(nextSnapshot);
@@ -1592,8 +1682,8 @@ if (
             productSubtype,
             name: petName,
             ownerName,
-            phone: useRecoveryPhoneAsContact ? recoveryPhone : phone,
-            email: useRecoveryEmailAsContact ? recoveryEmail : email,
+            phone,
+            email: recoveryEmail,
             city,
             addressDetail,
             distinctiveFeature,
@@ -1615,7 +1705,7 @@ if (
               allowDirectWhatsapp
             },
             recovery: {
-              phone: recoveryPhone,
+              phone: "",
               email: recoveryEmail
             }
           })
@@ -1648,8 +1738,8 @@ if (
           status: resolvedStatus,
           name: petName,
           ownerName,
-          phone: useRecoveryPhoneAsContact ? recoveryPhone : phone,
-          email: useRecoveryEmailAsContact ? recoveryEmail : email,
+          phone,
+          email: recoveryEmail,
           city,
           addressDetail,
           distinctiveFeature,
@@ -1665,10 +1755,10 @@ if (
           showNote,
           allowDirectCall,
           allowDirectWhatsapp,
-          recoveryPhone,
+          recoveryPhone: "",
           recoveryEmail,
-          useRecoveryPhoneAsContact,
-          useRecoveryEmailAsContact
+          useRecoveryPhoneAsContact: false,
+          useRecoveryEmailAsContact: false
         })
       );
 
@@ -1746,12 +1836,15 @@ if (
                 </div>
               </div>
 
-              <div className="mt-5 rounded-[1.5rem] border border-neutral-200 bg-neutral-50 p-4 sm:p-5">
-                <div className="min-w-0">
-                  <p className="text-xl font-semibold text-neutral-900">
+              <div className={`mt-5 rounded-[1.5rem] border p-4 sm:p-5 ${manageTheme.wrapper}`}>
+                <div className="flex min-w-0 flex-wrap items-center gap-2">
+                  <p className="min-w-0 truncate text-xl font-semibold text-neutral-900">
                     {displayPrimaryName}
                   </p>
-                  
+
+                  <span className={`rounded-full border px-3 py-1 text-xs font-medium ${manageTheme.badge}`}>
+                    {code || "-"}
+                  </span>
                 </div>
 
                 <div className="mt-4 grid grid-cols-2 gap-3">
@@ -1789,7 +1882,7 @@ if (
                       Değişiklikler herkese açık profilde anında görünür.
                   </p>
                 {status === "active" && confirmDeactivate ? (
-                  <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm leading-6 text-amber-900">
+                  <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-900">
                     Pasife alındığında herkese açık profilde bilgiler ve
                     iletişim seçenekleri kapanır.
                   </div>
@@ -1824,13 +1917,13 @@ if (
         </div>
 
         {error ? (
-          <div className="mb-5 rounded-[1.5rem] border border-red-200 bg-red-50 px-4 py-4 text-sm text-red-700">
+          <div className="mb-5 rounded-[1.5rem] border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
             {error}
           </div>
         ) : null}
 
         {success ? (
-          <div className="mb-5 rounded-[1.5rem] border border-emerald-200 bg-emerald-50 px-4 py-4 shadow-sm">
+          <div className="mb-5 rounded-[1.5rem] border border-emerald-200 bg-emerald-50 px-4 py-3 shadow-sm">
             <p className="text-sm font-semibold text-emerald-900">
               Kaydedildi
             </p>
@@ -1839,7 +1932,22 @@ if (
             </p>
           </div>
         ) : null}
+        {isDirty ? (
+  <div className="sticky top-3 z-30 mb-4 flex items-center justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 shadow-sm backdrop-blur">
+    <span>
+      Kaydedilmemiş değişiklikler var.
+    </span>
 
+    <button
+      type="button"
+      onClick={handleSubmit}
+      disabled={saving}
+      className="shrink-0 rounded-xl bg-neutral-900 px-3 py-2 text-xs font-semibold text-white transition hover:bg-neutral-800 disabled:opacity-50"
+    >
+      {saving ? "Kaydediliyor..." : "Kaydet"}
+    </button>
+  </div>
+) : null} 
         <form noValidate onSubmit={handleSubmit} className="space-y-4">
           <SectionCard
             id="basic"
@@ -1849,365 +1957,324 @@ if (
             onToggle={toggleSection}
             sectionRef={basicRef}
           >
-            
             <div className="grid gap-4">
-  <div className="grid grid-cols-2 gap-3">
-    <Field label="Profil Türü">
-      <select
-        value={productType}
-        onChange={(e) => setProductType(e.target.value as ProductType)}
-        className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm text-neutral-900 outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
-      >
-        <option value="item">Eşya</option>
-        <option value="key">Anahtar</option>
-        <option value="pet">Evcil hayvan</option>
-        <option value="person">Birey</option>
-        <option value="other">Diğer</option>
-      </select>
-    </Field>
-
-    <Field label="Kategori" optional>
-      <select
-        value={productSubtype}
-        onChange={(e) =>
-          setProductSubtype(e.target.value as ProductSubtype | "")
-        }
-        className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm text-neutral-900 outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
-      >
-        <option value="">Seçmek istemiyorum</option>
-        {allowedSubtypeOptions.map((item) => (
-          <option
-            key={`${productType}-${item.value}`}
-            value={item.value}
-          >
-            {item.label}
-          </option>
-        ))}
-      </select>
-      <p className="mt-2 text-xs text-neutral-500">
-        İsterseniz ürün tipini biraz daha net anlatabilirsiniz.
-      </p>
-    </Field>
-  </div>
-
-  <div className="grid grid-cols-2 gap-3">
-    <div>
-      <div className="mb-2 flex min-h-[44px] items-start justify-between gap-3">
-        <label className="block text-sm font-medium text-neutral-900">
-          {getPrimaryNameLabel(productType)}
-        </label>
-
-        <InlineToggle
-          checked={showPetName}
-          label="Görünsün"
-          onChange={setShowPetName}
-        />
-      </div>
-
-      <input
-        value={petName}
-        onChange={(e) => setPetName(e.target.value)}
-        className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm text-neutral-900 outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
-        placeholder="Ana görünen isim"
-        required
-      />
-    </div>
-
-    <div>
-      <div className="mb-2 flex min-h-[44px] items-start justify-between gap-3">
-        <label className="block text-sm font-medium text-neutral-900">
-          {getOwnerNameLabel(productType)}
-        </label>
-
-        <InlineToggle
-          checked={showName}
-          label="Görünsün"
-          onChange={setShowName}
-        />
-      </div>
-
-      <input
-        value={ownerName}
-        onChange={(e) => setOwnerName(e.target.value)}
-        className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm text-neutral-900 outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
-        placeholder="İsteğe bağlı"
-      />
-    </div>
-  </div>
-
-  <div className="grid gap-4 sm:grid-cols-2">
-    <Field label="Not" optional>
-      <textarea
-        value={note}
-        onChange={(e) => setNote(e.target.value)}
-        className="min-h-[120px] w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm text-neutral-900 outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
-        placeholder="Bulana göstermek istediğiniz kısa not. Varsa ayırt edici özellikleri de buraya yazabilirsiniz"
-      />
-      <div className="mt-3 flex flex-wrap gap-2">
-        <InlineToggle
-          checked={showNote}
-          disabled={!note.trim()}
-          label="Not görünsün"
-          onChange={setShowNote}
-        />
-      </div>
-    </Field>
-
-    <div>
-      <div className="mb-2 flex items-center gap-2">
-        <label className="block text-sm font-medium text-neutral-900">
-          Hızlı notlar
-        </label>
-        <span className="text-xs text-neutral-400">Opsiyonel</span>
-      </div>
-
-      <div className="grid gap-2">
-        {allowedAlerts.map((item) => {
-          const isActive = alerts.includes(item);
-
-          return (
-            <button
-              key={`${productType}-${item}`}
-              type="button"
-              onClick={() => toggleAlert(item)}
-              className={`w-full rounded-2xl border px-4 py-3 text-left text-sm transition ${
-                isActive
-                  ? "border-neutral-900 bg-neutral-900 text-white"
-                  : "border-neutral-300 bg-white text-neutral-700 hover:border-neutral-400 hover:bg-neutral-50"
-              }`}
-            >
-              {item}
-            </button>
-          );
-        })}
-      </div>
-    </div>
-  </div>
-</div>
-          </SectionCard>
-
-          <SectionCard
-            id="contact"
-            title="İletişim"
-            description="İletişim bilgilerini girin ve hangileri görünsün seçin."
-            isOpen={openSection === "contact"}
-            onToggle={toggleSection}
-            sectionRef={contactRef}
-          >
-            <div className="grid gap-4">
-              <div className="grid gap-4 sm:grid-cols-2">
-                <Field label="Telefon">
-                  <input
-                    value={phone}
-                    onChange={(e) =>
-                      setPhone(e.target.value.replace(/[^0-9]/g, ""))
-                    }
-                    disabled={useRecoveryPhoneAsContact}
-                    inputMode="numeric"
-                    pattern="[0-9]*"
-                    className={`w-full rounded-2xl border px-4 py-3 text-sm outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200 ${
-                      useRecoveryPhoneAsContact
-                        ? "cursor-not-allowed border-neutral-200 bg-neutral-100 text-neutral-500"
-                        : "border-neutral-300 bg-white text-neutral-900"
-                    }`}
-                    placeholder="05xxxxxxxxx"
-                  />
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    <InlineToggle
-                      checked={useRecoveryPhoneAsContact}
-                      disabled={!recoveryPhone.trim()}
-                      label="Kurtarma telefonunu kullan"
-                      onChange={(checked) => {
-                        setUseRecoveryPhoneAsContact(checked);
-                        if (checked) {
-                          setPhone(recoveryPhone.trim());
-                        } else {
-                          setPhone("");
-                        }
-                      }}
-                    />
-                    <InlineToggle
-                      checked={allowDirectCall}
-                      disabled={!phone.trim()}
-                      label="Telefonla ulaşılabilsin"
-                      onChange={setAllowDirectCall}
-                    />
-                    <InlineToggle
-                      checked={allowDirectWhatsapp}
-                      disabled={!phone.trim() || !allowDirectCall}
-                      label="WhatsApp açılsın"
-                      onChange={setAllowDirectWhatsapp}
-                    />
-                  </div>
-                </Field>
-
-                <Field label="E-posta">
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    disabled={useRecoveryEmailAsContact}
-                    className={`w-full rounded-2xl border px-4 py-3 text-sm outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200 ${
-                      useRecoveryEmailAsContact
-                        ? "cursor-not-allowed border-neutral-200 bg-neutral-100 text-neutral-500"
-                        : "border-neutral-300 bg-white text-neutral-900"
-                    }`}
-                    placeholder="ornek@mail.com"
-                  />
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    <InlineToggle
-                      checked={useRecoveryEmailAsContact}
-                      disabled={!recoveryEmail.trim()}
-                      label="Kurtarma e-postasını kullan"
-                      onChange={(checked) => {
-                        setUseRecoveryEmailAsContact(checked);
-                        if (checked) {
-                          setEmail(recoveryEmail.trim());
-                        } else {
-                          setEmail("");
-                        }
-                      }}
-                    />
-                  </div>
-                  <p className="mt-2 text-xs text-neutral-500">
-                    Herkese açık profilde e-posta görünmez. Bu alan mesaj
-                    bildirimleri için kullanılır.
-                  </p>
-                </Field>
-              </div>
-
-              <div className="rounded-[1.5rem] border border-neutral-200 bg-neutral-50 px-4 py-4">
-                <div className="flex items-center justify-between gap-3">
-                  <p className="text-sm font-medium text-neutral-900">
-                    Herkese açık bilgiler önizlemesi
-                  </p>
-                  <span className="rounded-full bg-white px-3 py-1 text-[11px] font-medium text-neutral-500">
-                    Şu an görünecek alanlar
-                  </span>
-                </div>
-
-                {publicPreviewItems.length > 0 ? (
-                  <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                    {publicPreviewItems.map((item) => (
-                      <div
-                        key={`${item.label}-${item.value}`}
-                        className="rounded-2xl border border-neutral-200 bg-white px-4 py-3"
-                      >
-                        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-neutral-500">
-                          {item.label}
-                        </p>
-                        <p className="mt-1 text-sm text-neutral-900">
-                          {item.value}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="mt-3 text-sm leading-6 text-neutral-600">
-                    Şu an herkese açık profilde bilgi görünmüyor. İsterseniz
-                    görünürlük seçeneklerinden bazı alanları açabilirsiniz.
-                  </p>
-                )}
-
-                {publicPreviewNote ? (
-                  <div className="mt-3 rounded-2xl border border-neutral-200 bg-white px-4 py-3">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-neutral-500">
-                      Not
-                    </p>
-                    <p className="mt-1 text-sm leading-6 text-neutral-900">
-                      {publicPreviewNote}
-                    </p>
-                  </div>
-                ) : null}
-              </div>
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                <Field label="Şehir" optional>
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="Profil Türü">
                   <select
-                    value={city}
-                    onChange={(e) => setCity(e.target.value)}
-                    disabled={productType === "key"}
-                    className={`w-full rounded-2xl border px-4 py-3 text-sm outline-none transition focus:ring-2 ${
-                      productType === "key"
-                        ? "cursor-not-allowed border-neutral-200 bg-neutral-100 text-neutral-400"
-                        : "border-neutral-300 bg-white text-neutral-900 focus:border-neutral-500 focus:ring-neutral-200"
-                    }`}
+                    value={productType}
+                    onChange={(e) => setProductType(e.target.value as ProductType)}
+                    className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm text-neutral-900 outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
                   >
-                    <option value="">Seçiniz</option>
-                    {TURKIYE_CITIES.map((item) => (
-                      <option key={item} value={item}>
-                        {item}
+                    <option value="item">Eşya</option>
+                    <option value="key">Anahtar</option>
+                    <option value="pet">Evcil hayvan</option>
+                    <option value="person">Birey</option>
+                    <option value="other">Diğer</option>
+                  </select>
+                </Field>
+
+                <Field label="Kategori" optional>
+                  <select
+                    value={productSubtype}
+                    onChange={(e) =>
+                      setProductSubtype(e.target.value as ProductSubtype | "")
+                    }
+                    className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm text-neutral-900 outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
+                  >
+                    <option value="">Seçmek istemiyorum</option>
+                    {allowedSubtypeOptions.map((item) => (
+                      <option
+                        key={`${productType}-${item.value}`}
+                        value={item.value}
+                      >
+                        {item.label}
                       </option>
                     ))}
                   </select>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    <InlineToggle
-                    checked={showCity}
-                    disabled={!city.trim() || productType === "key"}
-                    label="Şehir görünsün"
-                    onChange={setShowCity}
-                  />
-                  </div>
-                  {productType === "key" ? (
-                    <p className="mt-2 text-xs leading-5 text-amber-700">
-                      Anahtar ürünlerinde konum paylaşımı güvenlik riski
-                      oluşturabilir. Bu yüzden şehir bilgisi kapalı tutulmuştur.
-                    </p>
-                  ) : null}
                 </Field>
+              </div>
 
-                <div className="rounded-[1.5rem] border border-neutral-200 bg-neutral-50 px-4 py-4">
-                  <p className="text-sm font-medium text-neutral-900">
-                    Adres bilgisi gizli tutulur
-                  </p>
-                  <p className="mt-2 text-sm leading-6 text-neutral-600">
-                    Adres detayı güvenlik nedeniyle Dokuntag içinde paylaşılmaz
-                    ve herkese açık profilde gösterilmez. Adres belirtmek
-                    isterseniz bunu not alanına manuel olarak yazabilirsiniz.
-                  </p>
-                  <p className="mt-2 text-xs leading-5 text-neutral-500">
-                    Mevcut eski adres kayıtları sistemde saklı kalabilir ancak
-                    yeni ziyaretçilere gösterilmez.
-                  </p>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <div className="mb-2 flex min-h-[44px] items-start justify-between gap-3">
+                    <label className="block text-sm font-medium text-neutral-900">
+                      {getPrimaryNameLabel(productType)}
+                    </label>
+
+                    <InlineToggle
+                      checked={showPetName}
+                      label="Görünsün"
+                      onChange={setShowPetName}
+                    />
+                  </div>
+
+                  <input
+                    value={petName}
+                    onChange={(e) => setPetName(e.target.value)}
+                    className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm text-neutral-900 outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
+                    placeholder="Ana görünen isim"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <div className="mb-2 flex min-h-[44px] items-start justify-between gap-3">
+                    <label className="block text-sm font-medium text-neutral-900">
+                      {getOwnerNameLabel(productType)}
+                    </label>
+
+                    <InlineToggle
+                      checked={showName}
+                      label="Görünsün"
+                      onChange={setShowName}
+                    />
+                  </div>
+
+                  <input
+                    value={ownerName}
+                    onChange={(e) => setOwnerName(e.target.value)}
+                    className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm text-neutral-900 outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
+                    placeholder="İsteğe bağlı"
+                  />
+                </div>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <div className="mb-2 grid grid-cols-[1fr_auto] items-center gap-2">
+                    <div className="flex items-center gap-1.5">
+                    <label className="text-sm font-medium text-neutral-900">
+                      Not
+                    </label>
+                    <span className="text-xs text-neutral-400">(opsiyonel)</span>
+                  </div>
+
+                    <InlineToggle
+                      checked={showNote}
+                      disabled={!note.trim()}
+                      label="Görünsün"
+                      onChange={setShowNote}
+                    />
+                  </div>
+
+                  <textarea
+                    value={note}
+                    onChange={(e) => setNote(e.target.value)}
+                    className="min-h-[84px] w-full rounded-2xl border border-neutral-300 bg-white px-3 py-2.5 text-sm text-neutral-900 outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
+                    placeholder={`Bulana göstermek için Kısa not yazın\nGüvenlik için açık adres paylaşmayın.`}
+                  />
+                </div>
+
+                <div>
+                  <div className="mb-2 flex items-center gap-2">
+                    <label className="block text-sm font-medium text-neutral-900">
+                      Hızlı notlar
+                    </label>
+                    <span className="text-xs text-neutral-400">Opsiyonel</span>
+                  </div>
+
+                  <div className="grid gap-2">
+                    {allowedAlerts.map((item) => {
+                      const isActive = alerts.includes(item);
+
+                      return (
+                        <button
+                          key={`${productType}-${item}`}
+                          type="button"
+                          onClick={() => toggleAlert(item)}
+                          className={`flex min-h-[46px] w-full items-center justify-center rounded-2xl border px-3 py-2.5 text-center text-sm font-medium transition ${
+                            isActive
+                              ? "border-neutral-900 bg-neutral-900 text-white"
+                              : "border-neutral-300 bg-white text-neutral-700 hover:border-neutral-400 hover:bg-neutral-50"
+                          }`}
+                        >
+                          {item}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
             </div>
           </SectionCard>
 
           <SectionCard
+            id="contact"
+            title="İletişim"
+            description="Bulan kişinin size nasıl ulaşabileceğini buradan seçin."
+            isOpen={openSection === "contact"}
+            onToggle={toggleSection}
+            sectionRef={contactRef}
+          >
+            <div className="grid gap-4">
+              <div>
+                <label className="mb-2 block text-sm font-medium text-neutral-900">
+                  Telefon
+                </label>
+
+                <div className="grid grid-cols-[1.4fr_0.8fr_0.8fr] gap-2">
+                  <input
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value.replace(/[^0-9]/g, ""))}
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    className="min-w-0 rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm text-neutral-900 outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
+                    placeholder="05xxxxxxxxx"
+                  />
+
+                  <IconToggle
+                    checked={allowDirectCall}
+                    disabled={!phone.trim()}
+                    label="Telefon"
+                    tone="phone"
+                    icon={<PhoneIcon />}
+                    onChange={(checked) => {
+                      setAllowDirectCall(checked);
+                      setShowPhone(Boolean((checked || allowDirectWhatsapp) && phone.trim()));
+                    }}
+                  />
+
+                  <IconToggle
+                    checked={allowDirectWhatsapp}
+                    disabled={!phone.trim()}
+                    label="WhatsApp"
+                    tone="whatsapp"
+                    icon={<WhatsAppIcon />}
+                    onChange={(checked) => {
+                      setAllowDirectWhatsapp(checked);
+                      setShowPhone(Boolean((allowDirectCall || checked) && phone.trim()));
+                    }}
+                  />
+                </div>
+
+                <p className="mt-2 text-xs leading-5 text-neutral-500">
+                  Telefon girilirse arama ve WhatsApp seçeneklerini ayrı ayrı açabilirsiniz.
+                </p>
+              </div>
+
+              <div className="rounded-[1.5rem] border border-neutral-200 bg-neutral-50 px-4 py-3">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-sm font-medium text-neutral-900">
+                    Profil önizleme
+                  </p>
+                  <span className="rounded-full bg-white px-3 py-1 text-[11px] font-medium text-neutral-500">
+                    Public görünüm
+                  </span>
+                </div>
+
+                {publicPreviewItems.length > 0 || alerts.length > 0 || publicPreviewNote ? (
+                  <div className="mt-3 grid gap-3">
+                    <div className="grid grid-cols-2 gap-2">
+                      {publicPreviewItems.map((item) => (
+                        <div
+                          key={`${item.label}-${item.value}`}
+                          className="rounded-2xl border border-neutral-200 bg-white px-4 py-3"
+                        >
+                          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-neutral-500">
+                            {item.label}
+                          </p>
+                          <p className="mt-1 truncate text-sm text-neutral-900">
+                            {item.value}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+
+                    {alerts.length > 0 ? (
+                      <div className="flex flex-wrap gap-2">
+                        {alerts.map((alert) => (
+                          <span
+                            key={alert}
+                            className="rounded-full border border-neutral-200 bg-white px-3 py-1 text-xs font-medium text-neutral-700"
+                          >
+                            {alert}
+                          </span>
+                        ))}
+                      </div>
+                    ) : null}
+
+                    {publicPreviewNote ? (
+                      <div className="rounded-2xl border border-neutral-200 bg-white px-4 py-3">
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-neutral-500">
+                          Not
+                        </p>
+                        <p className="mt-1 text-sm leading-7 text-neutral-900">
+                          {publicPreviewNote}
+                        </p>
+                      </div>
+                    ) : null}
+                  </div>
+                ) : (
+                  <p className="mt-3 text-sm leading-6 text-neutral-600">
+                    Şu an herkese açık profilde bilgi görünmüyor. İsterseniz görünürlük seçeneklerinden bazı alanları açabilirsiniz.
+                  </p>
+                )}
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+  <div className="mb-2 grid grid-cols-[auto_1fr_auto] items-center gap-2">
+    <div className="flex items-center gap-1.5">
+      <label className="text-sm font-medium text-neutral-900">
+        Şehir
+      </label>
+      <span className="text-xs text-neutral-400">Opsiyonel</span>
+    </div>
+
+    <select
+      value={city}
+      onChange={(e) => setCity(e.target.value)}
+      disabled={productType === "key"}
+      className={`min-w-0 rounded-2xl border px-3 py-2.5 text-sm outline-none transition focus:ring-2 ${
+        productType === "key"
+          ? "cursor-not-allowed border-neutral-200 bg-neutral-100 text-neutral-400"
+          : "border-neutral-300 bg-white text-neutral-900 focus:border-neutral-500 focus:ring-neutral-200"
+      }`}
+    >
+      <option value="">Seçiniz</option>
+      {TURKIYE_CITIES.map((item) => (
+        <option key={item} value={item}>
+          {item}
+        </option>
+      ))}
+    </select>
+
+    <InlineToggle
+      checked={showCity}
+      disabled={!city.trim() || productType === "key"}
+      label="Görünsün"
+      onChange={setShowCity}
+    />
+  </div>
+
+  {productType === "key" ? (
+    <p className="mt-2 text-xs leading-5 text-amber-700">
+      Anahtar ürünlerinde konum paylaşımı güvenlik riski oluşturabilir. Bu yüzden şehir bilgisi kapalı tutulmuştur.
+    </p>
+  ) : null}
+</div>
+             
+              </div>
+            </div>
+          </SectionCard>
+
+          <SectionCard
             id="recovery"
-            title="Hesap Kurtarma ve bağlantılar"
-            description="Yedek iletişim ve bağlantıları burada yönetin."
+            title="Hesap kurtarma ve bağlantılar"
+            description="Yönetim erişimi ve ürün devri işlemlerini burada yönetin."
             isOpen={openSection === "recovery"}
             onToggle={toggleSection}
             sectionRef={recoveryRef}
           >
             <p className="text-sm text-center text-neutral-600">
-              Bu bilgiler sadece size özel kurtarma ve erişim için kullanılır.
+              Bu e-posta kimseye gösterilmez. Yönetim erişimi ve sistem bildirimleri için kullanılır.
             </p>
 
             <div className="mt-4 grid gap-4">
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="mb-2 block text-center text-sm font-medium text-neutral-700">
-                    Kurtarma telefonu
-                  </label>
-
-                  <input
-                    value={recoveryPhone}
-                    onChange={(e) =>
-                      setRecoveryPhone(e.target.value.replace(/[^0-9]/g, ""))
-                    }
-                    inputMode="numeric"
-                    pattern="[0-9]*"
-                    className="w-full rounded-2xl border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
-                    placeholder="05xxxxxxxxx"
-                  />
-                </div>
-
-                <div>
-                  <label className="mb-2 block text-center text-sm font-medium text-neutral-700">
-                    Kurtarma e-posta
+                    Kurtarma e-postası
                   </label>
 
                   <input
@@ -2222,31 +2289,30 @@ if (
                     placeholder="ornek@mail.com"
                   />
                 </div>
+
+                <div>
+                  <label className="mb-2 block text-center text-sm font-medium text-neutral-700">
+                    E-postayı tekrar yazın
+                  </label>
+
+                  <input
+                    type="email"
+                    value={recoveryEmailConfirm}
+                    onChange={(e) => setRecoveryEmailConfirm(e.target.value.trim())}
+                    className={`w-full rounded-2xl border px-4 py-3 text-sm outline-none transition focus:ring-2 ${
+                      error.toLowerCase().includes("kurtarma")
+                        ? "border-red-300 bg-red-50/40 focus:border-red-400 focus:ring-red-100"
+                        : "border-neutral-300 bg-white focus:border-neutral-500 focus:ring-neutral-200"
+                    }`}
+                    placeholder="ornek@mail.com"
+                  />
+                </div>
               </div>
 
-              <div>
-                <label className="mb-2 block text-center text-sm font-medium text-neutral-700">
-                  Kurtarma e-posta tekrar
-                </label>
-
-                <input
-                  type="email"
-                  value={recoveryEmailConfirm}
-                  onChange={(e) => setRecoveryEmailConfirm(e.target.value.trim())}
-                  className={`w-full rounded-2xl border px-4 py-3 text-sm outline-none transition focus:ring-2 ${
-                    error.toLowerCase().includes("kurtarma")
-                      ? "border-red-300 bg-red-50/40 focus:border-red-400 focus:ring-red-100"
-                      : "border-neutral-300 bg-white focus:border-neutral-500 focus:ring-neutral-200"
-                  }`}
-                  placeholder="ornek@mail.com"
-                />
-
-                <p className="mt-2 text-center text-xs text-neutral-500">
-                  Yanlış yazımı önlemek için kurtarma e-postasını iki kez girin.
-                </p>
-              </div>
-
-              <div className="rounded-[1.5rem] border border-neutral-200 bg-neutral-50 px-4 py-4">
+              <p className="text-center text-xs text-neutral-500">
+                Yanlış yazımı önlemek için kurtarma e-postasını iki kez girin.
+              </p>
+              <div className="rounded-[1.5rem] border border-neutral-200 bg-neutral-50 px-4 py-3">
                 <div className="grid gap-3">
                 <div>
                   <p className="text-sm font-medium text-neutral-900">
@@ -2449,11 +2515,11 @@ if (
     </div>
 
               {logsLoading ? (
-                <div className="rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-4 text-sm text-neutral-600">
+                <div className="rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm text-neutral-600">
                   Mesajlar yükleniyor...
                 </div>
               ) : filteredLogs.length === 0 ? (
-                <div className="rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-4 text-sm text-neutral-600">
+                <div className="rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm text-neutral-600">
                   Bu filtrede mesaj bulunmuyor.
                 </div>
               ) : (

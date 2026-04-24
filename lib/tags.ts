@@ -1,6 +1,6 @@
 ﻿import { readDB, readDBAsync, writeDB, writeDBAsync } from "@/lib/db";
 
-export type ProductType = "pet" | "item" | "key" | "person" | "other" | "other";
+export type ProductType = "pet" | "item" | "key" | "person" | "other";
 export type TagStatus = "unclaimed" | "active" | "inactive";
 export type TransferStatus = "pending" | "used" | "expired" | "cancelled";
 export type RecoveryEntryType = "my" | "recover";

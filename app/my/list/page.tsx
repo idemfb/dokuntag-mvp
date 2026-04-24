@@ -20,6 +20,41 @@ function getProductTypeLabel(productType: ProductType) {
   return "Eşya";
 }
 
+function getProductTheme(productType: ProductType) {
+  if (productType === "pet") {
+    return {
+      card: "border-emerald-200 bg-[linear-gradient(180deg,#f4fbf7_0%,#ffffff_100%)]",
+      badge: "border-emerald-200 bg-emerald-50 text-emerald-700"
+    };
+  }
+
+  if (productType === "key") {
+    return {
+      card: "border-amber-200 bg-[linear-gradient(180deg,#fffaf1_0%,#ffffff_100%)]",
+      badge: "border-amber-200 bg-amber-50 text-amber-700"
+    };
+  }
+
+  if (productType === "person") {
+    return {
+      card: "border-blue-200 bg-[linear-gradient(180deg,#f5f9ff_0%,#ffffff_100%)]",
+      badge: "border-blue-200 bg-blue-50 text-blue-700"
+    };
+  }
+
+  if (productType === "other") {
+    return {
+      card: "border-violet-200 bg-[linear-gradient(180deg,#faf7ff_0%,#ffffff_100%)]",
+      badge: "border-violet-200 bg-violet-50 text-violet-700"
+    };
+  }
+
+  return {
+    card: "border-neutral-200 bg-white",
+    badge: "border-neutral-200 bg-neutral-50 text-neutral-700"
+  };
+}
+
 function getStatusLabel(status: TagStatus) {
   if (status === "inactive") return "Kapalı";
   if (status === "active") return "Aktif";
@@ -45,14 +80,14 @@ function getRemainingTimeText(expiresAt: string) {
 
   const totalMinutes = Math.ceil(diff / (1000 * 60));
 
-  if (totalMinutes <= 0) return "SÃ¼re doldu";
-  if (totalMinutes < 60) return `${totalMinutes} dakika kaldÄ±`;
+  if (totalMinutes <= 0) return "Süre doldu";
+  if (totalMinutes < 60) return `${totalMinutes} dakika kaldı`;
 
   const hours = Math.floor(totalMinutes / 60);
   const minutes = totalMinutes % 60;
 
-  if (minutes === 0) return `${hours} saat kaldÄ±`;
-  return `${hours} saat ${minutes} dakika kaldÄ±`;
+  if (minutes === 0) return `${hours} saat kaldı`;
+  return `${hours} saat ${minutes} dakika kaldı`;
 }
 
 function EmptyState({
@@ -80,7 +115,7 @@ function EmptyState({
             href="/my"
             className="rounded-2xl bg-neutral-900 px-4 py-3 text-sm font-medium text-white transition hover:bg-neutral-800"
           >
-            ÃœrÃ¼nlerim giriÅŸine dÃ¶n
+            Ürünlerim girişine dön
           </a>
 
           <a
@@ -113,8 +148,8 @@ export default async function MyListPage({
       <main className="min-h-screen bg-[linear-gradient(180deg,#fbfbfa_0%,#fdfdfc_55%,#ffffff_100%)] px-4 py-10 text-neutral-900">
         <div className="mx-auto max-w-3xl space-y-6">
           <EmptyState
-            title="BaÄŸlantÄ± eksik"
-            text="GÃ¼venli giriÅŸ baÄŸlantÄ±sÄ±nda gerekli bilgi bulunamadÄ±. E-postanÄ±zdaki baÄŸlantÄ±yÄ± yeniden aÃ§Ä±n."
+            title="Bağlantı eksik"
+            text="Güvenli giriş bağlantısında gerekli bilgi bulunamadı. E-postanızdaki bağlantıyı yeniden açın."
           />
         </div>
       </main>
@@ -128,8 +163,8 @@ export default async function MyListPage({
       <main className="min-h-screen bg-[linear-gradient(180deg,#fbfbfa_0%,#fdfdfc_55%,#ffffff_100%)] px-4 py-10 text-neutral-900">
         <div className="mx-auto max-w-3xl space-y-6">
           <EmptyState
-            title="BaÄŸlantÄ± geÃ§ersiz"
-            text="Bu baÄŸlantÄ± bulunamadÄ± veya artÄ±k kullanÄ±lamÄ±yor. Yeni bir gÃ¼venli giriÅŸ baÄŸlantÄ±sÄ± istemeniz gerekir."
+            title="Bağlantı geçersiz"
+            text="Bu bağlantı bulunamadı veya artık kullanılamıyor. Yeni bir güvenli giriş bağlantısı istemeniz gerekir."
           />
         </div>
       </main>
@@ -141,8 +176,8 @@ export default async function MyListPage({
       <main className="min-h-screen bg-[linear-gradient(180deg,#fbfbfa_0%,#fdfdfc_55%,#ffffff_100%)] px-4 py-10 text-neutral-900">
         <div className="mx-auto max-w-3xl space-y-6">
           <EmptyState
-            title="BaÄŸlantÄ±nÄ±n sÃ¼resi doldu"
-            text="Bu baÄŸlantÄ±nÄ±n sÃ¼resi dolmuÅŸ. ÃœrÃ¼nlerim sayfasÄ±ndan yeni bir giriÅŸ baÄŸlantÄ±sÄ± isteyebilirsiniz."
+            title="Bağlantının süresi doldu"
+            text="Bu bağlantının süresi dolmuş. Ürünlerim sayfasından yeni bir giriş bağlantısı isteyebilirsiniz."
           />
         </div>
       </main>
@@ -154,8 +189,8 @@ export default async function MyListPage({
       <main className="min-h-screen bg-[linear-gradient(180deg,#fbfbfa_0%,#fdfdfc_55%,#ffffff_100%)] px-4 py-10 text-neutral-900">
         <div className="mx-auto max-w-3xl space-y-6">
           <EmptyState
-            title="BaÄŸlantÄ± artÄ±k kullanÄ±lamÄ±yor"
-            text="Bu baÄŸlantÄ± artÄ±k geÃ§erli deÄŸil. ÃœrÃ¼nlerim sayfasÄ±ndan yeni bir gÃ¼venli giriÅŸ baÄŸlantÄ±sÄ± isteyebilirsiniz."
+            title="Bağlantı artık kullanılamıyor"
+            text="Bu bağlantı artık geçerli değil. Ürünlerim sayfasından yeni bir güvenli giriş bağlantısı isteyebilirsiniz."
           />
         </div>
       </main>
@@ -172,7 +207,7 @@ export default async function MyListPage({
                 href="/my"
                 className="text-sm text-neutral-500 transition hover:text-neutral-900 hover:underline"
               >
-                â† ÃœrÃ¼nlerim giriÅŸine dÃ¶n
+                ← Ürünlerim girişine dön
               </a>
 
               <a
@@ -190,85 +225,91 @@ export default async function MyListPage({
             </p>
 
             <h1 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">
-              ÃœrÃ¼nlerim
+              Ürünlerim
             </h1>
 
             <p className="mt-3 max-w-2xl text-sm leading-6 text-neutral-600">
-              Bu gÃ¼venli baÄŸlantÄ± ile eriÅŸebileceÄŸiniz Ã¼rÃ¼nler aÅŸaÄŸÄ±da listelenmiÅŸtir.
+              Erişim doğrulandı. Bu güvenli bağlantı ile aynı e-posta adresine bağlı ürünlerinizi sınırlı süre boyunca görüntüleyebilirsiniz.
             </p>
           </div>
 
-          <div className="px-6 py-6">
-            <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-4 text-sm leading-6 text-emerald-800">
-              EriÅŸim doÄŸrulandÄ±. AÅŸaÄŸÄ±daki Ã¼rÃ¼nler aynÄ± e-posta adresine baÄŸlÄ±dÄ±r.
-            </div>
+          <div className="px-6 py-5">
+            <div className="rounded-[1.5rem] border border-neutral-200 bg-neutral-50 px-4 py-4">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="rounded-full border border-neutral-300 bg-white px-3 py-1 text-xs font-medium text-neutral-700">
+                  E-posta
+                </span>
 
-            <div className="mt-4 grid gap-3 md:grid-cols-2">
-              <div className="rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-4 text-sm leading-6 text-neutral-700">
-                E-posta:{" "}
-                <span className="font-medium text-neutral-900">{session.email}</span>
+                <span className="min-w-0 truncate rounded-full border border-neutral-300 bg-white px-3 py-1 text-xs font-medium text-neutral-900">
+                  {session.email}
+                </span>
+
+                <span className="rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-medium text-blue-900">
+                  Kalan süre: {getRemainingTimeText(session.expiresAt)}
+                </span>
               </div>
 
-              <div className="rounded-2xl border border-blue-200 bg-blue-50 px-4 py-4 text-sm leading-6 text-blue-900">
-                <div>Bu giriÅŸ baÄŸlantÄ±sÄ± sÄ±nÄ±rlÄ± sÃ¼reyle kullanÄ±labilir.</div>
-                <div className="mt-1 font-medium">
-                  Kalan sÃ¼re: {getRemainingTimeText(session.expiresAt)}
-                </div>
-              </div>
+              <p className="mt-3 text-sm leading-6 text-neutral-600">
+                Bağlantı süresi dolana kadar aşağıdaki ürünler arasında güvenli şekilde geçiş yapabilirsiniz.
+              </p>
             </div>
           </div>
         </section>
 
-        <section className="mx-auto max-w-4xl grid grid-cols-2 gap-3 xl:grid-cols-3">
-          {session.items.map((item) => (
-            <article
-              key={item.code}
-              className="rounded-xl border border-neutral-200 bg-white p-3 shadow-sm"
-            >
-              <div className="flex items-start justify-between gap-2">
-                <h2 className="min-w-0 truncate text-sm font-semibold text-neutral-900">
-                  {item.petName || item.code}
-                </h2>
+        <section className="mx-auto grid max-w-4xl grid-cols-2 gap-3 xl:grid-cols-3">
+          {session.items.map((item) => {
+            const theme = getProductTheme(item.productType);
 
-                <span className="shrink-0 text-[10px] font-medium uppercase tracking-[0.12em] text-neutral-400">
-                  {getProductTypeLabel(item.productType)}
-                </span>
-              </div>
+            return (
+              <article
+                key={item.code}
+                className={`rounded-xl border p-3.5 shadow-sm ${theme.card}`}
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <h2 className="min-w-0 truncate text-[13px] font-semibold text-neutral-900">
+                    {item.petName || item.code}
+                  </h2>
 
-              <div className="mt-2 flex items-center justify-between gap-2">
-                <span className="truncate text-[11px] text-neutral-500">
-                  {item.code}
-                </span>
+                  <span
+                    className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] tracking-wide font-medium ${theme.badge}`}
+                  >
+                    {getProductTypeLabel(item.productType)}
+                  </span>
+                </div>
 
-                <span
-                  className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ${getStatusBadgeClass(
-                    item.status
-                  )}`}
-                >
-                  {getStatusLabel(item.status)}
-                </span>
-              </div>
+                <div className="mt-2 flex items-center justify-between gap-2">
+                  <span className="truncate text-[11px] text-neutral-600">
+                    {item.code}
+                  </span>
 
-              <div className="mt-3">
-                <a
-                  href={`/recover/select?token=${encodeURIComponent(
-                    token
-                  )}&code=${encodeURIComponent(item.code)}`}
-                  className="inline-flex w-full items-center justify-center rounded-lg bg-neutral-900 px-3 py-2 text-xs font-medium text-white transition hover:bg-neutral-800"
-                >
-                  YÃ¶net
-                </a>
-              </div>
-            </article>
-          ))}
+                  <span
+                    className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] tracking-wide font-medium ${getStatusBadgeClass(
+                      item.status
+                    )}`}
+                  >
+                    {getStatusLabel(item.status)}
+                  </span>
+                </div>
+
+                <div className="mt-3">
+                  <a
+                    href={`/recover/select?token=${encodeURIComponent(
+                      token
+                    )}&code=${encodeURIComponent(item.code)}`}
+                    className="inline-flex w-full items-center justify-center rounded-xl bg-neutral-900 px-3 py-2.5 text-xs font-medium text-white transition hover:bg-neutral-800"
+                  >
+                    Yönet
+                  </a>
+                </div>
+              </article>
+            );
+          })}
         </section>
 
         <div className="mx-auto max-w-4xl rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm leading-6 text-amber-800">
-          Bu baÄŸlantÄ± sÃ¼re dolana kadar baÄŸlÄ± Ã¼rÃ¼nleriniz arasÄ±nda geÃ§iÅŸ yapabilir.
-          SÃ¼re dolduÄŸunda ÃœrÃ¼nlerim sayfasÄ±ndan yeni giriÅŸ baÄŸlantÄ±sÄ± isteyebilirsiniz.
+          Güvenli bağlantı süresi dolduğunda Ürünlerim sayfasından yeni bir giriş bağlantısı isteyebilirsiniz.
         </div>
       </div>
     </main>
   );
 }
-

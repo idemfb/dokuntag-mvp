@@ -2,7 +2,7 @@
 
 import { use, useEffect, useMemo, useState } from "react";
 
-type ProductType = "pet" | "item" | "key" | "person";
+type ProductType = "pet" | "item" | "key" | "person" | "other";
 type ProductSubtype =
   | "cat"
   | "dog"
@@ -108,7 +108,8 @@ const PRODUCT_SUBTYPE_OPTIONS: Record<
     { value: "tablet", label: "Tablet" },
     { value: "headphones", label: "Kulaklık" },
     { value: "item_other", label: "Diğer" }
-  ]
+  ],
+  other: [{ value: "item_other", label: "Diğer" }]
 };
 
 function getProductSubtypeLabel(value?: string) {
@@ -158,6 +159,7 @@ function getProductTypeLabel(productType?: ProductType) {
   if (productType === "pet") return "Evcil hayvan";
   if (productType === "key") return "Anahtar";
   if (productType === "person") return "Kişi";
+  if (productType === "other") return "Diğer";
   return "Eşya";
 }
 
@@ -165,6 +167,7 @@ function getProductIcon(productType?: ProductType) {
   if (productType === "pet") return "🐾";
   if (productType === "key") return "🔑";
   if (productType === "person") return "🧍";
+  if (productType === "other") return "●";
   return "🎒";
 }
 
@@ -172,6 +175,7 @@ function getHeadline(productType?: ProductType) {
   if (productType === "pet") return "Bu evcil hayvanın sahibine ulaşabilirsiniz";
   if (productType === "key") return "Bu anahtarın sahibine ulaşabilirsiniz";
   if (productType === "person") return "Bu kişi için yakınını bilgilendirebilirsiniz";
+  if (productType === "other") return "Bu profilin sahibine ulaşabilirsiniz";
   return "Bu eşyanın sahibine ulaşabilirsiniz";
 }
 
@@ -179,6 +183,7 @@ function getPrimaryNameLabel(productType?: ProductType) {
   if (productType === "pet") return "Evcil hayvan";
   if (productType === "key") return "Anahtar";
   if (productType === "person") return "Kişi";
+  if (productType === "other") return "Başlık";
   return "Eşya";
 }
 
@@ -191,6 +196,7 @@ function getFallbackName(productType?: ProductType) {
   if (productType === "pet") return "Kayıp evcil hayvan";
   if (productType === "key") return "Bulunan anahtar";
   if (productType === "person") return "Bilgi paylaşımı";
+  if (productType === "other") return "Dokuntag profili";
   return "Bulunan eşya";
 }
 
@@ -236,6 +242,21 @@ function getTheme(productType?: ProductType) {
         "border-teal-200 bg-white text-teal-900 hover:border-teal-300 hover:bg-teal-50/70",
       ring: "focus:border-teal-300 focus:ring-teal-100",
       chip: "border-teal-200 bg-teal-50/80 text-teal-900",
+      stickyButton: "bg-neutral-900 text-white"
+    };
+  }
+
+  if (productType === "other") {
+    return {
+      pageBg: "bg-[linear-gradient(180deg,#fbf8ff_0%,#fdfcff_55%,#ffffff_100%)]",
+      heroBg: "bg-gradient-to-br from-violet-50 via-white to-stone-50",
+      badge: "border-violet-200 bg-violet-100/80 text-violet-900",
+      softLabel: "text-violet-700",
+      accentButton: "bg-neutral-900 text-white hover:bg-neutral-800",
+      secondaryButton:
+        "border-violet-200 bg-white text-violet-900 hover:border-violet-300 hover:bg-violet-50/70",
+      ring: "focus:border-violet-300 focus:ring-violet-100",
+      chip: "border-violet-200 bg-violet-50/80 text-violet-900",
       stickyButton: "bg-neutral-900 text-white"
     };
   }
@@ -304,28 +325,33 @@ function WhatsAppIcon() {
 function ContactChoice({
   checked,
   label,
+  tone,
   onChange
 }: {
   checked: boolean;
   label: string;
+  tone: "phone" | "whatsapp" | "email";
   onChange: (value: boolean) => void;
 }) {
+const activeClass =
+  tone === "whatsapp" 
+  ? "border-[#25D366] bg-[#25D366] text-white shadow-sm hover:bg-[#1ebe5d]"
+    : tone === "email"
+      ? "border-neutral-900 bg-neutral-900 text-white"
+      : "border-blue-950 bg-blue-950 text-white";
+
   return (
-    <label
-      className={`inline-flex items-center gap-2 rounded-full border px-3 py-2 text-sm transition ${
+    <button
+      type="button"
+      onClick={() => onChange(!checked)}
+      className={`min-w-0 truncate rounded-2xl border px-2 py-2.5 text-xs font-semibold transition ${
         checked
-          ? "border-neutral-900 bg-neutral-900 text-white"
-          : "border-neutral-300 bg-white text-neutral-700 hover:border-neutral-400 hover:bg-neutral-50"
+          ? activeClass
+          : "border-neutral-300 bg-white text-neutral-700 hover:border-neutral-400"
       }`}
     >
-      <input
-        type="checkbox"
-        checked={checked}
-        onChange={(e) => onChange(e.target.checked)}
-        className="h-4 w-4"
-      />
-      <span>{label}</span>
-    </label>
+      {label}
+    </button>
   );
 }
 
@@ -345,7 +371,7 @@ export default function PublicPage({
   const [senderPhone, setSenderPhone] = useState("");
   const [senderEmail, setSenderEmail] = useState("");
   const [message, setMessage] = useState("");
-  const [contactPhone, setContactPhone] = useState(true);
+  const [contactPhone, setContactPhone] = useState(false);
   const [contactWhatsapp, setContactWhatsapp] = useState(false);
   const [contactEmail, setContactEmail] = useState(false);
   const [sending, setSending] = useState(false);
@@ -532,7 +558,7 @@ export default function PublicPage({
       setSenderPhone("");
       setSenderEmail("");
       setMessage("");
-      setContactPhone(true);
+      setContactPhone(false);
       setContactWhatsapp(false);
       setContactEmail(false);
     } catch (err) {
@@ -546,18 +572,18 @@ export default function PublicPage({
   const showWhatsappAction = Boolean(allowDirectWhatsapp && whatsappHref);
   const showEmailAction = Boolean(contactEmailValue && emailHref);
   const stickyActionLabel = useMemo(() => {
-  const productType = data?.productType;
+    const productType = data?.productType;
 
-  if (showCallAction) {
-    return productType === "person" ? "Yakınını ara" : "Hemen Ara";
-  }
+    if (showCallAction) {
+      return productType === "person" ? "Yakınını ara" : "Hemen Ara";
+    }
 
-  if (showWhatsappAction) {
-    return productType === "person" ? "Yakınına yaz" : "WhatsApp";
-  }
+    if (showWhatsappAction) {
+      return productType === "person" ? "Yakınına yaz" : "WhatsApp";
+    }
 
-  return "E-posta";
-}, [showCallAction, showWhatsappAction, data?.productType]);
+    return "E-posta";
+  }, [showCallAction, showWhatsappAction, data?.productType]);
 
   if (loading) {
     return (
@@ -616,7 +642,8 @@ export default function PublicPage({
                     Bu sayfa şu an kapalı
                   </h1>
                   <p className="mt-2 text-sm leading-6 text-neutral-600">
-                    Profil sahibi herkese açık görünürlüğü geçici olarak kapatmıştır.
+                    Profil sahibi herkese açık görünürlüğü geçici olarak
+                    kapatmıştır.
                   </p>
                 </div>
               </div>
@@ -624,7 +651,8 @@ export default function PublicPage({
 
             <div className="px-6 py-6 sm:px-8">
               <div className="rounded-[20px] border border-amber-200 bg-amber-50 px-4 py-4 text-sm leading-6 text-amber-900">
-                İletişim seçenekleri şu an görünmüyor. Sayfa yeniden açıldığında tekrar kullanılabilir.
+                İletişim seçenekleri şu an görünmüyor. Sayfa yeniden açıldığında
+                tekrar kullanılabilir.
               </div>
             </div>
           </section>
@@ -637,7 +665,7 @@ export default function PublicPage({
     <main
       className={`min-h-screen px-4 py-6 pb-28 text-neutral-900 sm:px-5 sm:py-8 sm:pb-10 ${theme.pageBg}`}
     >
-      <div className="mx-auto max-w-3xl space-y-4 sm:space-y-5">
+      <div className="mx-auto max-w-3xl space-y-3 sm:space-y-4">
         <section className="overflow-hidden rounded-[2rem] border border-neutral-200 bg-white shadow-sm">
           <div
             className={`border-b border-neutral-200 px-6 py-5 sm:px-8 sm:py-6 ${theme.heroBg}`}
@@ -692,13 +720,15 @@ export default function PublicPage({
             </div>
           </div>
 
-          <div className="px-6 py-4 sm:px-8 sm:py-5">
-            {(showCallAction || showWhatsappAction || showEmailAction) ? (
+          <div className="px-6 py-3.5 sm:px-8 sm:py-4">
+            {showCallAction || showWhatsappAction || showEmailAction ? (
               <div className="grid grid-cols-2 gap-2">
                 {showCallAction ? (
                   <ActionButton
                     href={callHref}
-                    label={data?.productType === "person" ? "Yakınını ara" : "Hemen Ara"}
+                    label={
+                      data?.productType === "person" ? "Yakınını ara" : "Hemen Ara"
+                    }
                     className={theme.accentButton}
                   />
                 ) : showEmailAction ? (
@@ -714,8 +744,10 @@ export default function PublicPage({
                 {showWhatsappAction ? (
                   <ActionButton
                     href={whatsappHref}
-                    label={data?.productType === "person" ? "Yakınına yaz" : "WhatsApp"}
-                    className="border border-[#25D366]/30 bg-[#25D366]/10 text-[#1d6f42] hover:border-[#25D366]/50 hover:bg-[#25D366]/15"
+                    label={
+                      data?.productType === "person" ? "Yakınına yaz" : "WhatsApp"
+                    }
+                    className="border border-[#25D366] bg-[#25D366] text-white shadow-sm hover:bg-[#1ebe5d]"
                     icon={<WhatsAppIcon />}
                   />
                 ) : showCallAction || showEmailAction ? (
@@ -724,7 +756,8 @@ export default function PublicPage({
               </div>
             ) : (
               <div className="rounded-[20px] border border-amber-200 bg-amber-50 px-4 py-4 text-sm leading-6 text-amber-900">
-                Bu sayfada doğrudan iletişim bilgisi görünmüyor. Aşağıdan kısa mesaj bırakabilirsiniz.
+                Bu sayfada doğrudan iletişim bilgisi görünmüyor. Aşağıdan kısa
+                mesaj bırakabilirsiniz.
               </div>
             )}
 
@@ -744,7 +777,7 @@ export default function PublicPage({
           </div>
         </section>
 
-        {(displayNote || data.alerts.length > 0) ? (
+        {displayNote || data.alerts.length > 0 ? (
           <section className="space-y-3">
             {displayNote ? (
               <div className="rounded-[20px] border border-neutral-200 bg-white px-4 py-4">
@@ -782,7 +815,7 @@ export default function PublicPage({
             </h2>
           </div>
 
-          <div className="px-6 py-4 sm:px-8 sm:py-5">
+          <div className="px-6 py-3.5 sm:px-8 sm:py-4">
             {sendError ? (
               <div className="mb-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-4 text-sm text-red-700">
                 {sendError}
@@ -844,20 +877,26 @@ export default function PublicPage({
                 <p className="mb-1.5 text-sm font-medium text-neutral-900">
                   Size nasıl dönüş yapılsın?
                 </p>
-                <div className="flex flex-wrap gap-2">
+
+                <div className="grid grid-cols-3 gap-2">
                   <ContactChoice
                     checked={contactPhone}
                     label="Telefon"
+                    tone="phone"
                     onChange={setContactPhone}
                   />
+
                   <ContactChoice
                     checked={contactWhatsapp}
                     label="WhatsApp"
+                    tone="whatsapp"
                     onChange={setContactWhatsapp}
                   />
+
                   <ContactChoice
                     checked={contactEmail}
                     label="E-posta"
+                    tone="email"
                     onChange={setContactEmail}
                   />
                 </div>
@@ -874,41 +913,44 @@ export default function PublicPage({
           </div>
         </section>
 
-        <section className="rounded-[18px] border border-neutral-200 bg-white px-4 py-3 sm:px-5">
-  <p className="text-sm leading-5 text-neutral-700">
-    <a
-      href={dokuntagHref}
-      target="_blank"
-      rel="noreferrer"
-      className="font-medium underline underline-offset-2 hover:opacity-80"
-    >
-      Dokuntag
-    </a>{" "}
-    ile örnek profil ve kullanım akışını inceleyin.
-  </p>
-  <div className="mt-2.5 grid grid-cols-2 gap-2">
-    <a
-      href={`${dokuntagHref}/demo`}
-      target="_blank"
-      rel="noreferrer"
-      className="inline-flex min-h-10 items-center justify-center rounded-2xl border border-neutral-300 bg-white px-4 py-2.5 text-sm font-medium text-neutral-800 transition hover:border-neutral-400 hover:bg-neutral-50"
-    >
-      Demo sayfası
-    </a>
+        <section className="rounded-[18px] border border-neutral-200 bg-white px-4 py-2.5 sm:px-5">
+          <p className="text-sm leading-5 text-neutral-700">
+            <a
+              href={dokuntagHref}
+              target="_blank"
+              rel="noreferrer"
+              className="font-medium underline underline-offset-2 hover:opacity-80"
+            >
+              Dokuntag
+            </a>{" "}
+            ile örnek profil ve kullanım akışını inceleyin.
+          </p>
 
-    <a
-      href={`${dokuntagHref}/how-it-works`}
-      target="_blank"
-      rel="noreferrer"
-      className="inline-flex min-h-10 items-center justify-center rounded-2xl border border-neutral-300 bg-white px-4 py-2.5 text-sm font-medium text-neutral-800 transition hover:border-neutral-400 hover:bg-neutral-50"
-    >
-      Nasıl çalışır?
-    </a>
-  </div>
-</section>
+          <div className="mt-2.5 grid grid-cols-2 gap-2">
+            <a
+              href={`${dokuntagHref}/demo`}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex min-h-10 items-center justify-center rounded-2xl border border-neutral-300 bg-white px-4 py-2.5 text-sm font-medium text-neutral-800 transition hover:border-neutral-400 hover:bg-neutral-50"
+            >
+              Demo sayfası
+            </a>
+
+            <a
+              href={`${dokuntagHref}/how-it-works`}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex min-h-10 items-center justify-center rounded-2xl border border-neutral-300 bg-white px-4 py-2.5 text-sm font-medium text-neutral-800 transition hover:border-neutral-400 hover:bg-neutral-50"
+            >
+              Nasıl çalışır?
+            </a>
+          </div>
+        </section>
       </div>
 
-      {(showCallAction && callHref) || (showWhatsappAction && whatsappHref) || (showEmailAction && emailHref) ? (
+      {(showCallAction && callHref) ||
+      (showWhatsappAction && whatsappHref) ||
+      (showEmailAction && emailHref) ? (
         <div className="fixed inset-x-0 bottom-0 z-20 border-t border-neutral-200 bg-white/95 px-4 py-3 backdrop-blur sm:hidden">
           <a
             href={

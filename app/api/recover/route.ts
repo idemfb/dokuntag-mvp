@@ -87,7 +87,7 @@ export async function POST(request: NextRequest) {
     const session = await createRecoverySessionByEmailAsync({
       email,
       entryType,
-      expiresInMinutes: 60
+      expiresInMinutes: 120
     });
 
     await addRecoverLog({
