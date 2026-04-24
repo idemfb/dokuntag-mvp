@@ -1995,49 +1995,49 @@ if (
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <div className="mb-2 flex min-h-[44px] items-center justify-between gap-2">
-                    <label className="text-sm font-medium text-neutral-900 leading-tight">
-                      {getPrimaryNameLabel(productType)}
-                    </label>
+  <div>
+    <label className="mb-1.5 block text-sm font-medium leading-tight text-neutral-900">
+      {getPrimaryNameLabel(productType)}
+    </label>
 
-                    <InlineToggle
-                      checked={showPetName}
-                      label="Görünsün"
-                      onChange={setShowPetName}
-                    />
-                  </div>
+    <input
+      value={petName}
+      onChange={(e) => setPetName(e.target.value)}
+      className="w-full rounded-2xl border border-neutral-300 bg-white px-3 py-2.5 text-sm text-neutral-900 outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
+      placeholder="Ana görünen isim"
+      required
+    />
 
-                  <input
-                    value={petName}
-                    onChange={(e) => setPetName(e.target.value)}
-                    className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm text-neutral-900 outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
-                    placeholder="Ana görünen isim"
-                    required
-                  />
-                </div>
+    <div className="mt-2 flex justify-end">
+      <InlineToggle
+        checked={showPetName}
+        label="Görünsün"
+        onChange={setShowPetName}
+      />
+    </div>
+  </div>
 
-                <div>
-                  <div className="mb-2 flex min-h-[44px] items-center justify-between gap-2">
-                    <label className="text-sm font-medium text-neutral-900 leading-tight">
-                      {getOwnerNameLabel(productType)}
-                    </label>
+  <div>
+    <label className="mb-1.5 block text-sm font-medium leading-tight text-neutral-900">
+      {getOwnerNameLabel(productType)}
+    </label>
 
-                    <InlineToggle
-                      checked={showName}
-                      label="Görünsün"
-                      onChange={setShowName}
-                    />
-                  </div>
+    <input
+      value={ownerName}
+      onChange={(e) => setOwnerName(e.target.value)}
+      className="w-full rounded-2xl border border-neutral-300 bg-white px-3 py-2.5 text-sm text-neutral-900 outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
+      placeholder="İsteğe bağlı"
+    />
 
-                  <input
-                    value={ownerName}
-                    onChange={(e) => setOwnerName(e.target.value)}
-                    className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm text-neutral-900 outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
-                    placeholder="İsteğe bağlı"
-                  />
-                </div>
-              </div>
+    <div className="mt-2 flex justify-end">
+      <InlineToggle
+        checked={showName}
+        label="Görünsün"
+        onChange={setShowName}
+      />
+    </div>
+  </div>
+</div>
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
