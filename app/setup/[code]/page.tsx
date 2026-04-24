@@ -1,20 +1,41 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
 type ProductType = "pet" | "item" | "key" | "person" | "other";
 
+type ProductSubtype =
+  | "cat"
+  | "dog"
+  | "bird"
+  | "pet_other"
+  | "house_key"
+  | "car_key"
+  | "office_key"
+  | "key_other"
+  | "girl_child"
+  | "boy_child"
+  | "woman"
+  | "man"
+  | "elder"
+  | "person_other"
+  | "bag"
+  | "wallet"
+  | "luggage"
+  | "phone_item"
+  | "tablet"
+  | "headphones"
+  | "item_other";
+
 type SetupForm = {
   productType: ProductType;
+  productSubtype: ProductSubtype | "";
   petName: string;
+  ownerName: string;
   phone: string;
-  email: string;
   note: string;
-  recoveryPhone: string;
   recoveryEmail: string;
-  useRecoveryPhoneForContact: boolean;
-  useRecoveryEmailForContact: boolean;
   allowDirectCall: boolean;
   allowDirectWhatsapp: boolean;
 };
@@ -23,28 +44,53 @@ type Props = {
   params: Promise<{ code: string }>;
 };
 
-const initialForm: SetupForm = {
-  allowDirectCall: false,
-  allowDirectWhatsapp: false,
-  productType: "item",
-  petName: "",
-  phone: "",
-  email: "",
-  note: "",
-  recoveryPhone: "",
-  recoveryEmail: "",
-  useRecoveryPhoneForContact: false,
-  useRecoveryEmailForContact: true
-  
+const PRODUCT_SUBTYPE_OPTIONS: Record<
+  ProductType,
+  Array<{ value: ProductSubtype; label: string }>
+> = {
+  pet: [
+    { value: "cat", label: "Kedi" },
+    { value: "dog", label: "Köpek" },
+    { value: "bird", label: "Kuş" },
+    { value: "pet_other", label: "Diğer" }
+  ],
+  key: [
+    { value: "house_key", label: "Ev anahtarı" },
+    { value: "car_key", label: "Araba anahtarı" },
+    { value: "office_key", label: "Ofis anahtarı" },
+    { value: "key_other", label: "Diğer" }
+  ],
+  person: [
+    { value: "girl_child", label: "Kız çocuk" },
+    { value: "boy_child", label: "Erkek çocuk" },
+    { value: "woman", label: "Kadın" },
+    { value: "man", label: "Erkek" },
+    { value: "elder", label: "Yaşlı" },
+    { value: "person_other", label: "Diğer" }
+  ],
+  item: [
+    { value: "bag", label: "Çanta" },
+    { value: "wallet", label: "Cüzdan" },
+    { value: "luggage", label: "Valiz" },
+    { value: "phone_item", label: "Telefon" },
+    { value: "tablet", label: "Tablet" },
+    { value: "headphones", label: "Kulaklık" },
+    { value: "item_other", label: "Diğer" }
+  ],
+  other: [{ value: "item_other", label: "Diğer" }]
 };
 
-function getPrimaryPlaceholder(type: ProductType) {
-  if (type === "pet") return "Evcil hayvan adı";
-  if (type === "person") return "Kişi adı";
-  if (type === "key") return "Anahtar adı";
-  if (type === "other") return "Ad / başlık";
-  return "Ürün adı";
-}
+const initialForm: SetupForm = {
+  productType: "item",
+  productSubtype: "",
+  petName: "",
+  ownerName: "",
+  phone: "",
+  note: "",
+  recoveryEmail: "",
+  allowDirectCall: false,
+  allowDirectWhatsapp: false
+};
 
 function getProductTypeLabel(type: ProductType) {
   if (type === "pet") return "Evcil hayvan";
@@ -52,6 +98,43 @@ function getProductTypeLabel(type: ProductType) {
   if (type === "person") return "Birey";
   if (type === "other") return "Diğer";
   return "Eşya";
+}
+
+function getPrimaryPlaceholder(type: ProductType) {
+  if (type === "pet") return "Evcil hayvan adı";
+  if (type === "person") return "Kişi adı";
+  if (type === "key") return "Anahtar adı";
+  if (type === "other") return "Ad / başlık";
+  return "Eşya adı";
+}
+
+function getOwnerPlaceholder(type: ProductType) {
+  if (type === "person") return "Yakını";
+  if (type === "pet") return "Sahibi";
+  return "Sahibi";
+}
+
+function getSubtypePlaceholder(type: ProductType) {
+  if (type === "pet") return "Tür";
+  if (type === "key") return "Anahtar türü";
+  if (type === "person") return "Kategori";
+  return "Kategori";
+}
+
+function getHeaderDescription(type: ProductType) {
+  if (type === "pet") {
+    return "Evcil hayvanınız kaybolduğunda size hızlıca ulaşılabilmesi için kısa bilgileri girin.";
+  }
+
+  if (type === "person") {
+    return "Bu profil, ihtiyaç halinde yakınınıza hızlıca ulaşılmasına yardımcı olur.";
+  }
+
+  if (type === "key") {
+    return "Anahtar üzerinde adres paylaşmadan, bulan kişinin size güvenli şekilde ulaşmasını sağlar.";
+  }
+
+  return "Kaybolduğunda size ulaşılabilmesi için kısa bilgileri girin.";
 }
 
 function getTheme(type: ProductType) {
@@ -120,6 +203,12 @@ export default function SetupPage({ params }: Props) {
   const [error, setError] = useState("");
 
   const theme = getTheme(form.productType);
+
+  const subtypeOptions = useMemo(
+    () => PRODUCT_SUBTYPE_OPTIONS[form.productType],
+    [form.productType]
+  );
+
   const recoveryEmailError =
     Boolean(error) &&
     (error.toLowerCase().includes("kurtarma e-postası") ||
@@ -139,29 +228,21 @@ export default function SetupPage({ params }: Props) {
   }, [params]);
 
   useEffect(() => {
-    if (form.useRecoveryPhoneForContact) {
-      const normalized = normalizePhone(form.recoveryPhone);
-      if (form.phone !== normalized) {
-        update("phone", normalized);
-      }
-    } else if (form.phone && form.phone === normalizePhone(form.recoveryPhone)) {
-      update("phone", "");
+    const valid = subtypeOptions.some(
+      (item) => item.value === form.productSubtype
+    );
+
+    if (form.productSubtype && !valid) {
+      update("productSubtype", "");
     }
-  }, [form.recoveryPhone, form.useRecoveryPhoneForContact]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [form.productType, form.productSubtype, subtypeOptions]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    if (form.useRecoveryEmailForContact) {
-      const normalized = normalizeEmail(form.recoveryEmail);
-      if (form.email !== normalized) {
-        update("email", normalized);
-      }
-    } else if (
-      form.email &&
-      form.email === normalizeEmail(form.recoveryEmail)
-    ) {
-      update("email", "");
-    }
-  }, [form.recoveryEmail, form.useRecoveryEmailForContact]); // eslint-disable-line react-hooks/exhaustive-deps
+  if (!form.phone) {
+  if (form.allowDirectCall) update("allowDirectCall", false);
+  if (form.allowDirectWhatsapp) update("allowDirectWhatsapp", false);
+}
+}, [form.phone, form.allowDirectCall, form.allowDirectWhatsapp]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -188,37 +269,38 @@ export default function SetupPage({ params }: Props) {
       }
 
       const normalizedPhone = normalizePhone(form.phone);
-      const normalizedEmail = normalizeEmail(form.email);
-      const normalizedRecoveryPhone = normalizePhone(form.recoveryPhone);
       const normalizedRecoveryEmail = normalizeEmail(form.recoveryEmail);
       const hasNote = Boolean(form.note.trim());
 
       const payload = {
         productType: form.productType,
+        productSubtype: form.productSubtype,
         petName: form.petName.trim(),
-        name: "",
-        ownerName: "",
+        name: form.petName.trim(),
+        ownerName: form.ownerName.trim(),
         phone: normalizedPhone,
-        email: normalizedEmail,
+        email: normalizedRecoveryEmail,
         city: "",
         addressDetail: "",
         distinctiveFeature: "",
         note: form.note.trim(),
         alerts: [],
-        allowPhone: Boolean(normalizedPhone),
-        allowWhatsapp: false,
-        showName: false,
-        showPhone: Boolean(normalizedPhone),
-        showEmail: Boolean(normalizedEmail),
+        allowPhone: Boolean(normalizedPhone && form.allowDirectCall),
+        allowWhatsapp: Boolean(
+          normalizedPhone && form.allowDirectCall && form.allowDirectWhatsapp
+        ),
+        showName: Boolean(form.ownerName.trim()),
+        showPhone: Boolean(normalizedPhone && form.allowDirectCall),
+        showEmail: false,
         showCity: false,
         showAddressDetail: false,
         showPetName: true,
         showNote: hasNote,
-        recoveryPhone: normalizedRecoveryPhone,
+        recoveryPhone: "",
         recoveryEmail: normalizedRecoveryEmail,
         recoveryEmailConfirm: normalizeEmail(recoveryEmailConfirm),
-        useRecoveryPhoneAsContact: form.useRecoveryPhoneForContact,
-        useRecoveryEmailAsContact: form.useRecoveryEmailForContact
+        useRecoveryPhoneAsContact: false,
+        useRecoveryEmailAsContact: false
       };
 
       const res = await fetch(`/api/setup/${code}`, {
@@ -256,42 +338,30 @@ export default function SetupPage({ params }: Props) {
   if (done) {
     return (
       <main className="min-h-screen bg-[#f5f5f3] px-4 py-5 text-neutral-900">
-        <div className="mx-auto max-w-md space-y-3">
-          <div className="flex items-center justify-between gap-3 px-1">
-            <a
-              href={mainSiteUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="text-sm text-neutral-500 transition hover:text-neutral-900 hover:underline"
-            >
-              ← Dokuntag ana sayfa
-            </a>
-          </div>
+        <div className="mx-auto max-w-md space-y-2 md:space-y-3">
+          <a
+            href={mainSiteUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="text-sm text-neutral-500 transition hover:text-neutral-900 hover:underline"
+          >
+            ← Dokuntag ana sayfa
+          </a>
 
-          <section className="rounded-[1.5rem] border border-neutral-200 bg-white px-4 py-4 shadow-sm">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="text-xs uppercase tracking-[0.18em] text-neutral-400">
-                  Dokuntag
-                </p>
-                <h1 className="mt-1.5 text-2xl font-semibold tracking-tight">
-                  Kurulum tamamlandı
-                </h1>
-              </div>
-              <span
-                className={`rounded-full border px-3 py-1 text-xs font-medium ${theme.badge}`}
-              >
-                Hazır
-              </span>
-            </div>
+          <section className="rounded-[1.5rem] border border-neutral-200 bg-white px-4 py-3.5 shadow-sm">
+            <p className="text-xs uppercase tracking-[0.18em] text-neutral-400">
+              Dokuntag
+            </p>
+            <h1 className="mt-1.5 text-2xl font-semibold tracking-tight">
+              Kurulum tamamlandı
+            </h1>
 
-            <p className="mt-2.5 text-sm leading-6 text-neutral-600">
-              Ürününüz artık aktif. Herkese açık sayfayı inceleyebilir,
-              ayrıntılı bilgi girişi ve tüm ayarlar için yönetim sayfasına
-              geçebilirsiniz.
+            <p className="mt-2 text-sm leading-6 text-neutral-600">
+              Profil aktif. Herkese açık sayfayı inceleyebilir, ayrıntıları
+              yönetim sayfasından düzenleyebilirsiniz.
             </p>
 
-            <div className="mt-4 grid grid-cols-2 gap-2">
+            <div className="mt-4 grid grid-cols-2 gap-1.5">
               <button
                 type="button"
                 onClick={() => router.push(`/p/${code}`)}
@@ -313,50 +383,25 @@ export default function SetupPage({ params }: Props) {
               </button>
             </div>
           </section>
-
-          <section className="rounded-[1.5rem] border border-neutral-200 bg-white px-4 py-4 shadow-sm">
-            <p className="text-sm font-medium text-neutral-900">
-              Dokuntag ile örnek profil ve kullanım akışını inceleyin.
-            </p>
-
-            <div className="mt-3 grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => router.push("/demo")}
-                className="rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm font-medium transition hover:border-neutral-400 hover:bg-neutral-50"
-              >
-                Demo sayfası
-              </button>
-              <button
-                type="button"
-                onClick={() => router.push("/how-it-works")}
-                className="rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm font-medium transition hover:border-neutral-400 hover:bg-neutral-50"
-              >
-                Nasıl çalışır?
-              </button>
-            </div>
-          </section>
         </div>
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen bg-[#f5f5f3] px-4 py-4 text-neutral-900">
-      <div className="mx-auto max-w-md space-y-3">
-        <div className="flex items-center justify-between gap-3 px-1">
-          <a
-            href={mainSiteUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="text-sm text-neutral-500 transition hover:text-neutral-900 hover:underline"
-          >
-            ← Dokuntag ana sayfa
-          </a>
-        </div>
+    <main className="min-h-screen bg-[#f5f5f3] px-4 py-3.5 text-neutral-900">
+      <div className="mx-auto max-w-md  ">
+        <a
+          href={mainSiteUrl}
+          target="_blank"
+          rel="noreferrer"
+          className="text-sm text-neutral-500 transition hover:text-neutral-900 hover:underline"
+        >
+          ← Dokuntag ana sayfa
+        </a>
 
         <section
-          className={`rounded-[1.5rem] border px-4 py-4 shadow-sm ${theme.wrapper}`}
+          className={`rounded-[1.5rem] border px-4 py-3.5 shadow-sm ${theme.wrapper}`}
         >
           <div className="flex items-start justify-between gap-3">
             <div>
@@ -367,33 +412,48 @@ export default function SetupPage({ params }: Props) {
                 Hızlı kurulum
               </h1>
             </div>
-
+ <span className={`rounded-full border px-3 py-1 text-xs font-medium ${theme.badge}`}>
+  Kod • {code || "-"}
+</span>
             <span
               className={`rounded-full border px-3 py-1 text-xs font-medium ${theme.badge}`}
             >
               {getProductTypeLabel(form.productType)}
             </span>
+            
           </div>
 
-          <p className="mt-2.5 text-sm leading-6 text-neutral-600">
-            Bilgileri girin, kurulumu tamamlayın, sonra herkese açık sayfanızı ve
-            yönetim alanınızı inceleyin.
+          <p className="mt-2 text-sm leading-6 text-neutral-600">
+            {getHeaderDescription(form.productType)}
+          </p>
+
+          <div className="mt-3 flex justify-end">
+          
+          </div>
+        </section>
+
+        <section className="rounded-[1.35rem] border border-blue-200 bg-blue-50 px-3 py-3">
+          <p className="text-sm font-medium text-blue-950">
+            Bu sayfa hızlı kurulum içindir
+          </p>
+          <p className="mt-0.5 text-xs leading-5 text-blue-900">
+            İsterseniz daha sonra yönetim sayfasından detayları ekleyebilirsiniz.
           </p>
         </section>
 
         <form
           noValidate
           onSubmit={handleSubmit}
-          className="rounded-[1.5rem] border border-neutral-200 bg-white px-4 py-4 shadow-sm"
+          className="rounded-[1.5rem] border border-neutral-200 bg-white px-4 py-3.5 shadow-sm"
         >
-          <div className="space-y-2.5">
+          <div className="space-y-2.5 md:space-y-3">
             {error ? (
               <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 shadow-sm">
                 {error}
               </div>
             ) : null}
 
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-1.5">
               <select
                 value={form.productType}
                 onChange={(e) =>
@@ -408,6 +468,23 @@ export default function SetupPage({ params }: Props) {
                 <option value="other">Diğer</option>
               </select>
 
+              <select
+                value={form.productSubtype}
+                onChange={(e) =>
+                  update("productSubtype", e.target.value as ProductSubtype | "")
+                }
+                className="min-w-0 rounded-2xl border border-neutral-300 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
+              >
+                <option value="">{getSubtypePlaceholder(form.productType)}</option>
+                {subtypeOptions.map((item) => (
+                  <option key={`${form.productType}-${item.value}`} value={item.value}>
+                    {item.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="grid grid-cols-2 gap-1.5">
               <input
                 value={form.petName}
                 onChange={(e) => update("petName", e.target.value)}
@@ -415,30 +492,72 @@ export default function SetupPage({ params }: Props) {
                 className="min-w-0 rounded-2xl border border-neutral-300 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
                 required
               />
-            </div>
-
-            <div className="grid grid-cols-2 gap-2">
-              <input
-                type="email"
-                value={form.email}
-                onChange={(e) =>
-                  update("email", normalizeEmail(e.target.value))
-                }
-                placeholder="İletişim e-postası"
-                disabled={form.useRecoveryEmailForContact}
-                className="min-w-0 rounded-2xl border border-neutral-300 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200 disabled:cursor-not-allowed disabled:bg-neutral-100"
-              />
 
               <input
-                value={form.phone}
-                onChange={(e) =>
-                  update("phone", normalizePhone(e.target.value))
-                }
-                placeholder="İletişim telefonu"
-                disabled={form.useRecoveryPhoneForContact}
-                className="min-w-0 rounded-2xl border border-neutral-300 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200 disabled:cursor-not-allowed disabled:bg-neutral-100"
+                value={form.ownerName}
+                onChange={(e) => update("ownerName", e.target.value)}
+                placeholder={getOwnerPlaceholder(form.productType)}
+                className="min-w-0 rounded-2xl border border-neutral-300 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
               />
             </div>
+
+            <section className="rounded-[1.35rem] border border-neutral-200 bg-neutral-50 px-3 py-3">
+              <p className="text-sm font-medium text-neutral-900">
+                İletişim telefonu
+              </p>
+              <p className="mt-0.5 text-xs leading-5 text-neutral-500">
+                Telefon, bulan kişinin size hızlıca ulaşabilmesi içindir. Arama ve WhatsApp seçeneklerini siz belirlersiniz.
+              </p>
+
+              <div className="mt-2 grid grid-cols-2 gap-1.5">
+                <input
+                  value={form.phone}
+                  onChange={(e) =>
+                    update("phone", normalizePhone(e.target.value))
+                  }
+                  placeholder="05xxxxxxxxx"
+                  className="min-w-0 rounded-2xl border border-neutral-300 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
+                />
+
+                <div className="grid grid-cols-2 gap-1.5">
+                  <button
+                    type="button"
+                    disabled={!form.phone}
+                    onClick={() => {
+                      const next = !form.allowDirectCall;
+                      update("allowDirectCall", next);
+                     
+                    }}
+                    className={`rounded-2xl border px-3 py-2.5 text-xs font-medium transition ${
+                      form.allowDirectCall
+                        ? "border-blue-600 bg-blue-600 text-white shadow-sm"
+                        : form.phone
+                          ? "border-neutral-300 bg-white text-neutral-600 hover:border-blue-200 hover:bg-blue-50"
+                          : "cursor-not-allowed border-neutral-200 bg-neutral-100 text-neutral-400"
+                    }`}
+                  >
+                  Telefon
+                  </button>
+
+                  <button
+                    type="button"
+                    disabled={!form.phone}
+                    onClick={() =>
+                      update("allowDirectWhatsapp", !form.allowDirectWhatsapp)
+                    }
+                    className={`rounded-2xl border px-3 py-2.5 text-xs font-medium transition ${
+                      form.allowDirectWhatsapp
+                        ? "border-green-600 bg-green-600 text-white shadow-sm"
+                        : form.phone
+                        ? "border-neutral-300 bg-white text-neutral-700 hover:border-emerald-300 hover:bg-emerald-50"
+                        : "cursor-not-allowed border-neutral-200 bg-neutral-100 text-neutral-400"
+                    }`}
+                  >
+                    WhatsApp
+                  </button>
+                </div>
+              </div>
+            </section>
 
             <textarea
               value={form.note}
@@ -447,105 +566,44 @@ export default function SetupPage({ params }: Props) {
               className="min-h-[72px] w-full rounded-2xl border border-neutral-300 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
             />
 
-            <div className="rounded-[1.35rem] border border-neutral-200 bg-neutral-50 px-3 py-3">
+            <section className="rounded-[1.35rem] border border-neutral-200 bg-neutral-50 px-3 py-3">
               <p className="text-sm font-medium text-neutral-900">
                 Hesap kurtarma
               </p>
-              <p className="mt-1 text-xs leading-5 text-neutral-500">
-                Yönetim erişimini tekrar alabilmeniz için kurtarma e-postası iki kez
-                aynı şekilde girilmelidir.
+              <p className="mt-0.5 text-xs leading-5 text-neutral-500">
+                E-posta kimseye gösterilmez. Yönetim erişimi ve Bildirimler için kullanılır.
               </p>
 
-              <div className="mt-2.5 grid grid-cols-2 gap-2">
-                <div className="min-w-0">
-                  <input
-                    type="email"
-                    value={form.recoveryEmail}
-                    onChange={(e) =>
-                      update("recoveryEmail", normalizeEmail(e.target.value))
-                    }
-                    placeholder="Kurtarma e-postası"
-                    className={`w-full min-w-0 rounded-2xl border bg-white px-3 py-2.5 text-sm outline-none transition focus:ring-2 ${
-                      recoveryEmailError
-                        ? "border-red-300 focus:border-red-400 focus:ring-red-100"
-                        : "border-neutral-300 focus:border-neutral-500 focus:ring-neutral-200"
-                    }`}
-                  />
+              <div className="mt-2 grid grid-cols-2 gap-1.5">
+                <input
+                  type="email"
+                  value={form.recoveryEmail}
+                  onChange={(e) =>
+                    update("recoveryEmail", normalizeEmail(e.target.value))
+                  }
+                  placeholder="Kurtarma e-postası"
+                  className={`min-w-0 rounded-2xl border bg-white px-3 py-2.5 text-sm outline-none transition focus:ring-2 ${
+                    recoveryEmailError
+                      ? "border-red-300 focus:border-red-400 focus:ring-red-100"
+                      : "border-neutral-300 focus:border-neutral-500 focus:ring-neutral-200"
+                  }`}
+                />
 
-                  <input
-                    type="email"
-                    value={recoveryEmailConfirm}
-                    onChange={(e) =>
-                      setRecoveryEmailConfirm(normalizeEmail(e.target.value))
-                    }
-                    placeholder="Kurtarma e-postasını tekrar yazın"
-                    className={`mt-2 w-full min-w-0 rounded-2xl border bg-white px-3 py-2.5 text-sm outline-none transition focus:ring-2 ${
-                      recoveryEmailError
-                        ? "border-red-300 focus:border-red-400 focus:ring-red-100"
-                        : "border-neutral-300 focus:border-neutral-500 focus:ring-neutral-200"
-                    }`}
-                  />
-
-                  <label className="mt-1.5 inline-flex items-center gap-2 text-xs text-neutral-700">
-                    <input
-                      type="checkbox"
-                      checked={form.useRecoveryEmailForContact}
-                      onChange={(e) =>
-                        update("useRecoveryEmailForContact", e.target.checked)
-                      }
-                    />
-                    İletişim için kullan
-                  </label>
-                </div>
-
-                <div className="min-w-0">
-                  <input
-                    value={form.recoveryPhone}
-                    onChange={(e) =>
-                      update("recoveryPhone", normalizePhone(e.target.value))
-                    }
-                    placeholder="Kurtarma telefonu"
-                    className="w-full min-w-0 rounded-2xl border border-neutral-300 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
-                  />
-                  <div className="mt-2 space-y-1">
-  <label className="flex items-center gap-2 text-xs">
-    <input
-      type="checkbox"
-      checked={form.allowDirectCall}
-      onChange={(e) =>
-        update("allowDirectCall", e.target.checked)
-      }
-      disabled={!form.recoveryPhone}
-    />
-    Telefon açılsın
-  </label>
-
-  <label className="flex items-center gap-2 text-xs">
-    <input
-      type="checkbox"
-      checked={form.allowDirectWhatsapp}
-      onChange={(e) =>
-        update("allowDirectWhatsapp", e.target.checked)
-      }
-      disabled={!form.allowDirectCall || !form.recoveryPhone}
-    />
-    WhatsApp açılsın
-  </label>
-</div>
-                  <label className="mt-1.5 inline-flex items-center gap-2 text-xs text-neutral-700">
-                    <input
-                      type="checkbox"
-                      checked={form.useRecoveryPhoneForContact}
-                      onChange={(e) =>
-                        update("useRecoveryPhoneForContact", e.target.checked)
-                      }
-                    />
-                    
-                    İletişim için kullan
-                  </label>
-                </div>
+                <input
+                  type="email"
+                  value={recoveryEmailConfirm}
+                  onChange={(e) =>
+                    setRecoveryEmailConfirm(normalizeEmail(e.target.value))
+                  }
+                  placeholder="E-postayı tekrar yazın"
+                  className={`min-w-0 rounded-2xl border bg-white px-3 py-2.5 text-sm outline-none transition focus:ring-2 ${
+                    recoveryEmailError
+                      ? "border-red-300 focus:border-red-400 focus:ring-red-100"
+                      : "border-neutral-300 focus:border-neutral-500 focus:ring-neutral-200"
+                  }`}
+                />
               </div>
-            </div>
+            </section>
 
             <button
               disabled={saving}
@@ -556,12 +614,12 @@ export default function SetupPage({ params }: Props) {
           </div>
         </form>
 
-        <section className="rounded-[1.5rem] border border-neutral-200 bg-white px-4 py-4 shadow-sm">
+        <section className="rounded-[1.5rem] border border-neutral-200 bg-white px-4 py-3.5 shadow-sm">
           <p className="text-sm font-medium text-neutral-900">
             Dokuntag ile örnek profil ve kullanım akışını inceleyin.
           </p>
 
-          <div className="mt-3 grid grid-cols-2 gap-2">
+          <div className="mt-3 grid grid-cols-2 gap-1.5">
             <button
               type="button"
               onClick={() => router.push("/demo")}
