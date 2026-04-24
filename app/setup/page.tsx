@@ -1,9 +1,9 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
-type ProductType = "pet" | "item" | "key" | "person" | "other" | "other";
+type ProductType = "pet" | "item" | "key" | "person" | "other";
 type OpenSection = "basic" | "contact" | "alerts" | null;
 
 type SetupForm = {
@@ -43,35 +43,35 @@ type ContactInsightsResponse = {
 
 const ALERT_OPTIONS_BY_TYPE: Record<ProductType, string[]> = {
   pet: [
-    "Acil bana ulaÅŸÄ±n",
-    "HayvanÄ±m hasta",
+    "Acil bana ulaşın",
+    "Hayvanım hasta",
     "Alerjisi var",
-    "Ãœrkek / yaklaÅŸmayÄ±n",
-    "Ã–dÃ¼l verilecektir"
+    "Ürkek / yaklaşmayın",
+    "Ödül verilecektir",
   ],
   item: [
-    "Acil bana ulaÅŸÄ±n",
-    "LÃ¼tfen benimle iletiÅŸime geÃ§in",
-    "Ä°Ã§inde Ã¶nemli eÅŸya var",
-    "Ã–dÃ¼l verilecektir"
+    "Acil bana ulaşın",
+    "Lütfen benimle iletişime geçin",
+    "İçinde önemli eşya var",
+    "Ödül verilecektir",
   ],
   key: [
-    "Acil bana ulaÅŸÄ±n",
-    "LÃ¼tfen benimle iletiÅŸime geÃ§in",
-    "Ã–nemli anahtar",
-    "Ã–dÃ¼l verilecektir"
+    "Acil bana ulaşın",
+    "Lütfen benimle iletişime geçin",
+    "Önemli anahtar",
+    "Ödül verilecektir",
   ],
   person: [
-    "Acil yakÄ±nÄ±ma ulaÅŸÄ±n",
-    "SaÄŸlÄ±k durumu iÃ§in bilgi verin",
-    "Kaybolursa lÃ¼tfen haber verin",
-    "Ã–dÃ¼l verilecektir"
+    "Acil yakınıma ulaşın",
+    "Sağlık durumu için bilgi verin",
+    "Kaybolursa lütfen haber verin",
+    "Ödül verilecektir",
   ],
   other: [
-  "Acil bana ulaşın",
-  "Lütfen benimle iletişime geçin",
-  "Önemli bilgi var"
-]
+    "Acil bana ulaşın",
+    "Lütfen benimle iletişime geçin",
+    "Önemli bilgi var",
+  ],
 };
 
 const initialForm: SetupForm = {
@@ -95,39 +95,41 @@ const initialForm: SetupForm = {
   showCity: false,
   showAddressDetail: false,
   showPetName: true,
-  showNote: true
+  showNote: true,
 };
 
 function getPrimaryNameLabel(productType: ProductType) {
-  if (productType === "pet") return "Evcil hayvan adÄ±";
-  if (productType === "person") return "KiÅŸi adÄ±";
-  if (productType === "key") return "Anahtar adÄ±";
-  return "ÃœrÃ¼n adÄ±";
+  if (productType === "pet") return "Evcil hayvan adı";
+  if (productType === "person") return "Kişi adı";
+  if (productType === "key") return "Anahtar adı";
+  return "Ürün adı";
 }
 
 function getOwnerNameLabel(productType: ProductType) {
-  if (productType === "person") return "YakÄ±nÄ±";
+  if (productType === "person") return "Yakını";
   return "Sahibi";
 }
 
 function getSecondaryNameLabel(productType: ProductType) {
-  if (productType === "pet") return "Etiket baÅŸlÄ±ÄŸÄ±";
-  if (productType === "person") return "Profil baÅŸlÄ±ÄŸÄ±";
-  if (productType === "key") return "Etiket / kÄ±sa baÅŸlÄ±k";
-  return "Etiket / kÄ±sa baÅŸlÄ±k";
+  if (productType === "pet") return "Etiket başlığı";
+  if (productType === "person") return "Profil başlığı";
+  return "Etiket / kısa başlık";
 }
 
 function getDistinctiveFeaturePlaceholder(productType: ProductType) {
   if (productType === "pet") {
-    return "Ã–rn: saÄŸ kulaÄŸÄ±nda beyaz leke, mavi tasma";
+    return "Örn: sağ kulağında beyaz leke, mavi tasma";
   }
+
   if (productType === "key") {
-    return "Ã–rn: kÄ±rmÄ±zÄ± anahtarlÄ±k, metal halka";
+    return "Örn: kırmızı anahtarlık, metal halka";
   }
+
   if (productType === "person") {
-    return "Ã–rn: mavi mont, siyah sÄ±rt Ã§antasÄ±";
+    return "Örn: mavi mont, siyah sırt çantası";
   }
-  return "Ã–rn: siyah Ã§anta, kÃ¶ÅŸesi hafif Ã§izik";
+
+  return "Örn: siyah çanta, köşesi hafif çizik";
 }
 
 function normalizePhone(value: string) {
@@ -153,7 +155,7 @@ function SectionCard({
   description,
   isOpen,
   onToggle,
-  children
+  children,
 }: {
   id: Exclude<OpenSection, null>;
   title: string;
@@ -173,6 +175,7 @@ function SectionCard({
           <h2 className="text-lg font-semibold tracking-tight text-neutral-900">
             {title}
           </h2>
+
           {description ? (
             <p className="mt-1 text-sm leading-6 text-neutral-600">
               {description}
@@ -181,7 +184,7 @@ function SectionCard({
         </div>
 
         <span className="ml-4 text-xl text-neutral-500">
-          {isOpen ? "âˆ’" : "+"}
+          {isOpen ? "−" : "+"}
         </span>
       </button>
 
@@ -197,7 +200,7 @@ function SectionCard({
 function Field({
   label,
   children,
-  optional
+  optional,
 }: {
   label: string;
   children: React.ReactNode;
@@ -209,10 +212,12 @@ function Field({
         <label className="block text-sm font-medium text-neutral-900">
           {label}
         </label>
+
         {optional ? (
           <span className="text-xs text-neutral-400">Opsiyonel</span>
         ) : null}
       </div>
+
       {children}
     </div>
   );
@@ -222,7 +227,7 @@ function InlineToggle({
   checked,
   disabled,
   label,
-  onChange
+  onChange,
 }: {
   checked: boolean;
   disabled?: boolean;
@@ -254,7 +259,7 @@ function InlineToggle({
 function AlertOption({
   label,
   checked,
-  onChange
+  onChange,
 }: {
   label: string;
   checked: boolean;
@@ -276,7 +281,7 @@ function AlertOption({
 function GuideStep({
   step,
   title,
-  text
+  text,
 }: {
   step: string;
   title: string;
@@ -287,7 +292,9 @@ function GuideStep({
       <div className="inline-flex rounded-full border border-neutral-300 bg-neutral-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-neutral-600">
         {step}
       </div>
+
       <h3 className="mt-3 text-sm font-semibold text-neutral-900">{title}</h3>
+
       <p className="mt-1.5 text-sm leading-6 text-neutral-600">{text}</p>
     </div>
   );
@@ -307,7 +314,7 @@ export default function SetupPage() {
   function updateField<K extends keyof SetupForm>(key: K, value: SetupForm[K]) {
     setForm((prev) => ({
       ...prev,
-      [key]: value
+      [key]: value,
     }));
   }
 
@@ -320,7 +327,7 @@ export default function SetupPage() {
       ...prev,
       alerts: checked
         ? [...prev.alerts, alert]
-        : prev.alerts.filter((item) => item !== alert)
+        : prev.alerts.filter((item) => item !== alert),
     }));
   }
 
@@ -329,21 +336,21 @@ export default function SetupPage() {
   const hasCity = useMemo(() => Boolean(form.city.trim()), [form.city]);
   const hasAddressDetail = useMemo(
     () => Boolean(form.addressDetail.trim()),
-    [form.addressDetail]
+    [form.addressDetail],
   );
   const hasNote = useMemo(() => Boolean(form.note.trim()), [form.note]);
 
   const alertOptions = useMemo(
     () => ALERT_OPTIONS_BY_TYPE[form.productType],
-    [form.productType]
+    [form.productType],
   );
 
   useEffect(() => {
     setForm((prev) => ({
       ...prev,
       alerts: prev.alerts.filter((item) =>
-        ALERT_OPTIONS_BY_TYPE[prev.productType].includes(item)
-      )
+        ALERT_OPTIONS_BY_TYPE[prev.productType].includes(item),
+      ),
     }));
   }, [form.productType]);
 
@@ -351,7 +358,7 @@ export default function SetupPage() {
     if (!hasPhone && form.allowPhone) {
       setForm((prev) => ({
         ...prev,
-        allowPhone: false
+        allowPhone: false,
       }));
     }
   }, [hasPhone, form.allowPhone]);
@@ -360,7 +367,7 @@ export default function SetupPage() {
     if ((!hasPhone || !form.allowPhone) && form.allowWhatsapp) {
       setForm((prev) => ({
         ...prev,
-        allowWhatsapp: false
+        allowWhatsapp: false,
       }));
     }
   }, [hasPhone, form.allowPhone, form.allowWhatsapp]);
@@ -369,7 +376,7 @@ export default function SetupPage() {
     if ((!hasPhone || !form.allowPhone) && form.showPhone) {
       setForm((prev) => ({
         ...prev,
-        showPhone: false
+        showPhone: false,
       }));
     }
   }, [hasPhone, form.allowPhone, form.showPhone]);
@@ -378,7 +385,7 @@ export default function SetupPage() {
     if (!hasEmail && form.showEmail) {
       setForm((prev) => ({
         ...prev,
-        showEmail: false
+        showEmail: false,
       }));
     }
   }, [hasEmail, form.showEmail]);
@@ -387,7 +394,7 @@ export default function SetupPage() {
     if (!hasCity && form.showCity) {
       setForm((prev) => ({
         ...prev,
-        showCity: false
+        showCity: false,
       }));
     }
   }, [hasCity, form.showCity]);
@@ -396,7 +403,7 @@ export default function SetupPage() {
     if (!hasAddressDetail && form.showAddressDetail) {
       setForm((prev) => ({
         ...prev,
-        showAddressDetail: false
+        showAddressDetail: false,
       }));
     }
   }, [hasAddressDetail, form.showAddressDetail]);
@@ -405,7 +412,7 @@ export default function SetupPage() {
     if (!hasNote && form.showNote) {
       setForm((prev) => ({
         ...prev,
-        showNote: false
+        showNote: false,
       }));
     }
   }, [hasNote, form.showNote]);
@@ -427,6 +434,7 @@ export default function SetupPage() {
 
         if (phone) params.set("phone", phone);
         if (email) params.set("email", email);
+
         if (form.code.trim()) {
           params.set("excludeCode", form.code.trim().toUpperCase());
         }
@@ -434,8 +442,8 @@ export default function SetupPage() {
         const res = await fetch(
           `/api/setup/contact-insights?${params.toString()}`,
           {
-            cache: "no-store"
-          }
+            cache: "no-store",
+          },
         );
 
         const data = (await res.json()) as ContactInsightsResponse;
@@ -469,25 +477,25 @@ export default function SetupPage() {
       const res = await fetch("/api/setup", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           ...form,
-          code: form.code.trim().toUpperCase()
-        })
+          code: form.code.trim().toUpperCase(),
+        }),
       });
 
       const data = await res.json();
 
       if (!res.ok || !data?.ok) {
-        throw new Error(data?.error || "Kurulum sÄ±rasÄ±nda bir hata oluÅŸtu.");
+        throw new Error(data?.error || "Kurulum sırasında bir hata oluştu.");
       }
 
       router.push(
-        `/manage/${form.code.trim().toUpperCase()}?token=${data.tag.manageToken}`
+        `/manage/${form.code.trim().toUpperCase()}?token=${data.tag.manageToken}`,
       );
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Bir hata oluÅŸtu.");
+      setError(err instanceof Error ? err.message : "Bir hata oluştu.");
     } finally {
       setLoading(false);
     }
@@ -503,56 +511,64 @@ export default function SetupPage() {
             rel="noreferrer"
             className="inline-flex items-center text-sm text-neutral-500 transition hover:text-neutral-900 hover:underline"
           >
-            â† Dokuntag ana sayfa
+            ← Dokuntag ana sayfa
           </a>
 
           <p className="mt-4 text-sm uppercase tracking-[0.24em] text-neutral-500">
             Dokuntag Setup
           </p>
+
           <h1 className="mt-2 text-3xl font-semibold tracking-tight text-neutral-900">
-            Ä°lk kurulum
+            İlk kurulum
           </h1>
+
           <p className="mt-3 max-w-xl text-sm leading-6 text-neutral-600">
-            Bilgileri doldurun ve kurulumu tamamlayÄ±n. SonrasÄ±nda size Ã¶zel
-            yÃ¶netim baÄŸlantÄ±nÄ±z oluÅŸur.
+            Bilgileri doldurun ve kurulumu tamamlayın. Sonrasında size özel
+            yönetim bağlantınız oluşur.
           </p>
         </div>
 
         <section className="mb-5 overflow-hidden rounded-[2rem] border border-neutral-200 bg-white shadow-sm">
           <div className="border-b border-neutral-200 bg-gradient-to-br from-white via-neutral-50 to-neutral-100/80 px-5 py-5 sm:px-6">
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">
-              NasÄ±l kurulur
+              Nasıl kurulur
             </p>
+
             <h2 className="mt-2 text-xl font-semibold tracking-tight text-neutral-900">
-              3 adÄ±mda kurulum
+              3 adımda kurulum
             </h2>
+
             <p className="mt-2 max-w-2xl text-sm leading-6 text-neutral-600">
-              KÄ±sa bilgileri girin, eriÅŸim tercihlerini seÃ§in ve kurulumu tamamlayÄ±n.
+              Kısa bilgileri girin, erişim tercihlerini seçin ve kurulumu
+              tamamlayın.
             </p>
           </div>
 
           <div className="px-5 py-5 sm:px-6">
             <div className="grid gap-3 sm:grid-cols-3">
               <GuideStep
-                step="1. AdÄ±m"
+                step="1. Adım"
                 title="Temel bilgileri girin"
-                text="Kod, Ã¼rÃ¼n tipi ve ana isim gibi temel bilgileri doldurun."
+                text="Kod, ürün tipi ve ana isim gibi temel bilgileri doldurun."
               />
+
               <GuideStep
-                step="2. AdÄ±m"
-                title="Ä°letiÅŸim tercihlerini seÃ§in"
-                text="Hangi bilgilerin gÃ¶rÃ¼neceÄŸini ve size nasÄ±l ulaÅŸÄ±lacaÄŸÄ±nÄ± belirleyin."
+                step="2. Adım"
+                title="İletişim tercihlerini seçin"
+                text="Hangi bilgilerin görüneceğini ve size nasıl ulaşılacağını belirleyin."
               />
+
               <GuideStep
-                step="3. AdÄ±m"
-                title="Kurulumu tamamlayÄ±n"
-                text="Kaydettikten sonra size Ã¶zel yÃ¶netim baÄŸlantÄ±nÄ±z oluÅŸur."
+                step="3. Adım"
+                title="Kurulumu tamamlayın"
+                text="Kaydettikten sonra size özel yönetim bağlantınız oluşur."
               />
             </div>
 
             <div className="mt-4 rounded-[1.5rem] border border-blue-200 bg-blue-50 px-4 py-4 text-sm leading-6 text-blue-900">
-              Ä°pucu: KÄ±sa baÅŸlÄ±k yalnÄ±zca ana isimden farklÄ±ysa kullanÄ±lÄ±r. Telefon,
-              e-posta ve not gibi alanlarÄ± ister aÃ§abilir ister gizli tutabilirsiniz.
+              İpucu: Kısa başlık yalnızca ana isimden farklıysa kullanılır.
+              Telefon, e-posta ve not gibi alanları ister açabilir ister gizli
+              tutabilirsiniz.
             </div>
           </div>
         </section>
@@ -566,19 +582,21 @@ export default function SetupPage() {
         {contactInsights?.hasMatch ? (
           <div className="mb-5 rounded-[1.5rem] border border-amber-200 bg-amber-50 px-4 py-4">
             <p className="text-sm font-medium text-amber-900">
-              Bu iletiÅŸim bilgileriyle iliÅŸkili Ã¶nceki Ã¼rÃ¼nleriniz olabilir
+              Bu iletişim bilgileriyle ilişkili önceki ürünleriniz olabilir
             </p>
+
             <p className="mt-1 text-sm leading-6 text-amber-800">
               {contactInsights.unreadCount > 0
-                ? `Ã–nceki Ã¼rÃ¼nlerinizde toplam ${contactInsights.unreadCount} okunmamÄ±ÅŸ mesaj gÃ¶rÃ¼nÃ¼yor.`
-                : "Daha Ã¶nce eklenmiÅŸ Ã¼rÃ¼nleriniz olabilir. Ä°sterseniz Ã¼rÃ¼nlerim alanÄ±nÄ± da kontrol edin."}
+                ? `Önceki ürünlerinizde toplam ${contactInsights.unreadCount} okunmamış mesaj görünüyor.`
+                : "Daha önce eklenmiş ürünleriniz olabilir. İsterseniz ürünlerim alanını da kontrol edin."}
             </p>
+
             <div className="mt-3 flex flex-wrap gap-2">
               <a
                 href="/my"
                 className="rounded-2xl border border-amber-300 bg-white px-4 py-2 text-sm font-medium text-amber-900 transition hover:bg-amber-100"
               >
-                ÃœrÃ¼nlerime git
+                Ürünlerime git
               </a>
             </div>
           </div>
@@ -588,7 +606,7 @@ export default function SetupPage() {
           <SectionCard
             id="basic"
             title="Temel bilgiler"
-            description="ÃœrÃ¼n ve profil bilgilerini girin."
+            description="Ürün ve profil bilgilerini girin."
             isOpen={openSection === "basic"}
             onToggle={toggleSection}
           >
@@ -598,13 +616,13 @@ export default function SetupPage() {
                   value={form.code}
                   onChange={(e) => updateField("code", e.target.value)}
                   className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
-                  placeholder="Ã–rn: DT001"
+                  placeholder="Örn: DT001"
                   required
                 />
               </Field>
 
               <div className="grid gap-4 sm:grid-cols-2">
-                <Field label="ÃœrÃ¼n tipi">
+                <Field label="Ürün tipi">
                   <select
                     value={form.productType}
                     onChange={(e) =>
@@ -612,10 +630,10 @@ export default function SetupPage() {
                     }
                     className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
                   >
-                    <option value="item">EÅŸya</option>
+                    <option value="item">Eşya</option>
                     <option value="key">Anahtar</option>
                     <option value="pet">Evcil hayvan</option>
-                    <option value="person">KiÅŸi</option>
+                    <option value="person">Kişi</option>
                   </select>
                 </Field>
 
@@ -624,13 +642,14 @@ export default function SetupPage() {
                     value={form.petName}
                     onChange={(e) => updateField("petName", e.target.value)}
                     className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
-                    placeholder="Ana gÃ¶rÃ¼nen isim"
+                    placeholder="Ana görünen isim"
                     required
                   />
+
                   <div className="mt-3 flex flex-wrap gap-2">
                     <InlineToggle
                       checked={form.showPetName}
-                      label={`${getPrimaryNameLabel(form.productType)} gÃ¶rÃ¼nsÃ¼n`}
+                      label={`${getPrimaryNameLabel(form.productType)} görünsün`}
                       onChange={(value) => updateField("showPetName", value)}
                     />
                   </div>
@@ -642,10 +661,11 @@ export default function SetupPage() {
                   value={form.tagName}
                   onChange={(e) => updateField("tagName", e.target.value)}
                   className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
-                  placeholder="Sadece farklÄ±ysa girin"
+                  placeholder="Sadece farklıysa girin"
                 />
+
                 <p className="mt-2 text-xs text-neutral-500">
-                  Ana isimden farklÄ±ysa gÃ¶sterilir.
+                  Ana isimden farklıysa gösterilir.
                 </p>
               </Field>
 
@@ -654,25 +674,28 @@ export default function SetupPage() {
                   value={form.ownerName}
                   onChange={(e) => updateField("ownerName", e.target.value)}
                   className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
-                  placeholder="Ä°steÄŸe baÄŸlÄ±"
+                  placeholder="İsteğe bağlı"
                 />
+
                 <div className="mt-3 flex flex-wrap gap-2">
                   <InlineToggle
                     checked={form.showName}
-                    label={`${getOwnerNameLabel(form.productType)} gÃ¶rÃ¼nsÃ¼n`}
+                    label={`${getOwnerNameLabel(form.productType)} görünsün`}
                     onChange={(value) => updateField("showName", value)}
                   />
                 </div>
               </Field>
 
-              <Field label="AyÄ±rt edici Ã¶zellik" optional>
+              <Field label="Ayırt edici özellik" optional>
                 <input
                   value={form.distinctiveFeature}
                   onChange={(e) =>
                     updateField("distinctiveFeature", e.target.value)
                   }
                   className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
-                  placeholder={getDistinctiveFeaturePlaceholder(form.productType)}
+                  placeholder={getDistinctiveFeaturePlaceholder(
+                    form.productType,
+                  )}
                 />
               </Field>
 
@@ -681,13 +704,14 @@ export default function SetupPage() {
                   value={form.note}
                   onChange={(e) => updateField("note", e.target.value)}
                   className="min-h-[120px] w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
-                  placeholder="Bulana gÃ¶stermek istediÄŸiniz kÄ±sa not"
+                  placeholder="Bulana göstermek istediğiniz kısa not"
                 />
+
                 <div className="mt-3 flex flex-wrap gap-2">
                   <InlineToggle
                     checked={form.showNote}
                     disabled={!hasNote}
-                    label="Not gÃ¶rÃ¼nsÃ¼n"
+                    label="Not görünsün"
                     onChange={(value) => updateField("showNote", value)}
                   />
                 </div>
@@ -697,8 +721,8 @@ export default function SetupPage() {
 
           <SectionCard
             id="contact"
-            title="Ä°letiÅŸim"
-            description="Ä°letiÅŸim bilgilerini girin ve hangileri gÃ¶rÃ¼nsÃ¼n seÃ§in."
+            title="İletişim"
+            description="İletişim bilgilerini girin ve hangileri görünsün seçin."
             isOpen={openSection === "contact"}
             onToggle={toggleSection}
           >
@@ -708,30 +732,36 @@ export default function SetupPage() {
                   <input
                     value={form.phone}
                     onChange={(e) =>
-                      updateField("phone", e.target.value.replace(/[^0-9]/g, ""))
+                      updateField(
+                        "phone",
+                        e.target.value.replace(/[^0-9]/g, ""),
+                      )
                     }
                     inputMode="numeric"
                     pattern="[0-9]*"
                     className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
                     placeholder="05xxxxxxxxx"
                   />
+
                   <div className="mt-3 flex flex-wrap gap-2">
                     <InlineToggle
                       checked={form.allowPhone}
                       disabled={!hasPhone}
-                      label="Telefonla ulaÅŸÄ±labilsin"
+                      label="Telefonla ulaşılabilsin"
                       onChange={(value) => updateField("allowPhone", value)}
                     />
+
                     <InlineToggle
                       checked={form.allowWhatsapp}
                       disabled={!hasPhone || !form.allowPhone}
-                      label="WhatsApp aÃ§Ä±lsÄ±n"
+                      label="WhatsApp açılsın"
                       onChange={(value) => updateField("allowWhatsapp", value)}
                     />
+
                     <InlineToggle
                       checked={form.showPhone}
                       disabled={!hasPhone || !form.allowPhone}
-                      label="Telefon gÃ¶rÃ¼nsÃ¼n"
+                      label="Telefon görünsün"
                       onChange={(value) => updateField("showPhone", value)}
                     />
                   </div>
@@ -745,11 +775,12 @@ export default function SetupPage() {
                     className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
                     placeholder="ornek@mail.com"
                   />
+
                   <div className="mt-3 flex flex-wrap gap-2">
                     <InlineToggle
                       checked={form.showEmail}
                       disabled={!hasEmail}
-                      label="E-posta gÃ¶rÃ¼nsÃ¼n"
+                      label="E-posta görünsün"
                       onChange={(value) => updateField("showEmail", value)}
                     />
                   </div>
@@ -757,37 +788,39 @@ export default function SetupPage() {
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2">
-                <Field label="Åehir" optional>
+                <Field label="Şehir" optional>
                   <input
                     value={form.city}
                     onChange={(e) => updateField("city", e.target.value)}
                     className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
-                    placeholder="Ä°steÄŸe baÄŸlÄ±"
+                    placeholder="İsteğe bağlı"
                   />
+
                   <div className="mt-3 flex flex-wrap gap-2">
                     <InlineToggle
                       checked={form.showCity}
                       disabled={!hasCity}
-                      label="Åehir gÃ¶rÃ¼nsÃ¼n"
+                      label="Şehir görünsün"
                       onChange={(value) => updateField("showCity", value)}
                     />
                   </div>
                 </Field>
 
-                <Field label="Adres detayÄ±" optional>
+                <Field label="Adres detayı" optional>
                   <input
                     value={form.addressDetail}
                     onChange={(e) =>
                       updateField("addressDetail", e.target.value)
                     }
                     className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
-                    placeholder="Ä°steÄŸe baÄŸlÄ±"
+                    placeholder="İsteğe bağlı"
                   />
+
                   <div className="mt-3 flex flex-wrap gap-2">
                     <InlineToggle
                       checked={form.showAddressDetail}
                       disabled={!hasAddressDetail}
-                      label="Adres detayÄ± gÃ¶rÃ¼nsÃ¼n"
+                      label="Adres detayı görünsün"
                       onChange={(value) =>
                         updateField("showAddressDetail", value)
                       }
@@ -800,8 +833,8 @@ export default function SetupPage() {
 
           <SectionCard
             id="alerts"
-            title="UyarÄ±lar"
-            description="Ä°sterseniz dikkat Ã§ekmesi gereken notlarÄ± seÃ§in."
+            title="Uyarılar"
+            description="İsterseniz dikkat çekmesi gereken notları seçin."
             isOpen={openSection === "alerts"}
             onToggle={toggleSection}
           >
@@ -829,4 +862,3 @@ export default function SetupPage() {
     </main>
   );
 }
-
