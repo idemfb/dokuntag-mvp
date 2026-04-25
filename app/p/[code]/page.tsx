@@ -397,7 +397,10 @@ export default function PublicPage({
         if (!res.ok || !json.success || !json.data) {
           throw new Error(json.message || "Sayfa yüklenemedi.");
         }
-
+        if (json.data.status === "unclaimed") {
+          window.location.href = `/setup/${code}`;
+          return;
+        }
         if (!cancelled) {
           setData(json.data);
         }

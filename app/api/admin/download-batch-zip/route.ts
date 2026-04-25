@@ -12,6 +12,7 @@ type ShapeOption = "round" | "square";
 type FontWeightOption = "500" | "600" | "700" | "800";
 type FontStyleOption = "normal" | "italic";
 type AlignOption = "left" | "center" | "right";
+type DesignType = "standard" | "tag" | "card" | "vehicle" | "business";
 
 type DesignInput = {
   size?: SizeOption;
@@ -87,6 +88,41 @@ function getBaseUrl(request: NextRequest) {
     return envBaseUrl.replace(/\/+$/, "");
   }
   return request.nextUrl.origin.replace(/\/+$/, "");
+}
+
+async function buildTagSvg(targetUrl: string, code: string, design: DesignInput) {
+  const size = design.size === "2.5cm" || design.size === "4cm" ? design.size : "3cm";
+  const shape = design.shape === "square" ? "square" : "round";
+  const brandText = normalizeText(design.brandText, "DOKUNTAG", 24);
+  const sloganText = normalizeText(design.sloganText, "Dokun • Bul • Buluştur", 28);
+  const codeText = normalizeText(design.codeText, code, 20);
+  const brandColor = normalizeColor(design.brandColor, "#111111");
+  const sloganColor = normalizeColor(design.sloganColor, "#111111");
+  const codeColor = normalizeColor(design.codeColor, "#111111");
+  const qrSvg = await QRCode.toString(targetUrl, { type: "svg", width: 256, margin: 1 });
+  const match = qrSvg.match(/<svg[^>]*viewBox="([^"]+)"[^>]*>([\s\S]*?)<\/svg>/i);
+  if (!match) throw new Error("QR SVG oluşturulamadı.");
+  const viewBox = match[1];
+  const innerSvg = match[2];
+  const width = size;
+  const height = size;
+  const qrSize = size === "2.5cm" ? 208 : size === "4cm" ? 220 : 214;
+  const qrX = Math.round((256 - qrSize) / 2);
+  const qrY = size === "2.5cm" ? 55 : 52;
+  const brandFontSize = size === "2.5cm" ? 16 : size === "4cm" ? 20 : 18;
+  const sloganFontSize = size === "2.5cm" ? 9.2 : size === "4cm" ? 11.5 : 10.2;
+  const codeFontSize = size === "2.5cm" ? 8.4 : size === "4cm" ? 10.6 : 9.3;
+  const rx = shape === "square" ? 20 : 128;
+  return `
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 320" width="${width}" height="${height}" role="img" aria-label="Dokuntag QR ${escapeXml(code)}">
+  <rect x="0" y="0" width="256" height="320" rx="${rx}" ry="${rx}" fill="#ffffff" />
+  <text x="128" y="28" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="${brandFontSize}" font-weight="800" letter-spacing="1.15" fill="${brandColor}">${escapeXml(brandText)}</text>
+  <path d="M116 39 C121 34, 135 34, 140 39" fill="none" stroke="${brandColor}" stroke-width="2.2" stroke-linecap="round" opacity="0.9" />
+  <path d="M121 43 C125 40, 131 40, 135 43" fill="none" stroke="${brandColor}" stroke-width="2" stroke-linecap="round" opacity="0.9" />
+  <svg viewBox="${viewBox}" x="${qrX}" y="${qrY}" width="${qrSize}" height="${qrSize}">${innerSvg}</svg>
+  <text x="128" y="${qrY + qrSize + 17}" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="${sloganFontSize}" font-weight="700" letter-spacing="0.25" fill="${sloganColor}">${escapeXml(sloganText)}</text>
+  <text x="128" y="${qrY + qrSize + 34}" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="${codeFontSize}" font-weight="800" letter-spacing="0.8" fill="${codeColor}">${escapeXml(codeText)}</text>
+</svg>`.trim();
 }
 
 async function buildSvg(targetUrl: string, code: string, design: DesignInput) {

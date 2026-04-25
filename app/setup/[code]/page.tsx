@@ -110,7 +110,6 @@ function getPrimaryPlaceholder(type: ProductType) {
 
 function getOwnerPlaceholder(type: ProductType) {
   if (type === "person") return "Yakını";
-  if (type === "pet") return "Sahibi";
   return "Sahibi";
 }
 
@@ -220,12 +219,46 @@ export default function SetupPage({ params }: Props) {
   }
 
   useEffect(() => {
+    let cancelled = false;
+
     (async () => {
       const resolved = await params;
-      setCode(String(resolved.code || "").trim().toUpperCase());
-      setLoading(false);
+      const nextCode = String(resolved.code || "").trim().toUpperCase();
+
+      if (cancelled) return;
+
+      setCode(nextCode);
+
+      try {
+        const res = await fetch(`/api/public/${nextCode}`, {
+          cache: "no-store"
+        });
+
+        if (cancelled) return;
+
+        if (res.ok) {
+          const data = await res.json();
+
+          const status = data?.data?.status;
+
+        if (status === "active" || status === "inactive") {
+          router.replace(`/p/${nextCode}`);
+          return;
+        }
+        }
+      } catch {
+        // Etiket bulunamazsa veya henüz aktif değilse setup devam eder.
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
     })();
-  }, [params]);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [params, router]);
 
   useEffect(() => {
     const valid = subtypeOptions.some(
@@ -238,11 +271,11 @@ export default function SetupPage({ params }: Props) {
   }, [form.productType, form.productSubtype, subtypeOptions]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-  if (!form.phone) {
-  if (form.allowDirectCall) update("allowDirectCall", false);
-  if (form.allowDirectWhatsapp) update("allowDirectWhatsapp", false);
-}
-}, [form.phone, form.allowDirectCall, form.allowDirectWhatsapp]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (!form.phone) {
+      if (form.allowDirectCall) update("allowDirectCall", false);
+      if (form.allowDirectWhatsapp) update("allowDirectWhatsapp", false);
+    }
+  }, [form.phone, form.allowDirectCall, form.allowDirectWhatsapp]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -286,11 +319,11 @@ export default function SetupPage({ params }: Props) {
         note: form.note.trim(),
         alerts: [],
         allowPhone: Boolean(normalizedPhone && form.allowDirectCall),
-        allowWhatsapp: Boolean(
-          normalizedPhone && form.allowDirectCall && form.allowDirectWhatsapp
-        ),
+        allowWhatsapp: Boolean(normalizedPhone && form.allowDirectWhatsapp),
         showName: Boolean(form.ownerName.trim()),
-        showPhone: Boolean(normalizedPhone && form.allowDirectCall),
+        showPhone: Boolean(
+          normalizedPhone && (form.allowDirectCall || form.allowDirectWhatsapp)
+        ),
         showEmail: false,
         showCity: false,
         showAddressDetail: false,
@@ -390,7 +423,7 @@ export default function SetupPage({ params }: Props) {
 
   return (
     <main className="min-h-screen bg-[#f5f5f3] px-4 py-3.5 text-neutral-900">
-      <div className="mx-auto max-w-md  ">
+      <div className="mx-auto max-w-md">
         <a
           href={mainSiteUrl}
           target="_blank"
@@ -412,7 +445,6 @@ export default function SetupPage({ params }: Props) {
                 Hızlı kurulum
               </h1>
             </div>
-
           </div>
 
           <p className="mt-2 text-sm leading-6 text-neutral-600">
@@ -420,28 +452,28 @@ export default function SetupPage({ params }: Props) {
           </p>
 
           <div className="mt-3 grid grid-cols-2 gap-2">
-  <span
-    className={`min-w-0 text-center truncate rounded-full border px-2 py-1 text-xs font-medium ${theme.badge}`}
-  >
-    Kod • {code || "-"}
-  </span>
+            <span
+              className={`min-w-0 truncate rounded-full border px-2 py-1 text-center text-xs font-medium ${theme.badge}`}
+            >
+              Kod • {code || "-"}
+            </span>
 
-  <span
-    className={`min-w-0 text-center truncate rounded-full border px-2 py-1 text-xs font-medium ${theme.badge}`}
-  >
-    {getProductTypeLabel(form.productType)}
-  </span>
-</div>
+            <span
+              className={`min-w-0 truncate rounded-full border px-2 py-1 text-center text-xs font-medium ${theme.badge}`}
+            >
+              {getProductTypeLabel(form.productType)}
+            </span>
+          </div>
         </section>
 
-     <section className="my-1.5 rounded-[1.35rem] border border-blue-200 bg-blue-50 px-3 py-4">
-  <p className="text-sm font-medium text-blue-950">
-    Bu sayfa hızlı kurulum içindir
-  </p>
-  <p className="mt-1.5 text-xs leading-5 text-blue-900">
-    İsterseniz daha sonra yönetim sayfasından detayları ekleyebilirsiniz.
-  </p>
-</section>
+        <section className="my-1.5 rounded-[1.35rem] border border-blue-200 bg-blue-50 px-3 py-4">
+          <p className="text-sm font-medium text-blue-950">
+            Bu sayfa hızlı kurulum içindir
+          </p>
+          <p className="mt-1.5 text-xs leading-5 text-blue-900">
+            İsterseniz daha sonra yönetim sayfasından detayları ekleyebilirsiniz.
+          </p>
+        </section>
 
         <form
           noValidate
@@ -508,44 +540,47 @@ export default function SetupPage({ params }: Props) {
                 İletişim telefonu
               </p>
               <p className="mt-0.5 text-xs leading-5 text-neutral-500">
-                Telefon, bulan kişinin size hızlıca ulaşabilmesi içindir. Arama ve WhatsApp seçeneklerini siz belirlersiniz.
+                Telefon, bulan kişinin size hızlıca ulaşabilmesi içindir. Arama
+                ve WhatsApp seçeneklerini siz belirlersiniz.
               </p>
 
               <div className="grid grid-cols-[1.25fr_1fr_1fr] gap-2">
-              <input
-                value={form.phone}
-                onChange={(e) => update("phone", normalizePhone(e.target.value))}
-                placeholder="İletişim telefonu"
-                inputMode="tel"
-                className="min-w-0 rounded-2xl border border-neutral-300 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
-              />
+                <input
+                  value={form.phone}
+                  onChange={(e) => update("phone", normalizePhone(e.target.value))}
+                  placeholder="İletişim telefonu"
+                  inputMode="tel"
+                  className="min-w-0 rounded-2xl border border-neutral-300 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
+                />
 
-              <button
-                type="button"
-                disabled={!form.phone}
-                onClick={() => update("allowDirectCall", !form.allowDirectCall)}
-                className={`rounded-2xl border px-2 py-2.5 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${
-                  form.allowDirectCall && form.phone
-                    ? "border-blue-900 bg-blue-900 text-white"
-                    : "border-neutral-300 bg-white text-neutral-700 hover:border-neutral-400"
-                }`}
-              >
-                Telefon
-              </button>
+                <button
+                  type="button"
+                  disabled={!form.phone}
+                  onClick={() => update("allowDirectCall", !form.allowDirectCall)}
+                  className={`rounded-2xl border px-2 py-2.5 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${
+                    form.allowDirectCall && form.phone
+                      ? "border-blue-900 bg-blue-900 text-white"
+                      : "border-neutral-300 bg-white text-neutral-700 hover:border-neutral-400"
+                  }`}
+                >
+                  Telefon
+                </button>
 
-              <button
-                type="button"
-                disabled={!form.phone}
-                onClick={() => update("allowDirectWhatsapp", !form.allowDirectWhatsapp)}
-                className={`rounded-2xl border px-2 py-2.5 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${
-                  form.allowDirectWhatsapp && form.phone
-                    ? "border-green-600 bg-green-600 text-white"
-                    : "border-neutral-300 bg-white text-neutral-700 hover:border-neutral-400"
-                }`}
-              >
-                WhatsApp
-              </button>
-            </div>
+                <button
+                  type="button"
+                  disabled={!form.phone}
+                  onClick={() =>
+                    update("allowDirectWhatsapp", !form.allowDirectWhatsapp)
+                  }
+                  className={`rounded-2xl border px-2 py-2.5 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${
+                    form.allowDirectWhatsapp && form.phone
+                      ? "border-[#25D366] bg-[#25D366] text-white"
+                      : "border-neutral-300 bg-white text-neutral-700 hover:border-neutral-400"
+                  }`}
+                >
+                  WhatsApp
+                </button>
+              </div>
             </section>
 
             <textarea
@@ -560,7 +595,8 @@ export default function SetupPage({ params }: Props) {
                 Hesap kurtarma
               </p>
               <p className="mt-0.5 text-xs leading-5 text-neutral-500">
-                E-posta kimseye gösterilmez. Yönetim erişimi ve Bildirimler için kullanılır.
+                E-posta kimseye gösterilmez. Yönetim erişimi ve bildirimler için
+                kullanılır.
               </p>
 
               <div className="mt-2 grid grid-cols-2 gap-1.5">

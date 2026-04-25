@@ -1,4 +1,3 @@
-
 import { NextRequest, NextResponse } from "next/server";
 import { generateUniqueCode } from "@/lib/code";
 import { upsertTagAsync } from "@/lib/tags";
@@ -46,11 +45,14 @@ function buildLabel(labelTemplate: string, code: string, index: number) {
 
 function buildDesignQuery(design?: DesignState) {
   const params = new URLSearchParams();
+
   if (!design) return "";
+
   Object.entries(design).forEach(([key, value]) => {
     if (value === undefined || value === null || value === "") return;
     params.set(key, String(value));
   });
+
   return params.toString();
 }
 
@@ -70,11 +72,17 @@ export async function POST(request: NextRequest) {
     const labelTemplate = getString(body?.labelTemplate);
 
     if (!count || count < 1) {
-      return NextResponse.json({ error: "Adet en az 1 olmalıdır." }, { status: 400 });
+      return NextResponse.json(
+        { error: "Adet en az 1 olmalıdır." },
+        { status: 400 }
+      );
     }
 
     if (count > 500) {
-      return NextResponse.json({ error: "Tek seferde en fazla 500 kod üretilebilir." }, { status: 400 });
+      return NextResponse.json(
+        { error: "Tek seferde en fazla 500 kod üretilebilir." },
+        { status: 400 }
+      );
     }
 
     const baseUrl = getBaseUrl(request);
@@ -107,7 +115,7 @@ export async function POST(request: NextRequest) {
       items.push({
         code,
         label,
-        setupLink: `${baseUrl}/setup/${code}`,
+        setupLink: `${baseUrl}/t/${code}`,
         qrPageLink: `${baseUrl}/qr/${code}${query}`,
         qrDownloadLink: `${baseUrl}/api/qr-download/${code}${query}`
       });
@@ -120,6 +128,10 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error("GENERATE_BATCH_ERROR", error);
-    return NextResponse.json({ error: "Toplu üretim sırasında hata oluştu." }, { status: 500 });
+
+    return NextResponse.json(
+      { error: "Toplu üretim sırasında hata oluştu." },
+      { status: 500 }
+    );
   }
 }

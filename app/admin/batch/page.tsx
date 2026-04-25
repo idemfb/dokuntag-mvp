@@ -14,6 +14,7 @@ type BatchItem = {
 type PdfPageSize = "A4" | "A3" | "custom";
 type PdfOrientation = "portrait" | "landscape";
 type ShapeOption = "round" | "square";
+type DesignType = "standard" | "tag" | "card" | "vehicle" | "business";
 
 type DesignState = {
   size: "2.5cm" | "3cm" | "4cm";

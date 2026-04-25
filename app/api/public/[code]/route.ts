@@ -1,8 +1,58 @@
 import { NextRequest, NextResponse } from "next/server";
 import { findTagByCodeAsync } from "@/lib/tags";
 
+function getDokuntagDemoProfile() {
+  return {
+    publicCode: "DKNTG",
+    oldCode: "",
+    productType: "key",
+    productSubtype: "house_key",
+
+    name: "Dokuntag Demo Anahtar",
+    ownerName: "Dokuntag",
+    phone: "05515551553",
+    email: "info@dokuntag.com",
+    city: "İstanbul",
+    addressDetail: "",
+    distinctiveFeature: "Örnek Dokuntag anahtarlık profili",
+    petName: "Dokuntag Demo Anahtar",
+    note:
+      "Bu sayfa Dokuntag’ın örnek profilidir. Dokuntag, kaybolan anahtar, çanta veya evcil hayvanın sahibine güvenli şekilde ulaşmasını sağlar.",
+
+    alerts: ["Acil bana ulaşın", "Önemli anahtar"],
+
+    allowDirectCall: true,
+    allowDirectWhatsapp: true,
+
+    contactOptions: {
+      allowDirectCall: true,
+      allowDirectWhatsapp: true
+    },
+
+    visibility: {
+      showName: true,
+      showPhone: true,
+      showEmail: true,
+      showCity: true,
+      showAddressDetail: false,
+      showPetName: true,
+      showNote: true
+    },
+
+    showName: true,
+    showPhone: true,
+    showEmail: true,
+    showCity: true,
+    showAddressDetail: false,
+    showPetName: true,
+    showNote: true,
+
+    status: "active"
+  };
+}
+
 export async function GET(
-  req: NextRequest,
+  _req: NextRequest,
   context: { params: Promise<{ code: string }> }
 ) {
   try {
@@ -16,6 +66,13 @@ export async function GET(
     }
 
     const normalizedCode = String(code).trim().toUpperCase();
+
+    if (normalizedCode === "DKNTG") {
+      return NextResponse.json({
+        success: true,
+        data: getDokuntagDemoProfile()
+      });
+    }
 
     const tag = await findTagByCodeAsync(normalizedCode);
 
@@ -41,6 +98,7 @@ export async function GET(
           name: "",
           ownerName: "",
           phone: "",
+          email: "",
           city: "",
           addressDetail: "",
           distinctiveFeature: "",
@@ -91,6 +149,7 @@ export async function GET(
         name: tag.profile?.name || "",
         ownerName: tag.profile?.ownerName || "",
         phone: tag.profile?.phone || "",
+        email: tag.profile?.email || "",
         city: tag.profile?.city || "",
         addressDetail: tag.profile?.addressDetail || "",
         distinctiveFeature: tag.profile?.distinctiveFeature || "",
@@ -110,7 +169,7 @@ export async function GET(
         visibility: {
           showName: Boolean(tag.visibility?.showName),
           showPhone: Boolean(tag.visibility?.showPhone),
-          showEmail: false,
+          showEmail: Boolean(tag.visibility?.showEmail),
           showCity: Boolean(tag.visibility?.showCity),
           showAddressDetail: Boolean(tag.visibility?.showAddressDetail),
           showPetName: Boolean(tag.visibility?.showPetName),
@@ -119,7 +178,7 @@ export async function GET(
 
         showName: Boolean(tag.visibility?.showName),
         showPhone: Boolean(tag.visibility?.showPhone),
-        showEmail: false,
+        showEmail: Boolean(tag.visibility?.showEmail),
         showCity: Boolean(tag.visibility?.showCity),
         showAddressDetail: Boolean(tag.visibility?.showAddressDetail),
         showPetName: Boolean(tag.visibility?.showPetName),

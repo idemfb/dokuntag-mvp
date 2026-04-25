@@ -12,6 +12,7 @@ type BatchItem = {
 type ShapeOption = "round" | "square";
 type PrintPageSize = "A4" | "A3" | "custom";
 type Orientation = "portrait" | "landscape";
+type DesignType = "standard" | "tag" | "card" | "vehicle" | "business";
 
 type DesignInput = {
   size?: "2.5cm" | "3cm" | "4cm";

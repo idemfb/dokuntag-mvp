@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 type PrintPageSize = "A4" | "A3" | "custom";
 type Orientation = "portrait" | "landscape";
 type ShapeOption = "round" | "square";
+type DesignType = "standard" | "tag" | "card" | "vehicle" | "business";
 
 type BatchItem = {
   code: string;
