@@ -33,6 +33,7 @@ type DesignState = {
   brandStyle: FontStyleOption;
   sloganStyle: FontStyleOption;
   codeStyle: FontStyleOption;
+  codeAlign: AlignOption;
   brandColor: string;
   sloganColor: string;
   codeColor: string;
@@ -48,6 +49,7 @@ const DEFAULTS_BY_SIZE: Record<SizeOption, DesignState> = {
   "2.5cm": {
     size: "2.5cm",
     shape: "round",
+    hasHole: true,
     brandText: "DOKUNTAG",
     sloganText: "Bul • Buluştur",
     codeText: "",
@@ -67,6 +69,7 @@ const DEFAULTS_BY_SIZE: Record<SizeOption, DesignState> = {
     brandStyle: "normal",
     sloganStyle: "italic",
     codeStyle: "normal",
+    codeAlign: "center",
     brandColor: "#111111",
     sloganColor: "#111111",
     codeColor: "#111111",
@@ -80,6 +83,7 @@ const DEFAULTS_BY_SIZE: Record<SizeOption, DesignState> = {
   "3cm": {
     size: "3cm",
     shape: "round",
+    hasHole: true,
     brandText: "DOKUNTAG",
     sloganText: "Bul • Buluştur",
     codeText: "",
@@ -99,6 +103,7 @@ const DEFAULTS_BY_SIZE: Record<SizeOption, DesignState> = {
     brandStyle: "normal",
     sloganStyle: "italic",
     codeStyle: "normal",
+    codeAlign: "center",
     brandColor: "#111111",
     sloganColor: "#111111",
     codeColor: "#111111",
@@ -112,6 +117,7 @@ const DEFAULTS_BY_SIZE: Record<SizeOption, DesignState> = {
   "4cm": {
     size: "4cm",
     shape: "round",
+    hasHole: true,
     brandText: "DOKUNTAG",
     sloganText: "Bul • Buluştur",
     codeText: "",
@@ -131,6 +137,7 @@ const DEFAULTS_BY_SIZE: Record<SizeOption, DesignState> = {
     brandStyle: "normal",
     sloganStyle: "italic",
     codeStyle: "normal",
+    codeAlign: "center",
     brandColor: "#111111",
     sloganColor: "#111111",
     codeColor: "#111111",
@@ -197,12 +204,12 @@ function readStateFromUrl(params: URLSearchParams): DesignState {
   return {
     ...defaults,
     shape:
-  params.get("shape") === "square"
-    ? "square"
-    : params.get("shape") === "drop"
-      ? "drop"
-      : defaults.shape,
-hasHole: params.get("hasHole") === "false" ? false : true,
+      params.get("shape") === "square"
+        ? "square"
+        : params.get("shape") === "drop"
+          ? "drop"
+          : defaults.shape,
+    hasHole: params.get("hasHole") === "false" ? false : true,
     brandText: String(params.get("brandText") || defaults.brandText).slice(0, 24),
     sloganText: String(params.get("sloganText") || defaults.sloganText).slice(0, 28),
     codeText: String(params.get("codeText") || defaults.codeText).slice(0, 20),
@@ -227,6 +234,7 @@ hasHole: params.get("hasHole") === "false" ? false : true,
     brandStyle: parseStyle(params.get("brandStyle"), defaults.brandStyle),
     sloganStyle: parseStyle(params.get("sloganStyle"), defaults.sloganStyle),
     codeStyle: parseStyle(params.get("codeStyle"), defaults.codeStyle),
+    codeAlign: parseAlign(params.get("codeAlign"), defaults.codeAlign),
     brandColor: parseColor(params.get("brandColor"), defaults.brandColor),
     sloganColor: parseColor(params.get("sloganColor"), defaults.sloganColor),
     codeColor: parseColor(params.get("codeColor"), defaults.codeColor),
@@ -263,6 +271,7 @@ function buildDesignQuery(state: DesignState) {
   params.set("brandStyle", state.brandStyle);
   params.set("sloganStyle", state.sloganStyle);
   params.set("codeStyle", state.codeStyle);
+  params.set("codeAlign", state.codeAlign);
   params.set("brandColor", state.brandColor);
   params.set("sloganColor", state.sloganColor);
   params.set("codeColor", state.codeColor);
@@ -561,9 +570,9 @@ export default function QrPage() {
             <section className="rounded-[2rem] border border-neutral-200 bg-white px-5 py-5 shadow-sm sm:px-6">
               <div className="flex flex-wrap items-center gap-2">
                 <TabButton active={activeTab === "general"} label="Genel" onClick={() => setActiveTab("general")} />
-                <TabButton active={activeTab === "brand"} label="Üst yazı" onClick={() => setActiveTab("brand")} />
+                <TabButton active={activeTab === "brand"} label={design.shape === "drop" ? "Marka" : "Üst yazı"} onClick={() => setActiveTab("brand")} />
                 <TabButton active={activeTab === "slogan"} label="Slogan" onClick={() => setActiveTab("slogan")} />
-                <TabButton active={activeTab === "code"} label="Sağ kod" onClick={() => setActiveTab("code")} />
+                <TabButton active={activeTab === "code"} label="Kod" onClick={() => setActiveTab("code")} />
                 <TabButton active={activeTab === "badge"} label="® simgesi" onClick={() => setActiveTab("badge")} />
                 <TabButton active={activeTab === "output"} label="Çıktı" onClick={() => setActiveTab("output")} />
               </div>
@@ -577,7 +586,7 @@ export default function QrPage() {
                       label="Hazır ölçü"
                       value={design.size}
                       onChange={(value) =>
-                        setDesign({ ...getDefaults(value as SizeOption), shape: design.shape })
+                        setDesign({ ...getDefaults(value as SizeOption), shape: design.shape, hasHole: design.hasHole, codeAlign: design.codeAlign })
                       }
                       options={[
                         { value: "2.5cm", label: "2,5 cm" },
@@ -632,7 +641,7 @@ export default function QrPage() {
             ) : null}
 
             {activeTab === "brand" ? (
-              <SectionCard title="Üst yazı" description="QR’a en yakın konumda bile üstüne binmez.">
+              <SectionCard title={design.shape === "drop" ? "Marka yazısı" : "Üst yazı"} description={design.shape === "drop" ? "Damla V2’de marka QR’ın altında görünür; boş bırakırsan görünmez." : "QR’a en yakın konumda bile üstüne binmez."}>
                 <div className="grid gap-3 sm:grid-cols-2">
                   <TextField label="Metin" value={design.brandText} onChange={(v) => updateDesign("brandText", v.slice(0, 24))} />
                   <ColorField label="Renk" value={design.brandColor} onChange={(v) => updateDesign("brandColor", v)} />
@@ -658,7 +667,7 @@ export default function QrPage() {
             ) : null}
 
             {activeTab === "slogan" ? (
-              <SectionCard title="Alt slogan" description="En yakın konumda bile QR’ın üstüne çıkmaz.">
+              <SectionCard title="Slogan" description="Boş bırakırsan görünmez. Damla V2’de marka yazısının altında konumlanır.">
                 <div className="grid gap-3 sm:grid-cols-2">
                   <TextField label="Metin" value={design.sloganText} onChange={(v) => updateDesign("sloganText", v.slice(0, 28))} />
                   <ColorField label="Renk" value={design.sloganColor} onChange={(v) => updateDesign("sloganColor", v)} />
@@ -684,12 +693,17 @@ export default function QrPage() {
             ) : null}
 
             {activeTab === "code" ? (
-              <SectionCard title="Sağ kod" description="Sağ tarafta kalır; yukarı-aşağı merkezi QR’a göre korunur.">
+              <SectionCard title="Kod" description="Damla V2’de kod konumu esnektir; yuvarlak/karede sağ kod mantığı korunur.">
                 <div className="grid gap-3 sm:grid-cols-2">
                   <TextField label="Metin" value={design.codeText} onChange={(v) => updateDesign("codeText", v.slice(0, 20))} />
                   <ColorField label="Renk" value={design.codeColor} onChange={(v) => updateDesign("codeColor", v)} />
                   <SliderField label="Kod boyutu" value={design.codeScale} min={40} max={500} onChange={(v) => updateScaledField("codeScale", v)} />
-                  <SliderField label="Sağ iç boşluk" value={design.codeInset} min={50} max={180} onChange={(v) => updateDesign("codeInset", v)} />
+                  <SliderField label="Kod boşluğu" value={design.codeInset} min={50} max={180} onChange={(v) => updateDesign("codeInset", v)} />
+                  <SelectField label="Kod konumu" value={design.codeAlign} onChange={(v) => updateDesign("codeAlign", v as AlignOption)} options={[
+                    { value: "left", label: "Sola" },
+                    { value: "center", label: "Ortala" },
+                    { value: "right", label: "Sağa" }
+                  ]} />
                   <SelectField label="Stil" value={design.codeStyle} onChange={(v) => updateDesign("codeStyle", v as FontStyleOption)} options={[
                     { value: "normal", label: "Normal" },
                     { value: "italic", label: "İtalik" }
@@ -739,7 +753,13 @@ export default function QrPage() {
               <div className="space-y-5 px-6 py-6">
                 <div className="flex justify-center">
                   <div
-                    className={`flex items-center justify-center border border-neutral-200 bg-white p-2 shadow-sm ${design.shape === "round" ? "rounded-full" : "rounded-3xl"}`}
+                    className={`flex items-center justify-center border border-neutral-200 bg-white p-2 shadow-sm ${
+                      design.shape === "round"
+                        ? "rounded-full"
+                        : design.shape === "square"
+                          ? "rounded-3xl"
+                          : ""
+                    }`}
                     style={cmPreviewStyle(design.size)}
                   >
                     <img src={qrImageUrl} alt={`${code} QR`} className="h-full w-full" />
