@@ -103,18 +103,14 @@ export async function POST(request: NextRequest) {
         session.token
       )}`;
 
-      await sendRecoveryMagicLinkEmail({
-      to: email,
-      verifyLink,
-      expiresAt: session.expiresAt,
-      entryType,
-      itemCount: session.items?.length || 0,
-      itemPreview: session.items
-        ?.slice(0, 5)
-        .map((item) => item.petName || item.code)
-        .filter(Boolean) || []
-    });
-    }
+   await sendRecoveryMagicLinkEmail({
+  to: email,
+  verifyLink,
+  expiresAt: session.expiresAt,
+  entryType,
+  itemCount: session.codes?.length ?? session.matchedCount ?? 0,
+  itemPreview: session.codes?.slice(0, 5) ?? [],
+});
 
     return NextResponse.json({
       success: true,
