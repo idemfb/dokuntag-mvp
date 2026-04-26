@@ -11,6 +11,8 @@ type BeforeInstallPromptEvent = Event & {
   }>;
 };
 
+const INSTALLED_KEY = "dokuntag_pwa_installed";
+
 function isStandaloneMode() {
   if (typeof window === "undefined") return false;
 
@@ -40,19 +42,22 @@ export default function AddToHomePrompt() {
 
   const cardRef = useRef<HTMLDivElement | null>(null);
 
-  const isManagePage = useMemo(() => {
-    return pathname.startsWith("/manage/");
-  }, [pathname]);
+  const isManagePage = useMemo(() => pathname.startsWith("/manage/"), [pathname]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    const currentPathname = window.location.pathname;
-
-    setPathname(currentPathname);
+    setPathname(window.location.pathname);
     setIsIOS(isIOSDevice());
 
-    if (isStandaloneMode()) return;
+    if (
+      isStandaloneMode() ||
+      window.localStorage.getItem(INSTALLED_KEY) === "1"
+    ) {
+      setIsVisible(false);
+      setIsMinimized(false);
+      return;
+    }
 
     const timer = window.setTimeout(() => {
       setIsVisible(true);
@@ -67,7 +72,15 @@ export default function AddToHomePrompt() {
       setShowGuide(false);
     }
 
+    function handleAppInstalled() {
+      window.localStorage.setItem(INSTALLED_KEY, "1");
+      setIsVisible(false);
+      setIsMinimized(false);
+      setDeferredPrompt(null);
+    }
+
     window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+    window.addEventListener("appinstalled", handleAppInstalled);
 
     return () => {
       window.clearTimeout(timer);
@@ -75,6 +88,7 @@ export default function AddToHomePrompt() {
         "beforeinstallprompt",
         handleBeforeInstallPrompt
       );
+      window.removeEventListener("appinstalled", handleAppInstalled);
     };
   }, []);
 
@@ -102,6 +116,7 @@ export default function AddToHomePrompt() {
       const choice = await deferredPrompt.userChoice;
 
       if (choice.outcome === "accepted") {
+        window.localStorage.setItem(INSTALLED_KEY, "1");
         setIsVisible(false);
         setIsMinimized(false);
       }

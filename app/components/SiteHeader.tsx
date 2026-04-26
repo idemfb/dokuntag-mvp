@@ -41,8 +41,9 @@ export default function SiteHeader({ variant = "default" }: SiteHeaderProps) {
 
       const diff = endX - startX;
 
-      if (diff > 80) setOpen(true);
-      if (diff < -80) setOpen(false);
+      if (Math.abs(diff) > 80) {
+        setOpen((current) => !current);
+      }
 
       touchStartX.current = null;
     }
