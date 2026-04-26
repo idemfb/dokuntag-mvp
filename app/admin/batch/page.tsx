@@ -13,12 +13,13 @@ type BatchItem = {
 
 type PdfPageSize = "A4" | "A3" | "custom";
 type PdfOrientation = "portrait" | "landscape";
-type ShapeOption = "round" | "square";
+type ShapeOption = "round" | "square" | "drop";
 type DesignType = "standard" | "tag" | "card" | "vehicle" | "business";
 
 type DesignState = {
   size: "2.5cm" | "3cm" | "4cm";
   shape: ShapeOption;
+  hasHole: boolean;
   brandText: string;
   sloganText: string;
   codeText: string;
@@ -86,6 +87,7 @@ function getDefaultDesign(): DesignState {
   return {
     size: "3cm",
     shape: "round",
+    hasHole: true,
     brandText: "DOKUNTAG",
     sloganText: "Bul • Buluştur",
     codeText: "",
@@ -145,6 +147,17 @@ export default function AdminBatchPage() {
   const [pdfCutMarks, setPdfCutMarks] = useState(true);
   const [pdfCustomWidth, setPdfCustomWidth] = useState("420");
   const [pdfCustomHeight, setPdfCustomHeight] = useState("297");
+  const [design, setDesign] = useState<DesignState>(() => tryGetSavedDesign());
+
+  function updateDesign<K extends keyof DesignState>(key: K, value: DesignState[K]) {
+    setDesign((prev) => {
+      const next = { ...prev, [key]: value };
+      try {
+        window.localStorage.setItem("dokuntag_qr_design", JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+  }
 
   const printText = useMemo(() => buildPrintText(items), [items]);
   const opsText = useMemo(() => buildOpsText(items), [items]);
@@ -166,7 +179,8 @@ export default function AdminBatchPage() {
         },
         body: JSON.stringify({
           count: parsedCount,
-          labelTemplate
+          labelTemplate,
+          design
         })
       });
 
@@ -212,6 +226,7 @@ export default function AdminBatchPage() {
         },
         body: JSON.stringify({
           zipName: `dokuntag-batch-${items.length}`,
+          design,
           items: items.map((item) => ({
             code: item.code,
             label: item.label
@@ -252,6 +267,7 @@ export default function AdminBatchPage() {
       const storageKey = `dokuntag_batch_${Date.now()}`;
       window.sessionStorage.setItem(storageKey, JSON.stringify(items));
       window.localStorage.setItem("dokuntag_batch_items", JSON.stringify(items));
+      window.localStorage.setItem("dokuntag_qr_design", JSON.stringify(design));
 
       window.open(
         `/admin/batch/print?storageKey=${encodeURIComponent(storageKey)}`,
@@ -271,8 +287,6 @@ export default function AdminBatchPage() {
     try {
       setPdfLoading(true);
       setError("");
-
-      const design = tryGetSavedDesign();
 
       const res = await fetch("/api/admin/download-batch-pdf", {
         method: "POST",
@@ -446,6 +460,75 @@ export default function AdminBatchPage() {
                 {error}
               </div>
             ) : null}
+          </div>
+        </section>
+
+
+        <section className="overflow-hidden rounded-[2rem] border border-neutral-200 bg-white shadow-sm">
+          <div className="border-b border-neutral-200 px-6 py-5">
+            <h2 className="text-lg font-semibold">QR formu</h2>
+            <p className="mt-1 text-sm text-neutral-600">
+              Damla V2 seçeneği anahtarlık/tasma formu için üst güvenli alanı ve delik işaretini dikkate alır. QR hedefi yine /t/[code] olarak kalır.
+            </p>
+          </div>
+
+          <div className="grid gap-4 px-6 py-6 md:grid-cols-3">
+            <label className="block">
+              <span className="mb-2 block text-sm font-medium text-neutral-700">Ürün formu</span>
+              <select
+                value={design.shape}
+                onChange={(e) => updateDesign("shape", e.target.value as ShapeOption)}
+                className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-neutral-500"
+              >
+                <option value="round">Yuvarlak</option>
+                <option value="square">Kare</option>
+                <option value="drop">Damla V2</option>
+              </select>
+            </label>
+
+            <label className="block">
+              <span className="mb-2 block text-sm font-medium text-neutral-700">Etiket ölçüsü</span>
+              <select
+                value={design.size}
+                onChange={(e) => updateDesign("size", e.target.value as DesignState["size"])}
+                className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-neutral-500"
+              >
+                <option value="2.5cm">2.5 cm</option>
+                <option value="3cm">3 cm</option>
+                <option value="4cm">4 cm</option>
+              </select>
+            </label>
+
+            <label className="flex items-center gap-2 rounded-2xl border border-neutral-300 bg-neutral-50 px-4 py-3 text-sm">
+              <input
+                type="checkbox"
+                checked={design.hasHole}
+                onChange={(e) => updateDesign("hasHole", e.target.checked)}
+              />
+              Delik alanı göster
+            </label>
+
+            <label className="block md:col-span-1">
+              <span className="mb-2 block text-sm font-medium text-neutral-700">Marka yazısı</span>
+              <input
+                value={design.brandText}
+                onChange={(e) => updateDesign("brandText", e.target.value)}
+                className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-neutral-500"
+              />
+            </label>
+
+            <label className="block md:col-span-1">
+              <span className="mb-2 block text-sm font-medium text-neutral-700">Slogan</span>
+              <input
+                value={design.sloganText}
+                onChange={(e) => updateDesign("sloganText", e.target.value)}
+                className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-neutral-500"
+              />
+            </label>
+
+            <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-900 md:col-span-1">
+              Damla V2’de delik seçiliyse QR biraz aşağı alınır. Baskıdan önce tek örnek indirip telefonda okutma testi yap.
+            </div>
           </div>
         </section>
 

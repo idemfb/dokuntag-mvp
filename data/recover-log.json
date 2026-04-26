@@ -14,5 +14,21 @@
     "fingerprint": "10f34b1244566bb397b6ce86323723b3701c6698a1f2a21e8b4e39bd76d13e12",
     "ip": "::1",
     "createdAt": "2026-04-24T15:57:57.767Z"
+  },
+  {
+    "id": "697d88e3-f9b2-46ae-9fdf-a87145971023",
+    "email": "i.dem@hotmail.com",
+    "entryType": "my",
+    "fingerprint": "10f34b1244566bb397b6ce86323723b3701c6698a1f2a21e8b4e39bd76d13e12",
+    "ip": "::1",
+    "createdAt": "2026-04-26T08:34:58.642Z"
+  },
+  {
+    "id": "ce8417e0-f4a3-4717-ba30-e2a7ce9c8c1d",
+    "email": "i.dem@hotmail.com",
+    "entryType": "my",
+    "fingerprint": "10f34b1244566bb397b6ce86323723b3701c6698a1f2a21e8b4e39bd76d13e12",
+    "ip": "::1",
+    "createdAt": "2026-04-26T09:02:12.406Z"
   }
 ]

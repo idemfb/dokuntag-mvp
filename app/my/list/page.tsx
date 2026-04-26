@@ -1,4 +1,5 @@
-﻿import { verifyRecoverySessionTokenAsync } from "@/lib/tags";
+﻿import { redirect } from "next/navigation";
+import { verifyRecoverySessionTokenAsync } from "@/lib/tags";
 
 type ProductType = "pet" | "item" | "key" | "person" | "other";
 type TagStatus = "unclaimed" | "active" | "inactive";
@@ -144,60 +145,24 @@ export default async function MyListPage({
   const mainSiteUrl = getMainSiteUrl();
 
   if (!token) {
-    return (
-      <main className="min-h-screen bg-[linear-gradient(180deg,#fbfbfa_0%,#fdfdfc_55%,#ffffff_100%)] px-4 py-10 text-neutral-900">
-        <div className="mx-auto max-w-3xl space-y-6">
-          <EmptyState
-            title="Bağlantı eksik"
-            text="Güvenli giriş bağlantısında gerekli bilgi bulunamadı. E-postanızdaki bağlantıyı yeniden açın."
-          />
-        </div>
-      </main>
-    );
+    redirect("/my");
   }
 
   const session = await verifyRecoverySessionTokenAsync(token);
 
-  if (!session) {
-    return (
-      <main className="min-h-screen bg-[linear-gradient(180deg,#fbfbfa_0%,#fdfdfc_55%,#ffffff_100%)] px-4 py-10 text-neutral-900">
-        <div className="mx-auto max-w-3xl space-y-6">
-          <EmptyState
-            title="Bağlantı geçersiz"
-            text="Bu bağlantı bulunamadı veya artık kullanılamıyor. Yeni bir güvenli giriş bağlantısı istemeniz gerekir."
-          />
-        </div>
-      </main>
-    );
-  }
+if (!session) {
+  redirect("/my");
+}
 
-  if (session.status === "expired") {
-    return (
-      <main className="min-h-screen bg-[linear-gradient(180deg,#fbfbfa_0%,#fdfdfc_55%,#ffffff_100%)] px-4 py-10 text-neutral-900">
-        <div className="mx-auto max-w-3xl space-y-6">
-          <EmptyState
-            title="Bağlantının süresi doldu"
-            text="Bu bağlantının süresi dolmuş. Ürünlerim sayfasından yeni bir giriş bağlantısı isteyebilirsiniz."
-          />
-        </div>
-      </main>
-    );
-  }
+if (session.status === "expired") {
+  redirect("/my");
+}
 
-  if (session.status === "used") {
-    return (
-      <main className="min-h-screen bg-[linear-gradient(180deg,#fbfbfa_0%,#fdfdfc_55%,#ffffff_100%)] px-4 py-10 text-neutral-900">
-        <div className="mx-auto max-w-3xl space-y-6">
-          <EmptyState
-            title="Bağlantı artık kullanılamıyor"
-            text="Bu bağlantı artık geçerli değil. Ürünlerim sayfasından yeni bir güvenli giriş bağlantısı isteyebilirsiniz."
-          />
-        </div>
-      </main>
-    );
-  }
+if (session.status === "used") {
+  redirect("/my");
+}
 
-  return (
+return (
     <main className="min-h-screen bg-[linear-gradient(180deg,#fbfbfa_0%,#fdfdfc_55%,#ffffff_100%)] px-4 py-10 text-neutral-900">
       <div className="mx-auto max-w-5xl space-y-6">
         <section className="mx-auto max-w-4xl overflow-hidden rounded-[2rem] border border-neutral-200 bg-white shadow-sm">

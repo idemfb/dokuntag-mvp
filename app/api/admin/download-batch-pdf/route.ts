@@ -9,7 +9,7 @@ type BatchItem = {
   label?: string;
 };
 
-type ShapeOption = "round" | "square";
+type ShapeOption = "round" | "square" | "drop";
 type PrintPageSize = "A4" | "A3" | "custom";
 type Orientation = "portrait" | "landscape";
 type DesignType = "standard" | "tag" | "card" | "vehicle" | "business";
@@ -17,6 +17,7 @@ type DesignType = "standard" | "tag" | "card" | "vehicle" | "business";
 type DesignInput = {
   size?: "2.5cm" | "3cm" | "4cm";
   shape?: ShapeOption;
+  hasHole?: boolean;
   brandText?: string;
   sloganText?: string;
   codeText?: string;
@@ -110,6 +111,14 @@ function hexToRgb(hex: string) {
   const g = parseInt(safe.slice(2, 4), 16) / 255;
   const b = parseInt(safe.slice(4, 6), 16) / 255;
   return rgb(r, g, b);
+}
+
+function getDropPath(contentX: number, contentY: number, itemSizePt: number) {
+  const sx = itemSizePt / 256;
+  const sy = itemSizePt / 320;
+  const x = (n: number) => contentX + n * sx;
+  const y = (n: number) => contentY + n * sy;
+  return `M ${x(128)} ${y(312)} C ${x(80)} ${y(270)} ${x(14)} ${y(202)} ${x(14)} ${y(122)} C ${x(14)} ${y(55)} ${x(62)} ${y(8)} ${x(128)} ${y(8)} C ${x(194)} ${y(8)} ${x(242)} ${y(55)} ${x(242)} ${y(122)} C ${x(242)} ${y(202)} ${x(176)} ${y(270)} ${x(128)} ${y(312)} Z`;
 }
 
 function getPageSize(
@@ -272,8 +281,27 @@ function drawCell(
     drawCutMarks(page, cellX, cellY, cellSizePt);
   }
 
+  const isDrop = design.shape === "drop";
+  const hasHole = design.hasHole !== false;
+
+  if (isDrop) {
+    page.drawSvgPath(getDropPath(contentX, contentY, itemSizePt), {
+      color: rgb(1, 1, 1),
+      borderColor: rgb(0.12, 0.12, 0.12),
+      borderWidth: 0.35
+    });
+
+    if (hasHole) {
+      const holeX = contentX + itemSizePt / 2;
+      const holeY = contentY + itemSizePt * 0.84;
+      page.drawCircle({ x: holeX, y: holeY, size: itemSizePt * 0.046, color: rgb(1, 1, 1), borderColor: rgb(0.1, 0.1, 0.1), borderWidth: 0.45 });
+    }
+  }
+
   const qrX = contentX + (itemSizePt - qrSizePt) / 2;
-  const qrY = contentY + (itemSizePt - qrSizePt) / 2;
+  const qrY = isDrop
+    ? contentY + (hasHole ? itemSizePt * 0.28 : itemSizePt * 0.24)
+    : contentY + (itemSizePt - qrSizePt) / 2;
 
   const brandPreferred =
     mmToPt(1.6) * (parsePercent(design.brandScale, 100, 40, 500) / 100);
@@ -298,8 +326,8 @@ function drawCell(
     mmToPt(0.4) +
     mmToPt((parsePercent(design.codeInset, 100, 50, 180) - 100) * 0.015);
 
-  const brandY = qrY + qrSizePt + brandGapPt + brandSize;
-  const sloganY = contentY + sloganSize * 0.2;
+  const brandY = isDrop && hasHole ? contentY + itemSizePt * 0.9 : qrY + qrSizePt + brandGapPt + brandSize;
+  const sloganY = isDrop ? contentY + itemSizePt * 0.13 : contentY + sloganSize * 0.2;
   const codeCenterX = contentX + itemSizePt - codeInsetPt;
   const codeCenterY = contentY + itemSizePt / 2;
 
@@ -427,7 +455,7 @@ export async function POST(request: NextRequest) {
     const cellSizePt = mmToPt(cellSizeMm);
     const itemSizePt = mmToPt(itemSizeMm);
     const qrScale = parsePercent(design.qrScale, 100, 85, 115) / 100;
-    const qrSizePt = itemSizePt * 0.64 * qrScale;
+    const qrSizePt = itemSizePt * (design.shape === "drop" ? 0.55 : 0.64) * qrScale;
     const gridWidthPt = columns * cellSizePt + Math.max(0, columns - 1) * gapPt;
     const gridHeightPt = rows * cellSizePt + Math.max(0, rows - 1) * gapPt;
 

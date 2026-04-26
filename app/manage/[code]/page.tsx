@@ -1819,7 +1819,7 @@ if (
       <div className="mx-auto max-w-3xl">
         <div className="mb-6">
           <a
-            href="/my"
+            href="/my/list"
             className="inline-flex items-center text-sm text-neutral-500 transition hover:text-neutral-900 hover:underline"
           >
             ← Ürünlerim

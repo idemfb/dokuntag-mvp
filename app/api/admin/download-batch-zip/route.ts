@@ -8,7 +8,7 @@ type BatchItem = {
 };
 
 type SizeOption = "2.5cm" | "3cm" | "4cm";
-type ShapeOption = "round" | "square";
+type ShapeOption = "round" | "square" | "drop";
 type FontWeightOption = "500" | "600" | "700" | "800";
 type FontStyleOption = "normal" | "italic";
 type AlignOption = "left" | "center" | "right";
@@ -17,6 +17,7 @@ type DesignType = "standard" | "tag" | "card" | "vehicle" | "business";
 type DesignInput = {
   size?: SizeOption;
   shape?: ShapeOption;
+  hasHole?: boolean;
   brandText?: string;
   sloganText?: string;
   codeText?: string;
@@ -92,7 +93,7 @@ function getBaseUrl(request: NextRequest) {
 
 async function buildTagSvg(targetUrl: string, code: string, design: DesignInput) {
   const size = design.size === "2.5cm" || design.size === "4cm" ? design.size : "3cm";
-  const shape = design.shape === "square" ? "square" : "round";
+  const shape = design.shape === "square" ? "square" : design.shape === "drop" ? "drop" : "round";
   const brandText = normalizeText(design.brandText, "DOKUNTAG", 24);
   const sloganText = normalizeText(design.sloganText, "Dokun • Bul • Buluştur", 28);
   const codeText = normalizeText(design.codeText, code, 20);
@@ -106,28 +107,40 @@ async function buildTagSvg(targetUrl: string, code: string, design: DesignInput)
   const innerSvg = match[2];
   const width = size;
   const height = size;
-  const qrSize = size === "2.5cm" ? 208 : size === "4cm" ? 220 : 214;
+  const isDrop = shape === "drop";
+  const qrSize = isDrop ? (size === "2.5cm" ? 188 : size === "4cm" ? 204 : 196) : (size === "2.5cm" ? 208 : size === "4cm" ? 220 : 214);
   const qrX = Math.round((256 - qrSize) / 2);
-  const qrY = size === "2.5cm" ? 55 : 52;
+  const qrY = isDrop ? (design.hasHole === false ? 62 : 74) : (size === "2.5cm" ? 55 : 52);
   const brandFontSize = size === "2.5cm" ? 16 : size === "4cm" ? 20 : 18;
   const sloganFontSize = size === "2.5cm" ? 9.2 : size === "4cm" ? 11.5 : 10.2;
   const codeFontSize = size === "2.5cm" ? 8.4 : size === "4cm" ? 10.6 : 9.3;
   const rx = shape === "square" ? 20 : 128;
+  const clipMarkup = shape === "drop"
+    ? `<path d="M128 8 C194 8 242 55 242 122 C242 202 176 270 128 312 C80 270 14 202 14 122 C14 55 62 8 128 8 Z" />`
+    : `<rect x="0" y="0" width="256" height="320" rx="${rx}" ry="${rx}" />`;
+  const backgroundMarkup = shape === "drop"
+    ? `<path d="M128 8 C194 8 242 55 242 122 C242 202 176 270 128 312 C80 270 14 202 14 122 C14 55 62 8 128 8 Z" fill="#ffffff" />`
+    : `<rect x="0" y="0" width="256" height="320" rx="${rx}" ry="${rx}" fill="#ffffff" />`;
+  const holeMarkup = shape === "drop" && design.hasHole !== false
+    ? `<circle cx="128" cy="42" r="15" fill="#ffffff" stroke="#111111" stroke-width="2.2" opacity="0.9" /><circle cx="128" cy="42" r="8" fill="none" stroke="#d4d4d4" stroke-width="1" opacity="0.9" />`
+    : "";
   return `
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 320" width="${width}" height="${height}" role="img" aria-label="Dokuntag QR ${escapeXml(code)}">
-  <rect x="0" y="0" width="256" height="320" rx="${rx}" ry="${rx}" fill="#ffffff" />
-  <text x="128" y="28" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="${brandFontSize}" font-weight="800" letter-spacing="1.15" fill="${brandColor}">${escapeXml(brandText)}</text>
+  <defs><clipPath id="shapeClip">${clipMarkup}</clipPath></defs>
+  ${backgroundMarkup}
+  <g clip-path="url(#shapeClip)">${holeMarkup}<text x="128" y="28" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="${brandFontSize}" font-weight="800" letter-spacing="1.15" fill="${brandColor}">${escapeXml(brandText)}</text>
   <path d="M116 39 C121 34, 135 34, 140 39" fill="none" stroke="${brandColor}" stroke-width="2.2" stroke-linecap="round" opacity="0.9" />
   <path d="M121 43 C125 40, 131 40, 135 43" fill="none" stroke="${brandColor}" stroke-width="2" stroke-linecap="round" opacity="0.9" />
   <svg viewBox="${viewBox}" x="${qrX}" y="${qrY}" width="${qrSize}" height="${qrSize}">${innerSvg}</svg>
   <text x="128" y="${qrY + qrSize + 17}" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="${sloganFontSize}" font-weight="700" letter-spacing="0.25" fill="${sloganColor}">${escapeXml(sloganText)}</text>
   <text x="128" y="${qrY + qrSize + 34}" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="${codeFontSize}" font-weight="800" letter-spacing="0.8" fill="${codeColor}">${escapeXml(codeText)}</text>
+</g>
 </svg>`.trim();
 }
 
 async function buildSvg(targetUrl: string, code: string, design: DesignInput) {
   const size = design.size === "2.5cm" || design.size === "4cm" ? design.size : "3cm";
-  const shape = design.shape === "square" ? "square" : "round";
+  const shape = design.shape === "square" ? "square" : design.shape === "drop" ? "drop" : "round";
   const brandText = normalizeText(design.brandText, "DOKUNTAG", 24);
   const sloganText = normalizeText(design.sloganText, "Bul • Buluştur", 28);
   const codeText = normalizeText(design.codeText, code, 20);
@@ -194,15 +207,27 @@ async function buildSvg(targetUrl: string, code: string, design: DesignInput) {
   const viewBox = match[1];
   const innerSvg = match[2];
   const rx = shape === "round" ? 128 : 20;
+  const clipMarkup = shape === "drop"
+    ? `<path d="M128 8 C194 8 242 55 242 122 C242 202 176 270 128 312 C80 270 14 202 14 122 C14 55 62 8 128 8 Z" />`
+    : `<rect x="0" y="0" width="256" height="320" rx="${rx}" ry="${rx}" />`;
+  const backgroundMarkup = shape === "drop"
+    ? `<path d="M128 8 C194 8 242 55 242 122 C242 202 176 270 128 312 C80 270 14 202 14 122 C14 55 62 8 128 8 Z" fill="#ffffff" />`
+    : `<rect x="0" y="0" width="256" height="320" rx="${rx}" ry="${rx}" fill="#ffffff" />`;
+  const holeMarkup = shape === "drop" && design.hasHole !== false
+    ? `<circle cx="128" cy="42" r="15" fill="#ffffff" stroke="#111111" stroke-width="2.2" opacity="0.9" />`
+    : "";
 
   return `
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 320" width="${size}" height="${size}" role="img" aria-label="Dokuntag QR ${safeCode}">
-  <rect x="0" y="0" width="256" height="320" rx="${rx}" ry="${rx}" fill="#ffffff" />
+  <defs><clipPath id="shapeClip">${clipMarkup}</clipPath></defs>
+  ${backgroundMarkup}
+  <g clip-path="url(#shapeClip)">${holeMarkup}
   <text x="${brandX}" y="${brandY}" text-anchor="${brandAnchor}" font-family="Arial, Helvetica, sans-serif" font-size="${brandFontSize}" font-weight="${design.brandWeight || "800"}" font-style="${design.brandStyle || "normal"}" fill="${normalizeColor(design.brandColor, "#111111")}">${safeBrandText}</text>
   <text x="${badgeX}" y="${badgeY}" text-anchor="start" font-family="Arial, Helvetica, sans-serif" font-size="${badgeFontSize}" font-weight="800" fill="${normalizeColor(design.brandColor, "#111111")}">®</text>
   <svg viewBox="${viewBox}" x="${realQrX}" y="${realQrY}" width="${qrSize}" height="${qrSize}">${innerSvg}</svg>
   <text x="${codeX}" y="${codeCenterY}" transform="rotate(90 ${codeX} ${codeCenterY})" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="${codeFontSize}" font-weight="700" font-style="${design.codeStyle || "normal"}" fill="${normalizeColor(design.codeColor, "#111111")}">${safeCodeText}</text>
   <text x="${sloganX}" y="${sloganY}" text-anchor="${sloganAnchor}" font-family="Arial, Helvetica, sans-serif" font-size="${sloganFontSize}" font-weight="${design.sloganWeight || "700"}" font-style="${design.sloganStyle || "italic"}" fill="${normalizeColor(design.sloganColor, "#111111")}">${safeSloganText}</text>
+  </g>
 </svg>`.trim();
 }
 

@@ -104,11 +104,16 @@ export async function POST(request: NextRequest) {
       )}`;
 
       await sendRecoveryMagicLinkEmail({
-        to: email,
-        verifyLink,
-        expiresAt: session.expiresAt,
-        entryType
-      });
+      to: email,
+      verifyLink,
+      expiresAt: session.expiresAt,
+      entryType,
+      itemCount: session.items?.length || 0,
+      itemPreview: session.items
+        ?.slice(0, 5)
+        .map((item) => item.petName || item.code)
+        .filter(Boolean) || []
+    });
     }
 
     return NextResponse.json({

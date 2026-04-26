@@ -1,5 +1,36 @@
+import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+
+export const metadata: Metadata = {
+  title: "Dokuntag® | NFC ve QR ile kaybolanı sahibine ulaştırın",
+  description:
+    "Dokuntag®, NFC ve QR ile çalışan güvenli kayıp buluşturma sistemidir. Birey, evcil hayvan, anahtar ve eşyalar için güvenli iletişim köprüsü kurar.",
+  alternates: {
+    canonical: "/",
+  },
+  openGraph: {
+    title: "Dokuntag® | Dokun, Bul, Buluştur",
+    description:
+      "NFC ve QR ile kaybolanı sahibine ulaştıran güvenli iletişim sistemi.",
+    url: "https://dokuntag.com",
+    images: [
+      {
+        url: "/images/hero-main.jpg",
+        width: 1200,
+        height: 630,
+        alt: "Dokuntag NFC ve QR kayıp buluşturma sistemi",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Dokuntag® | Dokun, Bul, Buluştur",
+    description:
+      "NFC ve QR ile kaybolanı sahibine ulaştıran güvenli iletişim sistemi.",
+    images: ["/images/hero-main.jpg"],
+  },
+};
 
 const phoneDisplay = "0551 555 15 53";
 const phoneHref = "tel:+905515551553";
@@ -15,191 +46,87 @@ const socialLinks = [
   { name: "TikTok", href: "https://tiktok.com/@dokuntag" },
   { name: "YouTube", href: "https://youtube.com/@dokuntag" },
   { name: "X", href: "https://x.com/dokuntag" },
-  { name: "Facebook", href: "https://facebook.com/dokuntag" }
+  { name: "Facebook", href: "https://facebook.com/dokuntag" },
 ];
 
 const useCases = [
   {
-    title: "Anahtar",
-    text: "Anahtarınız kaybolduğunda bulan kişi size kolayca ulaşabilir.",
-    image: "/images/lost-key.jpg"
-  },
-  {
-    title: "Çanta",
-    text: "Unutulan çanta, sahibine daha hızlı geri dönebilir.",
-    image: "/images/bag-tag.jpg"
+    title: "Birey",
+    text: "Yakınınıza ulaşılması gereken durumlarda güvenli iletişim köprüsü oluşturur.",
+    image: "/images/relief-phone.jpg",
   },
   {
     title: "Evcil hayvan",
-    text: "Tasmadaki Dokuntag ile bulan kişi size güvenli şekilde ulaşabilir.",
-    image: "/images/pet-tag.jpg"
-  }
+    text: "Tasmadaki Dokuntag® ile bulan kişi size güvenli şekilde ulaşabilir.",
+    image: "/images/pet-tag.jpg",
+  },
+  {
+    title: "Anahtar",
+    text: "Anahtarınız kaybolduğunda bulan kişi size kolayca ulaşabilir.",
+    image: "/images/lost-key.jpg",
+  },
+  {
+    title: "Eşya",
+    text: "Çanta, laptop, valiz ve değer verdiğiniz eşyalar için kullanılabilir.",
+    image: "/images/bag-tag.jpg",
+  },
 ];
 
 const steps = [
   {
     title: "Etiketi tak",
-    text: "Dokuntag’ı anahtarınıza, çantanıza veya evcil hayvan tasmasına takın."
+    text: "Dokuntag®’ı birey, evcil hayvan, anahtar, çanta veya değer verdiğiniz eşyalar için kullanın.",
   },
   {
     title: "Bulan kişi okutur",
-    text: "NFC ile dokunur veya QR kodu okutur. Uygulama indirmesine gerek yoktur."
+    text: "NFC ile dokunur veya QR kodu okutur. Uygulama indirmesine gerek yoktur.",
   },
   {
     title: "Size ulaşır",
-    text: "Açılan güvenli profil üzerinden sizin belirlediğiniz yöntemle iletişim kurar."
-  }
+    text: "Açılan güvenli profil üzerinden sizin belirlediğiniz yöntemle iletişim kurar.",
+  },
 ];
 
 const faqItems = [
   {
     question: "Adres paylaşmak zorunda mıyım?",
     answer:
-      "Hayır. Hangi bilgilerin görüneceği sizin kontrolünüzdedir. Adres paylaşmak zorunda değilsiniz."
+      "Hayır. Dokuntag adres bilgisi istemez ve adres paylaşmanızı önermez.",
   },
   {
     question: "Bulan kişinin uygulama indirmesi gerekir mi?",
     answer:
-      "Hayır. NFC ya da QR okutulduğunda Dokuntag profil sayfası tarayıcıda açılır."
+      "Hayır. NFC ya da QR okutulduğunda Dokuntag profil sayfası tarayıcıda açılır.",
   },
   {
     question: "Telefon numaram görünmek zorunda mı?",
     answer:
-      "Hayır. Telefon, WhatsApp, e-posta ve not alanlarını isteğinize göre açıp kapatabilirsiniz."
+      "Hayır. Telefon, WhatsApp, e-posta ve not alanlarını isteğinize göre açıp kapatabilirsiniz.",
   },
   {
     question: "NFC ve QR aynı yere mi gider?",
     answer:
-      "Evet. Varsayılan olarak NFC ve QR aynı güvenli Dokuntag profil akışına yönlenir. İhtiyaç halinde NFC bağlantısı özel bir adrese de tanımlanabilir."
+      "Evet. Varsayılan olarak NFC ve QR aynı güvenli Dokuntag profil akışına yönlenir. Özel yönlendirme ihtiyaçları için bizimle iletişime geçebilirsiniz.",
   },
   {
-    question: "Birden fazla ürün ekleyebilir miyim?",
+    question: "Yıllık üyelik var mı?",
     answer:
-      "Evet. Dokuntag yapısı birden fazla ürün yönetimine uygun şekilde hazırlanmıştır."
-  }
+      "Hayır. Dokuntag® One fiziksel ürün olarak üyeliksiz kullanılır.",
+  },
 ];
 
 const trustItems = [
-  "Adres paylaşmak zorunda değilsiniz",
+  "Adres bilgisi istemez ve adres paylaşmanızı önermez",
   "Telefon görünürlüğünü siz seçersiniz",
   "WhatsApp isteğe bağlıdır",
   "Bulan kişi uygulama indirmez",
   "NFC ve QR güvenli profil akışına yönlenir",
-  "Bilgiler ürün sahibi tarafından yönetilir"
+  "Bilgiler ürün sahibi tarafından yönetilir",
 ];
 
 export default function HomePage() {
   return (
     <main className="min-h-screen bg-[#f7f3ea] text-neutral-950">
-      <header className="sticky top-0 z-50 border-b border-black/5 bg-[#f7f3ea]/85 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 sm:px-8">
-          <Link href="/" className="text-lg font-semibold tracking-tight">
-            Dokuntag
-          </Link>
-
-          <nav className="hidden items-center gap-6 text-sm text-neutral-600 md:flex">
-            <a href="#nasil-calisir" className="hover:text-neutral-950">
-              Nasıl çalışır
-            </a>
-            <a href="#neden" className="hover:text-neutral-950">
-              Neden Dokuntag?
-            </a>
-            <a href="#yardim" className="hover:text-neutral-950">
-              Kaybettim / Buldum
-            </a>
-            <Link href="/p/DKNTG" className="hover:text-neutral-950">
-              Demo profil
-            </Link>
-            <Link href="/satis" className="hover:text-neutral-950">
-              Satın al
-            </Link>
-            <a href="#iletisim" className="hover:text-neutral-950">
-              İletişim
-            </a>
-          </nav>
-
-          <div className="flex items-center gap-3">
-            <Link
-              href="/scan"
-              className="hidden rounded-full border border-neutral-300 bg-white/60 px-4 py-2 text-sm font-semibold text-neutral-800 transition hover:bg-white sm:inline-flex"
-            >
-              QR okut
-            </Link>
-
-            <Link
-              href="/my"
-              className="hidden rounded-full border border-neutral-300 bg-white/60 px-4 py-2 text-sm font-semibold text-neutral-800 transition hover:bg-white sm:inline-flex"
-            >
-              Ürünlerim
-            </Link>
-
-            <Link
-              href="/satis"
-              className="rounded-full bg-neutral-950 px-4 py-2 text-sm font-semibold text-white transition hover:bg-neutral-800"
-            >
-              Hemen edin
-            </Link>
-
-            <details className="relative md:hidden">
-              <summary className="list-none rounded-full border border-neutral-300 bg-white/70 px-3 py-2 text-sm font-semibold">
-                Menü
-              </summary>
-
-              <div className="absolute right-0 mt-3 w-64 overflow-hidden rounded-3xl border border-neutral-200 bg-white p-2 shadow-xl">
-                <a
-                  href="#nasil-calisir"
-                  className="block rounded-2xl px-4 py-3 text-sm hover:bg-neutral-100"
-                >
-                  Nasıl çalışır
-                </a>
-                <a
-                  href="#neden"
-                  className="block rounded-2xl px-4 py-3 text-sm hover:bg-neutral-100"
-                >
-                  Neden Dokuntag?
-                </a>
-                <a
-                  href="#yardim"
-                  className="block rounded-2xl px-4 py-3 text-sm hover:bg-neutral-100"
-                >
-                  Kaybettim / Buldum
-                </a>
-                <Link
-                  href="/p/DKNTG"
-                  className="block rounded-2xl px-4 py-3 text-sm hover:bg-neutral-100"
-                >
-                  Demo profil
-                </Link>
-                <Link
-                  href="/scan"
-                  className="block rounded-2xl px-4 py-3 text-sm hover:bg-neutral-100"
-                >
-                  QR okut
-                </Link>
-                <Link
-                  href="/satis"
-                  className="block rounded-2xl px-4 py-3 text-sm hover:bg-neutral-100"
-                >
-                  Satın al
-                </Link>
-                <Link
-                  href="/my"
-                  className="block rounded-2xl px-4 py-3 text-sm hover:bg-neutral-100"
-                >
-                  Ürünlerim
-                </Link>
-                <a
-                  href="#iletisim"
-                  className="block rounded-2xl px-4 py-3 text-sm hover:bg-neutral-100"
-                >
-                  İletişim
-                </a>
-              </div>
-            </details>
-          </div>
-        </div>
-      </header>
-
       <section className="px-5 py-16 sm:px-8 sm:py-24">
         <div className="mx-auto grid max-w-7xl items-center gap-10 lg:grid-cols-[0.95fr_1.05fr]">
           <div>
@@ -212,7 +139,7 @@ export default function HomePage() {
             </h1>
 
             <p className="mt-6 max-w-2xl text-lg leading-8 text-neutral-600 sm:text-xl">
-              Dokuntag ile bulan kişi size anında ulaşır. Uygulama indirmeden,
+              Dokuntag® ile bulan kişi size anında ulaşır. Uygulama indirmeden,
               karmaşa yaşamadan, güvenli ve kontrollü şekilde.
             </p>
 
@@ -221,7 +148,7 @@ export default function HomePage() {
                 href="/satis"
                 className="rounded-full bg-neutral-950 px-8 py-4 text-center text-sm font-semibold text-white transition hover:bg-neutral-800"
               >
-                Hemen edin
+                Ön sipariş ver
               </Link>
 
               <a
@@ -257,15 +184,15 @@ export default function HomePage() {
         <div className="mx-auto max-w-7xl">
           <div className="max-w-3xl">
             <p className="text-sm font-semibold uppercase tracking-[0.22em] text-neutral-500">
-              Neden Dokuntag?
+              Neden Dokuntag®?
             </p>
             <h2 className="mt-4 text-4xl font-semibold tracking-tight sm:text-5xl">
               Çünkü kaybolduğunda sana ulaşacak bir yol gerekir.
             </h2>
             <p className="mt-5 text-lg leading-8 text-neutral-600">
-              Anahtarınızı, çantanızı veya evcil hayvanınızı bulan kişi iyi
-              niyetli olabilir. Ama size ulaşacak bir yol yoksa geri dönmesi
-              zordur.
+              Anahtarınızı, çantanızı, evcil hayvanınızı veya yakınınızı bulan
+              kişi iyi niyetli olabilir. Ama size ulaşacak bir yol yoksa geri
+              dönmesi zordur.
             </p>
           </div>
 
@@ -291,24 +218,6 @@ export default function HomePage() {
 
             <div className="overflow-hidden rounded-[2rem] border border-neutral-200 bg-white shadow-sm">
               <Image
-                src="/images/bag-tag.jpg"
-                alt="Çanta üzerinde Dokuntag"
-                width={900}
-                height={900}
-                className="h-72 w-full object-cover"
-              />
-              <div className="p-7">
-                <h3 className="text-2xl font-semibold">
-                  Çantanı bir yerde unutsan?
-                </h3>
-                <p className="mt-3 text-sm leading-6 text-neutral-600">
-                  Dokuntag sayesinde bulan kişi size hızlıca ulaşabilir.
-                </p>
-              </div>
-            </div>
-
-            <div className="overflow-hidden rounded-[2rem] border border-neutral-200 bg-white shadow-sm">
-              <Image
                 src="/images/pet-tag.jpg"
                 alt="Evcil hayvan tasmasında Dokuntag"
                 width={900}
@@ -320,8 +229,26 @@ export default function HomePage() {
                   Evcil hayvanın uzaklaşırsa?
                 </h3>
                 <p className="mt-3 text-sm leading-6 text-neutral-600">
-                  Tasmadaki Dokuntag, bulan kişiyle aranızda güvenli bir köprü
+                  Tasmadaki Dokuntag®, bulan kişiyle aranızda güvenli bir köprü
                   kurar.
+                </p>
+              </div>
+            </div>
+
+            <div className="overflow-hidden rounded-[2rem] border border-neutral-200 bg-white shadow-sm">
+              <Image
+                src="/images/bag-tag.jpg"
+                alt="Çanta üzerinde Dokuntag"
+                width={900}
+                height={900}
+                className="h-72 w-full object-cover"
+              />
+              <div className="p-7">
+                <h3 className="text-2xl font-semibold">
+                  Çantanı bir yerde unutsan?
+                </h3>
+                <p className="mt-3 text-sm leading-6 text-neutral-600">
+                  Dokuntag® sayesinde bulan kişi size hızlıca ulaşabilir.
                 </p>
               </div>
             </div>
@@ -349,7 +276,7 @@ export default function HomePage() {
               Tek dokunuşla güvenli bağlantı açılır.
             </h2>
             <p className="mt-5 text-lg leading-8 text-neutral-600">
-              Dokuntag, NFC ve QR teknolojisini kullanır. Bulan kişi etiketi
+              Dokuntag®, NFC ve QR teknolojisini kullanır. Bulan kişi etiketi
               okutur, güvenli profil açılır ve sizin izin verdiğiniz iletişim
               yollarıyla size ulaşır.
             </p>
@@ -402,8 +329,8 @@ export default function HomePage() {
               Bir ürün mü buldunuz, yoksa ürününüz mü kayboldu?
             </h2>
             <p className="mt-5 text-neutral-600">
-              Dokuntag iki taraf için de süreci sadeleştirir. Bulan kişi hızlıca
-              okutur, ürün sahibi iletişim bilgilerini kontrol eder.
+              Dokuntag® iki taraf için de süreci sadeleştirir. Bulan kişi
+              hızlıca okutur, ürün sahibi iletişim bilgilerini kontrol eder.
             </p>
           </div>
 
@@ -411,7 +338,7 @@ export default function HomePage() {
             <div className="rounded-[2rem] bg-[#f7f3ea] p-6">
               <h3 className="text-2xl font-semibold">Bir ürün buldum</h3>
               <p className="mt-3 text-sm leading-6 text-neutral-600">
-                Üzerindeki Dokuntag NFC alanına dokunun veya QR kodu okutun.
+                Üzerindeki Dokuntag® NFC alanına dokunun veya QR kodu okutun.
                 Sayfa açılırsa sahibine ulaşmak için yönergeleri takip edin.
               </p>
               <Link
@@ -446,11 +373,15 @@ export default function HomePage() {
               Kullanım alanları
             </p>
             <h2 className="mt-4 text-4xl font-semibold tracking-tight sm:text-5xl">
-              Değer verdiğiniz şeyler için.
+              Öncelik can, sonra değer verdiğiniz her şey.
             </h2>
+            <p className="mx-auto mt-5 max-w-3xl text-lg leading-8 text-neutral-600">
+              Birey, evcil hayvan, anahtar ve eşyalar için güvenli iletişim
+              katmanı oluşturur.
+            </p>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             {useCases.map((item) => (
               <div
                 key={item.title}
@@ -472,6 +403,11 @@ export default function HomePage() {
               </div>
             ))}
           </div>
+
+          <div className="mt-5 rounded-[2rem] border border-neutral-200 bg-white/70 p-5 text-sm leading-6 text-neutral-600">
+            Diğer kullanımlar: laptop, telefon, ekipman, valiz, bisiklet,
+            araç içi eşya ve güvenli iletişim gerektiren farklı alanlar.
+          </div>
         </div>
       </section>
 
@@ -489,13 +425,13 @@ export default function HomePage() {
 
           <div className="p-2 sm:p-6">
             <p className="text-sm font-semibold uppercase tracking-[0.22em] text-neutral-400">
-              Dokuntag güven sistemi
+              Dokuntag® güven sistemi
             </p>
             <h2 className="mt-4 text-4xl font-semibold tracking-tight sm:text-5xl">
               Bilgilerinizin kontrolü sizde.
             </h2>
             <p className="mt-5 text-lg leading-8 text-neutral-300">
-              Dokuntag bir güven köprüsüdür. Bulan kişi yalnızca sizin görünür
+              Dokuntag® bir güven köprüsüdür. Bulan kişi yalnızca sizin görünür
               yapmayı seçtiğiniz bilgilere ulaşır. Amaç, kaybolanı sahibine
               hızlı ve güvenli şekilde ulaştırmaktır.
             </p>
@@ -548,7 +484,7 @@ export default function HomePage() {
                 İletişim
               </p>
               <h2 className="mt-4 text-4xl font-semibold tracking-tight sm:text-5xl">
-                Dokuntag ile iletişime geçin.
+                Dokuntag® ile iletişime geçin.
               </h2>
               <p className="mt-5 text-neutral-600">
                 Ürün, kurulum, iş birliği veya destek için bize ulaşabilirsiniz.
@@ -606,7 +542,7 @@ export default function HomePage() {
               <div className="mt-8 rounded-3xl bg-[#f7f3ea] p-6">
                 <h4 className="font-semibold">Demo profil</h4>
                 <p className="mt-2 text-sm leading-6 text-neutral-600">
-                  Bulan kişinin gördüğü örnek Dokuntag profilini inceleyin.
+                  Bulan kişinin gördüğü örnek Dokuntag® profilini inceleyin.
                 </p>
                 <Link
                   href="/p/DKNTG"
@@ -627,7 +563,7 @@ export default function HomePage() {
           </h2>
 
           <p className="mx-auto mt-5 max-w-xl text-lg leading-8 text-neutral-600">
-            Dokuntag, kaybolanla sahibi arasında güvenli ve hızlı bir bağlantı
+            Dokuntag®, kaybolanla sahibi arasında güvenli ve hızlı bir bağlantı
             kurar.
           </p>
 
@@ -636,7 +572,7 @@ export default function HomePage() {
               href="/satis"
               className="rounded-full bg-neutral-950 px-8 py-4 text-center text-sm font-semibold text-white transition hover:bg-neutral-800"
             >
-              Hemen edin
+              Ön sipariş ver
             </Link>
 
             <Link
@@ -648,33 +584,6 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-
-      <footer className="border-t border-neutral-200 px-5 py-8 sm:px-8">
-        <div className="mx-auto flex max-w-7xl flex-col gap-4 text-sm text-neutral-500 sm:flex-row sm:items-center sm:justify-between">
-          <p>© Dokuntag</p>
-
-          <div className="flex flex-wrap gap-4">
-            <a href="#nasil-calisir" className="hover:text-neutral-950">
-              Nasıl çalışır
-            </a>
-            <a href="#neden" className="hover:text-neutral-950">
-              Neden Dokuntag?
-            </a>
-            <a href="#yardim" className="hover:text-neutral-950">
-              Kaybettim / Buldum
-            </a>
-            <Link href="/scan" className="hover:text-neutral-950">
-              QR okut
-            </Link>
-            <Link href="/satis" className="hover:text-neutral-950">
-              Satın al
-            </Link>
-            <a href="#iletisim" className="hover:text-neutral-950">
-              İletişim
-            </a>
-          </div>
-        </div>
-      </footer>
     </main>
   );
 }

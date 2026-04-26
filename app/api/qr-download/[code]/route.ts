@@ -1,4 +1,3 @@
-
 import { NextResponse } from "next/server";
 import QRCode from "qrcode";
 
@@ -7,7 +6,7 @@ type Params = {
 };
 
 type SizeOption = "2.5cm" | "3cm" | "4cm";
-type ShapeOption = "round" | "square";
+type ShapeOption = "round" | "square" | "drop";
 type FontWeightOption = "500" | "600" | "700" | "800";
 type FontStyleOption = "normal" | "italic";
 type AlignOption = "left" | "center" | "right";
@@ -16,6 +15,7 @@ type DesignType = "standard" | "tag" | "card" | "vehicle" | "business";
 type LayoutOverrides = {
   size: SizeOption;
   shape: ShapeOption;
+  hasHole: boolean;
   brandText: string;
   sloganText: string;
   codeText: string;
@@ -93,11 +93,33 @@ function normalizeSize(value: string | null): SizeOption {
 }
 
 function normalizeShape(value: string | null): ShapeOption {
-  return value === "square" ? "square" : "round";
+  if (value === "square") return "square";
+  if (value === "drop") return "drop";
+  return "round";
+}
+
+function normalizeBoolean(value: string | null, fallback: boolean) {
+  if (value === "true") return true;
+  if (value === "false") return false;
+  return fallback;
+}
+
+function normalizeDesignType(value: string | null): DesignType {
+  if (value === "standard" || value === "card" || value === "vehicle" || value === "business") {
+    return value;
+  }
+
+  return "tag";
 }
 
 function normalizeText(value: string | null, fallback: string, maxLength: number) {
-  const text = String(value || "").trim();
+  const raw = value;
+  const text = String(raw ?? "").trim();
+
+  if (raw === "") {
+    return "";
+  }
+
   return (text || fallback).slice(0, maxLength);
 }
 
@@ -220,8 +242,9 @@ function readLayoutOverrides(searchParams: URLSearchParams, normalizedCode: stri
   return {
     size: normalizeSize(searchParams.get("size")),
     shape: normalizeShape(searchParams.get("shape")),
-    brandText: normalizeText(searchParams.get("brandText"), "DOKUNTAG", 24),
-    sloganText: normalizeText(searchParams.get("sloganText"), "Bul • Buluştur", 28),
+    hasHole: normalizeBoolean(searchParams.get("hasHole"), true),
+    brandText: normalizeText(searchParams.get("brandText"), "dokuntag", 24),
+    sloganText: normalizeText(searchParams.get("sloganText"), "", 28),
     codeText: normalizeText(searchParams.get("codeText"), normalizedCode, 20),
     brandScale: parsePercent(searchParams.get("brandScale"), 100, 40, 500),
     sloganScale: parsePercent(searchParams.get("sloganScale"), 100, 40, 500),
@@ -259,12 +282,15 @@ function getTextAnchor(align: AlignOption) {
 function getAlignedX(align: AlignOption, preset: LayoutPreset, horizontalFactor: number, outerSafePx: number) {
   const minX = preset.outerPadding + outerSafePx + 6;
   const maxX = 256 - preset.outerPadding - outerSafePx - 6;
+
   if (align === "left") {
     return clamp(minX, minX, maxX);
   }
+
   if (align === "right") {
     return clamp(maxX, minX, maxX);
   }
+
   return clamp(128 + (horizontalFactor - 1) * 26, minX, maxX);
 }
 
@@ -278,8 +304,11 @@ function fitTextFontSize({
   maxWidth: number;
 }) {
   if (!text) return requestedFontSize;
+
   const estimatedWidth = requestedFontSize * Math.max(text.length, 1) * 0.62;
+
   if (estimatedWidth <= maxWidth) return requestedFontSize;
+
   const fitted = requestedFontSize * (maxWidth / estimatedWidth);
   return Number(clamp(fitted, 7, requestedFontSize).toFixed(2));
 }
@@ -307,7 +336,6 @@ function computeLayout(preset: LayoutPreset, overrides: LayoutOverrides) {
   const qrY = qrCenterY - qrHalf;
   const qrTop = qrY;
   const qrBottom = qrY + qrSize;
-  const qrLeft = qrX;
   const qrRight = qrX + qrSize;
 
   const brandRequestedFont = Number((preset.brandFontSize * overrides.brandScale / 100).toFixed(2));
@@ -315,14 +343,14 @@ function computeLayout(preset: LayoutPreset, overrides: LayoutOverrides) {
   const codeRequestedFont = Number((preset.codeFontSize * overrides.codeScale / 100).toFixed(2));
   const badgeRequestedFont = Number((5.3 * overrides.badgeScale / 100).toFixed(2));
 
-  const availableTextWidth =
-    256 - (preset.outerPadding + outerSafePx + 10) * 2;
+  const availableTextWidth = 256 - (preset.outerPadding + outerSafePx + 10) * 2;
 
   const brandFontSize = fitTextFontSize({
     text: overrides.brandText,
     requestedFontSize: brandRequestedFont,
     maxWidth: availableTextWidth
   });
+
   const sloganFontSize = fitTextFontSize({
     text: overrides.sloganText,
     requestedFontSize: sloganRequestedFont,
@@ -334,11 +362,11 @@ function computeLayout(preset: LayoutPreset, overrides: LayoutOverrides) {
 
   const minBrandY = preset.outerPadding + outerSafePx + brandFontSize;
   const maxBrandY = qrTop - innerSafePx - 6;
-  let brandY = clamp(qrTop - innerSafePx - 8 - brandGapPx, minBrandY, maxBrandY);
+  const brandY = clamp(qrTop - innerSafePx - 8 - brandGapPx, minBrandY, maxBrandY);
 
   const minSloganY = qrBottom + innerSafePx + sloganFontSize + 2;
   const maxSloganY = preset.viewBoxHeight - preset.outerPadding - outerSafePx - 2;
-  let sloganY = clamp(qrBottom + innerSafePx + 10 + sloganGapPx, minSloganY, maxSloganY);
+  const sloganY = clamp(qrBottom + innerSafePx + 10 + sloganGapPx, minSloganY, maxSloganY);
 
   const brandX = getAlignedX(overrides.brandAlign, preset, horizontalFactor, outerSafePx);
   const sloganX = getAlignedX(overrides.sloganAlign, preset, horizontalFactor, outerSafePx);
@@ -363,10 +391,16 @@ function computeLayout(preset: LayoutPreset, overrides: LayoutOverrides) {
   const badgeOffsetX = (overrides.badgeOffsetX - 100) * 0.55;
   const badgeOffsetY = (overrides.badgeOffsetY - 100) * 0.45;
   const estimatedBrandWidth = brandFontSize * overrides.brandText.length * 0.58;
-  let badgeX = brandX + estimatedBrandWidth / 2 + 2 + badgeOffsetX;
-  let badgeY = brandY - brandFontSize * 0.6 + badgeOffsetY;
-  badgeX = clamp(badgeX, brandX + 4, 256 - preset.outerPadding - outerSafePx - 4);
-  badgeY = clamp(badgeY, preset.outerPadding + outerSafePx + 3, qrTop - innerSafePx - 3);
+  const badgeX = clamp(
+    brandX + estimatedBrandWidth / 2 + 2 + badgeOffsetX,
+    brandX + 4,
+    256 - preset.outerPadding - outerSafePx - 4
+  );
+  const badgeY = clamp(
+    brandY - brandFontSize * 0.6 + badgeOffsetY,
+    preset.outerPadding + outerSafePx + 3,
+    qrTop - innerSafePx - 3
+  );
 
   return {
     qrSize,
@@ -386,9 +420,160 @@ function computeLayout(preset: LayoutPreset, overrides: LayoutOverrides) {
     badgeFontSize,
     badgeX,
     badgeY,
-    outerSafePx,
     brandTextAnchor,
     sloganTextAnchor
+  };
+}
+
+function getClipMarkup(shape: ShapeOption, viewBoxHeight: number) {
+  if (shape === "drop") {
+    const dropPath =
+      "M128 8 C176 50 242 118 242 198 C242 265 194 312 128 312 C62 312 14 265 14 198 C14 118 80 50 128 8 Z";
+
+    return {
+      clip: `<path d="${dropPath}" />`,
+      background: `<path d="${dropPath}" fill="#ffffff" />`
+    };
+  }
+
+  const rx = shape === "square" ? 20 : 128;
+
+  return {
+    clip: `<rect x="0" y="0" width="256" height="${viewBoxHeight}" rx="${rx}" ry="${rx}" />`,
+    background: `<rect x="0" y="0" width="256" height="${viewBoxHeight}" rx="${rx}" ry="${rx}" fill="#ffffff" />`
+  };
+}
+
+function getHoleMarkup(overrides: LayoutOverrides) {
+  if (overrides.shape !== "drop" || !overrides.hasHole) return "";
+
+  return `
+    <circle cx="128" cy="42" r="15" fill="#ffffff" stroke="#111111" stroke-width="2.2" opacity="0.9" />
+    <circle cx="128" cy="42" r="8" fill="none" stroke="#d4d4d4" stroke-width="1" opacity="0.9" />
+  `;
+}
+
+function getBrandSymbol({
+  x,
+  y,
+  color,
+  scale = 1
+}: {
+  x: number;
+  y: number;
+  color: string;
+  scale?: number;
+}) {
+  const w1 = 24 * scale;
+  const w2 = 14 * scale;
+  const dy2 = 5 * scale;
+
+  return `
+    <path d="M${x - w1 / 2} ${y} C${x - w1 / 4} ${y - 5 * scale}, ${x + w1 / 4} ${y - 5 * scale}, ${x + w1 / 2} ${y}" fill="none" stroke="${color}" stroke-width="${2.1 * scale}" stroke-linecap="round" opacity="0.92" />
+    <path d="M${x - w2 / 2} ${y + dy2} C${x - w2 / 4} ${y + dy2 - 3 * scale}, ${x + w2 / 4} ${y + dy2 - 3 * scale}, ${x + w2 / 2} ${y + dy2}" fill="none" stroke="${color}" stroke-width="${1.9 * scale}" stroke-linecap="round" opacity="0.92" />
+  `;
+}
+
+function renderOptionalText({
+  x,
+  y,
+  text,
+  anchor,
+  fontSize,
+  weight,
+  style,
+  letterSpacing,
+  color,
+  extra = ""
+}: {
+  x: number;
+  y: number;
+  text: string;
+  anchor: string;
+  fontSize: number;
+  weight: string;
+  style: string;
+  letterSpacing: number;
+  color: string;
+  extra?: string;
+}) {
+  if (!text.trim()) return "";
+
+  return `
+    <text
+      ${extra}
+      x="${x}"
+      y="${y}"
+      text-anchor="${anchor}"
+      font-family="Arial, Helvetica, sans-serif"
+      font-size="${fontSize}"
+      font-weight="${weight}"
+      font-style="${style}"
+      letter-spacing="${letterSpacing}"
+      fill="${color}"
+    >${escapeXml(text)}</text>
+  `;
+}
+
+function getDropTextLayout(overrides: LayoutOverrides, qrY: number, qrSize: number) {
+  const brandText = overrides.brandText.trim();
+  const sloganText = overrides.sloganText.trim();
+  const codeText = overrides.codeText.trim();
+
+  const brandFontSize = clamp(
+    (overrides.size === "2.5cm" ? 9.8 : overrides.size === "4cm" ? 13 : 11.2) *
+      (overrides.brandScale / 100),
+    7,
+    18
+  );
+
+  const sloganFontSize = clamp(
+    (overrides.size === "2.5cm" ? 6.9 : overrides.size === "4cm" ? 9.2 : 7.8) *
+      (overrides.sloganScale / 100),
+    5.5,
+    14
+  );
+
+  const codeFontSize = clamp(
+    (overrides.size === "2.5cm" ? 7.6 : overrides.size === "4cm" ? 10.2 : 8.8) *
+      (overrides.codeScale / 100),
+    6,
+    16
+  );
+
+  const baseY = qrY + qrSize + 16;
+  const brandY = clamp(baseY, qrY + qrSize + 12, 284);
+  const symbolScale = clamp(brandFontSize / 12, 0.75, 1.35);
+  const symbolY = brandY - brandFontSize + 3;
+
+  let sloganY = brandY + (sloganText ? sloganFontSize + 6 : 0);
+  let codeY = sloganText ? sloganY + codeFontSize + 7 : brandY + codeFontSize + 9;
+
+  sloganY = clamp(sloganY, brandY + 8, 299);
+  codeY = clamp(codeY, brandY + 10, 309);
+
+  const codeAnchor = getTextAnchor(overrides.sloganAlign);
+  const codeX =
+    overrides.sloganAlign === "left"
+      ? 58
+      : overrides.sloganAlign === "right"
+        ? 198
+        : 128;
+
+  return {
+    brandText,
+    sloganText,
+    codeText,
+    brandFontSize,
+    sloganFontSize,
+    codeFontSize,
+    brandY,
+    sloganY,
+    codeY,
+    codeX,
+    codeAnchor,
+    symbolY,
+    symbolScale
   };
 }
 
@@ -414,33 +599,124 @@ async function buildTagQrSvg(code: string, overrides: LayoutOverrides) {
   const innerSvg = match[2];
   const preset = getBasePreset(overrides.size);
   const safeCode = escapeXml(code);
-  const brandText = escapeXml(overrides.brandText || "DOKUNTAG");
-  const sloganText = escapeXml(overrides.sloganText || "Dokun • Bul • Buluştur");
-  const codeText = escapeXml(overrides.codeText || code);
-  const brandFontSize = overrides.size === "2.5cm" ? 16 : overrides.size === "4cm" ? 20 : 18;
-  const sloganFontSize = overrides.size === "2.5cm" ? 9.2 : overrides.size === "4cm" ? 11.5 : 10.2;
-  const codeFontSize = overrides.size === "2.5cm" ? 8.4 : overrides.size === "4cm" ? 10.6 : 9.3;
+  const isDrop = overrides.shape === "drop";
+  const clipMarkup = getClipMarkup(overrides.shape, preset.viewBoxHeight);
+  const holeMarkup = getHoleMarkup(overrides);
+
+  if (isDrop) {
+    const qrSize =
+      overrides.size === "2.5cm" ? 178 : overrides.size === "4cm" ? 198 : 188;
+    const qrX = Math.round((256 - qrSize) / 2);
+    const qrY = overrides.hasHole ? 69 : 48;
+    const textLayout = getDropTextLayout(overrides, qrY, qrSize);
+
+    return `
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 ${preset.viewBoxHeight}" width="${preset.width}" height="${preset.height}" role="img" aria-label="Dokuntag QR ${safeCode}">
+  <defs>
+    <clipPath id="shapeClip">
+      ${clipMarkup.clip}
+    </clipPath>
+  </defs>
+
+  ${clipMarkup.background}
+  <g clip-path="url(#shapeClip)">
+    ${holeMarkup}
+    <svg viewBox="${viewBox}" x="${qrX}" y="${qrY}" width="${qrSize}" height="${qrSize}">${innerSvg}</svg>
+
+    ${
+      textLayout.brandText
+        ? `
+    <text x="128" y="${textLayout.brandY}" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="${textLayout.brandFontSize}" font-weight="${overrides.brandWeight}" font-style="${overrides.brandStyle}" letter-spacing="0.55" fill="${overrides.brandColor}">${escapeXml(textLayout.brandText)}</text>
+    <text x="${128 + textLayout.brandText.length * textLayout.brandFontSize * 0.31 + 3}" y="${textLayout.brandY - textLayout.brandFontSize * 0.52}" text-anchor="start" font-family="Arial, Helvetica, sans-serif" font-size="${clamp(textLayout.brandFontSize * 0.52, 4, 8)}" font-weight="800" fill="${overrides.brandColor}">®</text>
+    ${getBrandSymbol({
+      x: 128,
+      y: textLayout.symbolY,
+      color: overrides.brandColor,
+      scale: textLayout.symbolScale
+    })}
+        `
+        : ""
+    }
+
+    ${renderOptionalText({
+      x: 128,
+      y: textLayout.sloganY,
+      text: textLayout.sloganText,
+      anchor: "middle",
+      fontSize: textLayout.sloganFontSize,
+      weight: overrides.sloganWeight,
+      style: overrides.sloganStyle,
+      letterSpacing: 0.18,
+      color: overrides.sloganColor
+    })}
+
+    ${renderOptionalText({
+      x: textLayout.codeX,
+      y: textLayout.codeY,
+      text: textLayout.codeText,
+      anchor: textLayout.codeAnchor,
+      fontSize: textLayout.codeFontSize,
+      weight: "800",
+      style: overrides.codeStyle,
+      letterSpacing: 0.7,
+      color: overrides.codeColor
+    })}
+  </g>
+</svg>`.trim();
+  }
+
+  const brandText = overrides.brandText.trim();
+  const sloganText = overrides.sloganText.trim();
+  const codeText = overrides.codeText.trim() || code;
   const qrSize = overrides.size === "2.5cm" ? 208 : overrides.size === "4cm" ? 220 : 214;
   const qrX = Math.round((256 - qrSize) / 2);
   const qrY = overrides.size === "2.5cm" ? 55 : 52;
-  const rx = overrides.shape === "square" ? 20 : 128;
+  const brandFontSize = overrides.size === "2.5cm" ? 16 : overrides.size === "4cm" ? 20 : 18;
+  const sloganFontSize = overrides.size === "2.5cm" ? 9.2 : overrides.size === "4cm" ? 11.5 : 10.2;
+  const codeFontSize = overrides.size === "2.5cm" ? 8.4 : overrides.size === "4cm" ? 10.6 : 9.3;
+  const brandY = 28;
 
   return `
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 ${preset.viewBoxHeight}" width="${preset.width}" height="${preset.height}" role="img" aria-label="Dokuntag QR ${safeCode}">
   <defs>
     <clipPath id="shapeClip">
-      <rect x="0" y="0" width="256" height="${preset.viewBoxHeight}" rx="${rx}" ry="${rx}" />
+      ${clipMarkup.clip}
     </clipPath>
   </defs>
 
-  <rect x="0" y="0" width="256" height="${preset.viewBoxHeight}" rx="${rx}" ry="${rx}" fill="#ffffff" />
+  ${clipMarkup.background}
   <g clip-path="url(#shapeClip)">
-    <text x="128" y="28" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="${brandFontSize}" font-weight="800" letter-spacing="1.15" fill="${overrides.brandColor}">${brandText}</text>
-    <path d="M116 39 C121 34, 135 34, 140 39" fill="none" stroke="${overrides.brandColor}" stroke-width="2.2" stroke-linecap="round" opacity="0.9" />
-    <path d="M121 43 C125 40, 131 40, 135 43" fill="none" stroke="${overrides.brandColor}" stroke-width="2" stroke-linecap="round" opacity="0.9" />
+    ${
+      brandText
+        ? `
+    <text x="128" y="${brandY}" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="${brandFontSize}" font-weight="800" letter-spacing="1.15" fill="${overrides.brandColor}">${escapeXml(brandText)}</text>
+    ${getBrandSymbol({ x: 128, y: brandY + 11, color: overrides.brandColor, scale: 1 })}
+        `
+        : ""
+    }
     <svg viewBox="${viewBox}" x="${qrX}" y="${qrY}" width="${qrSize}" height="${qrSize}">${innerSvg}</svg>
-    <text x="128" y="${qrY + qrSize + 17}" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="${sloganFontSize}" font-weight="700" letter-spacing="0.25" fill="${overrides.sloganColor}">${sloganText}</text>
-    <text x="128" y="${qrY + qrSize + 34}" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="${codeFontSize}" font-weight="800" letter-spacing="0.8" fill="${overrides.codeColor}">${codeText}</text>
+    ${renderOptionalText({
+      x: 128,
+      y: qrY + qrSize + 17,
+      text: sloganText,
+      anchor: "middle",
+      fontSize: sloganFontSize,
+      weight: "700",
+      style: overrides.sloganStyle,
+      letterSpacing: 0.25,
+      color: overrides.sloganColor
+    })}
+    ${renderOptionalText({
+      x: 128,
+      y: qrY + qrSize + (sloganText ? 34 : 20),
+      text: codeText,
+      anchor: "middle",
+      fontSize: codeFontSize,
+      weight: "800",
+      style: overrides.codeStyle,
+      letterSpacing: 0.8,
+      color: overrides.codeColor
+    })}
   </g>
 </svg>`.trim();
 }
@@ -469,33 +745,38 @@ async function buildQrSvg(code: string, overrides: LayoutOverrides) {
   const viewBox = match[1];
   const innerSvg = match[2];
   const safeCode = escapeXml(code);
-  const safeBrandText = escapeXml(overrides.brandText);
-  const safeSloganText = escapeXml(overrides.sloganText);
-  const safeCodeText = escapeXml(overrides.codeText || code);
-  const rx = overrides.shape === "round" ? 128 : 20;
+  const safeBrandText = overrides.brandText;
+  const safeSloganText = overrides.sloganText;
+  const safeCodeText = overrides.codeText || code;
+  const clipMarkup = getClipMarkup(overrides.shape, preset.viewBoxHeight);
+  const holeMarkup = getHoleMarkup(overrides);
 
   return `
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 ${preset.viewBoxHeight}" width="${preset.width}" height="${preset.height}" role="img" aria-label="Dokuntag QR ${safeCode}">
   <defs>
     <clipPath id="shapeClip">
-      <rect x="0" y="0" width="256" height="${preset.viewBoxHeight}" rx="${rx}" ry="${rx}" />
+      ${clipMarkup.clip}
     </clipPath>
   </defs>
 
-  <rect x="0" y="0" width="256" height="${preset.viewBoxHeight}" rx="${rx}" ry="${rx}" fill="#ffffff" />
+  ${clipMarkup.background}
   <g clip-path="url(#shapeClip)">
-    <text
-      x="${layout.brandX}"
-      y="${layout.brandY}"
-      text-anchor="${layout.brandTextAnchor}"
-      font-family="Arial, Helvetica, sans-serif"
-      font-size="${layout.brandFontSize}"
-      font-weight="${overrides.brandWeight}"
-      font-style="${overrides.brandStyle}"
-      letter-spacing="0.5"
-      fill="${overrides.brandColor}"
-    >${safeBrandText}</text>
+    ${holeMarkup}
+    ${renderOptionalText({
+      x: layout.brandX,
+      y: layout.brandY,
+      text: safeBrandText,
+      anchor: layout.brandTextAnchor,
+      fontSize: layout.brandFontSize,
+      weight: overrides.brandWeight,
+      style: overrides.brandStyle,
+      letterSpacing: 0.5,
+      color: overrides.brandColor
+    })}
 
+    ${
+      overrides.brandText.trim()
+        ? `
     <text
       x="${layout.badgeX}"
       y="${layout.badgeY}"
@@ -506,35 +787,38 @@ async function buildQrSvg(code: string, overrides: LayoutOverrides) {
       font-style="normal"
       fill="${overrides.brandColor}"
     >®</text>
+        `
+        : ""
+    }
 
     <svg viewBox="${viewBox}" x="${layout.qrX}" y="${layout.qrY}" width="${layout.qrSize}" height="${layout.qrSize}">
       ${innerSvg}
     </svg>
 
-    <text
-      x="${layout.codeX}"
-      y="${layout.codeCenterY}"
-      transform="rotate(90 ${layout.codeX} ${layout.codeCenterY})"
-      text-anchor="middle"
-      font-family="Arial, Helvetica, sans-serif"
-      font-size="${layout.codeFontSize}"
-      font-weight="700"
-      font-style="${overrides.codeStyle}"
-      letter-spacing="0.45"
-      fill="${overrides.codeColor}"
-    >${safeCodeText}</text>
+    ${renderOptionalText({
+      x: layout.codeX,
+      y: layout.codeCenterY,
+      text: safeCodeText,
+      anchor: "middle",
+      fontSize: layout.codeFontSize,
+      weight: "700",
+      style: overrides.codeStyle,
+      letterSpacing: 0.45,
+      color: overrides.codeColor,
+      extra: `transform="rotate(90 ${layout.codeX} ${layout.codeCenterY})"`
+    })}
 
-    <text
-      x="${layout.sloganX}"
-      y="${layout.sloganY}"
-      text-anchor="${layout.sloganTextAnchor}"
-      font-family="Arial, Helvetica, sans-serif"
-      font-size="${layout.sloganFontSize}"
-      font-weight="${overrides.sloganWeight}"
-      font-style="${overrides.sloganStyle}"
-      letter-spacing="0.25"
-      fill="${overrides.sloganColor}"
-    >${safeSloganText}</text>
+    ${renderOptionalText({
+      x: layout.sloganX,
+      y: layout.sloganY,
+      text: safeSloganText,
+      anchor: layout.sloganTextAnchor,
+      fontSize: layout.sloganFontSize,
+      weight: overrides.sloganWeight,
+      style: overrides.sloganStyle,
+      letterSpacing: 0.25,
+      color: overrides.sloganColor
+    })}
   </g>
 </svg>`.trim();
 }
@@ -550,17 +834,20 @@ export async function GET(request: Request, { params }: Params) {
 
     const { searchParams } = new URL(request.url);
     const overrides = readLayoutOverrides(searchParams, normalizedCode);
-    const svg = await buildQrSvg(normalizedCode, overrides);
+    const designType = normalizeDesignType(searchParams.get("designType"));
+    const svg =
+      designType === "standard"
+        ? await buildQrSvg(normalizedCode, overrides)
+        : await buildTagQrSvg(normalizedCode, overrides);
 
     return new NextResponse(svg, {
       headers: {
         "Content-Type": "image/svg+xml; charset=utf-8",
-        "Content-Disposition": `attachment; filename="qr-${normalizedCode}-${overrides.size}.svg"`,
         "Cache-Control": "no-store"
       }
     });
   } catch (error) {
-    console.error("QR_DOWNLOAD_ERROR", error);
-    return NextResponse.json({ error: "QR indirilemedi." }, { status: 500 });
+    console.error("QR_GENERATE_ERROR", error);
+    return NextResponse.json({ error: "QR oluşturulamadı." }, { status: 500 });
   }
 }

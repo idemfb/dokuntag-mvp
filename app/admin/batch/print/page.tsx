@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 
 type PrintPageSize = "A4" | "A3" | "custom";
 type Orientation = "portrait" | "landscape";
-type ShapeOption = "round" | "square";
+type ShapeOption = "round" | "square" | "drop";
 type DesignType = "standard" | "tag" | "card" | "vehicle" | "business";
 
 type BatchItem = {
@@ -15,6 +15,7 @@ type BatchItem = {
 type DesignState = {
   size: "2.5cm" | "3cm" | "4cm";
   shape: ShapeOption;
+  hasHole: boolean;
   brandText: string;
   sloganText: string;
   codeText: string;

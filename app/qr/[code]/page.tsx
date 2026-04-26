@@ -4,7 +4,7 @@
 import { useEffect, useMemo, useState } from "react";
 
 type SizeOption = "2.5cm" | "3cm" | "4cm";
-type ShapeOption = "round" | "square";
+type ShapeOption = "round" | "square" | "drop";
 type FontWeightOption = "500" | "600" | "700" | "800";
 type FontStyleOption = "normal" | "italic";
 type AlignOption = "left" | "center" | "right";
@@ -13,6 +13,7 @@ type TabKey = "general" | "brand" | "slogan" | "code" | "badge" | "output";
 type DesignState = {
   size: SizeOption;
   shape: ShapeOption;
+  hasHole: boolean;
   brandText: string;
   sloganText: string;
   codeText: string;
@@ -195,7 +196,13 @@ function readStateFromUrl(params: URLSearchParams): DesignState {
 
   return {
     ...defaults,
-    shape: params.get("shape") === "square" ? "square" : defaults.shape,
+    shape:
+  params.get("shape") === "square"
+    ? "square"
+    : params.get("shape") === "drop"
+      ? "drop"
+      : defaults.shape,
+hasHole: params.get("hasHole") === "false" ? false : true,
     brandText: String(params.get("brandText") || defaults.brandText).slice(0, 24),
     sloganText: String(params.get("sloganText") || defaults.sloganText).slice(0, 28),
     codeText: String(params.get("codeText") || defaults.codeText).slice(0, 20),
@@ -236,6 +243,7 @@ function buildDesignQuery(state: DesignState) {
   const params = new URLSearchParams();
   params.set("size", state.size);
   params.set("shape", state.shape);
+  params.set("hasHole", state.hasHole ? "true" : "false");
   params.set("brandText", state.brandText);
   params.set("sloganText", state.sloganText);
   params.set("codeText", state.codeText);
@@ -583,12 +591,26 @@ export default function QrPage() {
                       onChange={(value) => updateDesign("shape", value as ShapeOption)}
                       options={[
                         { value: "round", label: "Yuvarlak" },
-                        { value: "square", label: "Kare" }
+                        { value: "square", label: "Kare" },
+                        { value: "drop", label: "Damla V2" }
                       ]}
                     />
                   </div>
                 </SectionCard>
-
+                <label className="flex items-center gap-2 rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={design.hasHole}
+                    disabled={design.shape !== "drop"}
+                    onChange={(e) =>
+                      setDesign((prev) => ({
+                        ...prev,
+                        hasHole: e.target.checked
+                      }))
+                    }
+                  />
+                  Damla V2 delik alanı
+                </label>
                 <SectionCard title="Denge ve güvenli sınırlar" description="Yazılar QR üstüne binmez ve baskı alanı dışına taşmaz.">
                   <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                     <SliderField label="Dikey denge" value={design.verticalBalance} min={50} max={150} onChange={(v) => updateDesign("verticalBalance", v)} />

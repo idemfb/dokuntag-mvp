@@ -419,7 +419,10 @@ export async function sendRecoveryMagicLinkEmail(input: {
   verifyLink: string;
   expiresAt: string;
   entryType: "my" | "recover";
+  itemCount?: number;
+  itemPreview?: string[];
 }) {
+
   const from = getEnv("EMAIL_FROM");
 
   if (!from) {
@@ -447,12 +450,29 @@ export async function sendRecoveryMagicLinkEmail(input: {
       ? "Yönetim bağlantısı kurtarma işlemini güvenli şekilde başlatmak için aşağıdaki bağlantıyı kullanın."
       : "Ürünlerinizi güvenli şekilde görüntülemek için aşağıdaki bağlantıyı kullanın.";
 
+const itemCountText =
+  input.entryType === "my" && typeof input.itemCount === "number"
+    ? `${input.itemCount} ürün bu güvenli bağlantıyla görüntülenebilir.`
+    : "";
+    const itemPreviewText =
+  input.entryType === "my" && input.itemPreview?.length
+    ? input.itemPreview.join(", ")
+    : "";
   const html = `
     <div style="font-family:Arial,sans-serif; line-height:1.6; color:#111;">
       <h2>${escapeHtml(title)}</h2>
 
       <p>${escapeHtml(intro)}</p>
-
+      ${
+  itemCountText
+    ? `<p><strong>${escapeHtml(itemCountText)}</strong></p>`
+    : ""
+}
+  ${
+  itemPreviewText
+    ? `<p style="margin-top:8px;">Ürünler: ${escapeHtml(itemPreviewText)}</p>`
+    : ""
+}
       <div style="margin:18px 0;">
         ${button(input.verifyLink, "Güvenli bağlantıyı aç")}
       </div>
@@ -471,11 +491,13 @@ export async function sendRecoveryMagicLinkEmail(input: {
   `;
 
   const text = [
-    title,
-    "",
-    intro,
-    "",
-    `Bağlantı: ${input.verifyLink}`,
+  title,
+  "",
+  intro,
+itemCountText ? itemCountText : "",
+itemPreviewText ? `Ürünler: ${itemPreviewText}` : "",
+"",
+`Bağlantı: ${input.verifyLink}`,
     `Geçerlilik: ${expiresText}`,
     "",
     "Bu bağlantı tek kullanımlıktır ve süresi dolduğunda yeniden istenmelidir.",
