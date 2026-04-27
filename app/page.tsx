@@ -149,10 +149,10 @@ const guideItems = [
     href: "/evcil-hayvan-kaybolursa-ne-yapilir",
   },
   {
-  title: "Kayıp eşya nasıl bulunur?",
-  text: "Çanta, valiz, laptop veya kişisel eşyalar kaybolduğunda yapılması gerekenler.",
-  href: "/kayip-esya-nasil-bulunur",
-},
+    title: "Kayıp eşya nasıl bulunur?",
+    text: "Çanta, valiz, laptop veya kişisel eşyalar kaybolduğunda yapılması gerekenler.",
+    href: "/kayip-esya-nasil-bulunur",
+  },
   {
     title: "NFC anahtarlık nedir?",
     text: "NFC teknolojisinin nasıl çalıştığını ve kayıp eşya için nasıl kullanıldığını öğrenin.",
@@ -171,20 +171,20 @@ export default function HomePage() {
             </p>
 
             <h1 className="max-w-3xl text-5xl font-semibold tracking-tight text-neutral-950 sm:text-6xl lg:text-7xl">
-              Kaybolanı sahibine ulaştırmanın en kolay yolu
+              Kaybolanı sahibine ulaştırmanın en hızlı yolu
             </h1>
 
             <p className="mt-6 max-w-2xl text-lg leading-8 text-neutral-600 sm:text-xl">
-              Dokuntag® ile bulan kişi size anında ulaşır. Uygulama indirmeden,
-              karmaşa yaşamadan, güvenli ve kontrollü şekilde.
-            </p>
+            Bulan kişi QR okutur veya etikete dokundurur. Saniyeler içinde size ulaşır;
+            kontrol sizde kalır. Uygulama indirmeden, karmaşa yaşamadan.
+          </p>
 
             <div className="mt-10 flex flex-col gap-3 sm:flex-row">
               <Link
                 href="/satis"
-                className="rounded-full bg-neutral-950 px-8 py-4 text-center text-sm font-semibold text-white transition hover:bg-neutral-800"
+                className="rounded-full bg-neutral-950 px-8 py-4 text-center text-sm font-semibold text-white transition hover:scale-[1.02] hover:bg-neutral-800"
               >
-                Ön sipariş ver
+                İlk üretim için bilgi al
               </Link>
 
               <a
@@ -198,9 +198,12 @@ export default function HomePage() {
                 href="/scan"
                 className="rounded-full border border-neutral-300 bg-white/70 px-8 py-4 text-center text-sm font-semibold text-neutral-950 transition hover:bg-white"
               >
-                QR okut
+                QR okut / NFC dokundur
               </Link>
             </div>
+            <p className="mt-4 text-sm text-neutral-500">
+            Tek seferlik fiziksel ürün · Yıllık ücret yok · Uygulama gerekmez
+          </p>
           </div>
 
           <div className="relative overflow-hidden rounded-[2.5rem] border border-white/50 bg-white shadow-sm">
@@ -316,7 +319,9 @@ export default function HomePage() {
               okutur, güvenli profil açılır ve sizin izin verdiğiniz iletişim
               yollarıyla size ulaşır.
             </p>
-
+            <p className="mt-3 text-sm text-neutral-500">
+              Tüm telefonlarda QR ile çalışır. Destekleyen cihazlarda NFC ile daha hızlı açılır.
+            </p>
             <div className="mt-8 space-y-4">
               {steps.map((item, index) => (
                 <div
@@ -348,7 +353,7 @@ export default function HomePage() {
                 href="/scan"
                 className="inline-flex justify-center rounded-full bg-neutral-950 px-6 py-3 text-sm font-semibold text-white transition hover:bg-neutral-800"
               >
-                QR okut
+                QR okut / NFC dokundur
               </Link>
             </div>
           </div>
@@ -381,7 +386,7 @@ export default function HomePage() {
                 href="/scan"
                 className="mt-6 inline-flex rounded-full bg-neutral-950 px-6 py-3 text-sm font-semibold text-white transition hover:bg-neutral-800"
               >
-                QR okut
+                QR okut / NFC dokundur
               </Link>
             </div>
 
@@ -515,14 +520,14 @@ export default function HomePage() {
       <section id="rehberler" className="px-5 py-20 sm:px-8">
         <div className="mx-auto max-w-6xl">
           <p className="text-sm font-semibold uppercase tracking-[0.22em] text-neutral-500">
-            Rehberler
+            Daha fazlasını keşfet
           </p>
 
           <h2 className="mt-4 text-3xl font-semibold tracking-tight sm:text-4xl">
-            Kaybolan eşyalar ve güvenli iletişim hakkında kısa rehberler.
+            Kayıp durumlarında ne yapmanız gerektiğini öğrenin.
           </h2>
 
-          <div className="mt-8 grid gap-4 md:grid-cols-3">
+          <div className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             {guideItems.map((item) => (
               <Link
                 key={item.href}
@@ -636,9 +641,9 @@ export default function HomePage() {
           <div className="mt-10 flex flex-col justify-center gap-3 sm:flex-row">
             <Link
               href="/satis"
-              className="rounded-full bg-neutral-950 px-8 py-4 text-center text-sm font-semibold text-white transition hover:bg-neutral-800"
+              className="rounded-full bg-neutral-950 px-8 py-4 text-center text-sm font-semibold text-white transition hover:scale-[1.02] hover:bg-neutral-800"
             >
-              Ön sipariş ver
+              İlk üretim için bilgi al
             </Link>
 
             <Link

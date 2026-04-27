@@ -455,6 +455,8 @@ export default function PublicPage({
     return String(data.city || "").trim();
   }, [data, showCity]);
 
+  const shouldShowCity = Boolean(displayCity && data?.productType !== "key");
+
   const displayNote = useMemo(() => {
     if (!data || !showNote) return "";
     return String(data.note || "").trim();
@@ -769,7 +771,7 @@ export default function PublicPage({
                 <CompactInfoRow label="Telefon" value={maskPhone(contactPhoneValue)} />
               ) : null}
 
-              {displayCity ? (
+              {shouldShowCity ? (
                 <CompactInfoRow label="Şehir" value={displayCity} />
               ) : null}
 
@@ -916,39 +918,7 @@ export default function PublicPage({
           </div>
         </section>
 
-        <section className="rounded-[18px] border border-neutral-200 bg-white px-4 py-2.5 sm:px-5">
-          <p className="text-sm leading-5 text-neutral-700">
-            <a
-              href={dokuntagHref}
-              target="_blank"
-              rel="noreferrer"
-              className="font-medium underline underline-offset-2 hover:opacity-80"
-            >
-              Dokuntag
-            </a>{" "}
-            ile örnek profil ve kullanım akışını inceleyin.
-          </p>
-
-          <div className="mt-2.5 grid grid-cols-2 gap-2">
-            <a
-              href={`${dokuntagHref}/demo`}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex min-h-10 items-center justify-center rounded-2xl border border-neutral-300 bg-white px-4 py-2.5 text-sm font-medium text-neutral-800 transition hover:border-neutral-400 hover:bg-neutral-50"
-            >
-              Demo sayfası
-            </a>
-
-            <a
-              href={`${dokuntagHref}/how-it-works`}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex min-h-10 items-center justify-center rounded-2xl border border-neutral-300 bg-white px-4 py-2.5 text-sm font-medium text-neutral-800 transition hover:border-neutral-400 hover:bg-neutral-50"
-            >
-              Nasıl çalışır?
-            </a>
-          </div>
-        </section>
+        
       </div>
 
       {(showCallAction && callHref) ||

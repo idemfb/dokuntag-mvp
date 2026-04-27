@@ -9,9 +9,6 @@ type SiteHeaderProps = {
 
 const navItems = [
   { label: "Nasıl çalışır", href: "/#nasil-calisir" },
-  { label: "Rehberler", href: "/#rehberler" },
-  { label: "Hikayeler", href: "/hikayeler" },
-  { label: "Hakkımızda", href: "/hakkimizda" },
   { label: "Demo", href: "/p/DKNTG" },
   { label: "QR okut", href: "/scan" },
   { label: "Ürünlerim", href: "/my" },
@@ -72,7 +69,7 @@ export default function SiteHeader({ variant = "default" }: SiteHeaderProps) {
         </Link>
 
         {variant === "default" ? (
-          <nav className="hidden items-center gap-5 text-sm text-neutral-600 xl:flex">
+          <nav className="hidden items-center gap-6 text-sm text-neutral-600 lg:flex">
             {navItems.map((item) => (
               <Link
                 key={item.href}
@@ -89,15 +86,15 @@ export default function SiteHeader({ variant = "default" }: SiteHeaderProps) {
           <Link
             href="/satis"
             onClick={() => setOpen(false)}
-            className="rounded-full bg-neutral-950 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-neutral-800"
+            className="rounded-full bg-neutral-950 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:scale-[1.02] hover:bg-neutral-800"
           >
-            Ön sipariş ver
+            İlk üretim için bilgi al
           </Link>
 
           <button
             type="button"
             onClick={() => setOpen((value) => !value)}
-            className="inline-flex items-center gap-2 rounded-full border border-neutral-300 bg-white/75 px-4 py-2 text-sm font-semibold text-neutral-900 shadow-sm transition hover:bg-white xl:hidden"
+            className="inline-flex items-center gap-2 rounded-full border border-neutral-300 bg-white/75 px-4 py-2 text-sm font-semibold text-neutral-900 shadow-sm transition hover:bg-white lg:hidden"
             aria-expanded={open}
             aria-label="Menüyü aç"
           >
@@ -109,7 +106,7 @@ export default function SiteHeader({ variant = "default" }: SiteHeaderProps) {
           </button>
 
           {open ? (
-            <div className="absolute right-0 top-12 w-72 overflow-hidden rounded-[1.75rem] border border-neutral-200 bg-white/95 p-2 shadow-2xl backdrop-blur xl:hidden">
+            <div className="absolute right-0 top-12 w-72 overflow-hidden rounded-[1.75rem] border border-neutral-200 bg-white/95 p-2 shadow-2xl backdrop-blur lg:hidden">
               <div className="px-4 py-3">
                 <p className="text-xs font-semibold uppercase tracking-[0.2em] text-neutral-400">
                   Dokuntag®
@@ -139,7 +136,7 @@ export default function SiteHeader({ variant = "default" }: SiteHeaderProps) {
                 onClick={() => setOpen(false)}
                 className="mt-1 block rounded-2xl bg-neutral-950 px-4 py-3 text-center text-sm font-semibold text-white transition hover:bg-neutral-800"
               >
-                Ön sipariş ver
+                İlk üretim için bilgi al
               </Link>
             </div>
           ) : null}

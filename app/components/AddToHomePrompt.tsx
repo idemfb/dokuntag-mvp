@@ -224,7 +224,7 @@ export default function AddToHomePrompt() {
                       href="/scan"
                       className="rounded-full border border-neutral-300 px-4 py-2.5 text-center text-xs font-semibold text-neutral-800 transition hover:bg-neutral-50"
                     >
-                      QR okut
+                      QR okut/NFC
                     </Link>
                   )}
                 </div>

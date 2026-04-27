@@ -1,14 +1,14 @@
-
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 type SizeOption = "2.5cm" | "3cm" | "4cm";
 type ShapeOption = "round" | "square" | "drop";
 type FontWeightOption = "500" | "600" | "700" | "800";
 type FontStyleOption = "normal" | "italic";
 type AlignOption = "left" | "center" | "right";
-type TabKey = "general" | "brand" | "slogan" | "code" | "badge" | "output";
+type FitMode = "cover" | "contain";
+type TabKey = "general" | "front" | "back" | "qr" | "output";
 
 type DesignState = {
   size: SizeOption;
@@ -45,13 +45,27 @@ type DesignState = {
   lockTextAdjustments: boolean;
 };
 
+type ArtworkState = {
+  imageUrl: string;
+  fileName: string;
+  fit: FitMode;
+  scale: number;
+  x: number;
+  y: number;
+  rotate: number;
+  caption: string;
+  captionColor: string;
+  captionScale: number;
+  captionY: number;
+};
+
 const DEFAULTS_BY_SIZE: Record<SizeOption, DesignState> = {
   "2.5cm": {
     size: "2.5cm",
     shape: "round",
     hasHole: true,
-    brandText: "DOKUNTAG",
-    sloganText: "Bul • Buluştur",
+    brandText: "dokuntag",
+    sloganText: "",
     codeText: "",
     brandScale: 100,
     sloganScale: 100,
@@ -67,7 +81,7 @@ const DEFAULTS_BY_SIZE: Record<SizeOption, DesignState> = {
     brandWeight: "800",
     sloganWeight: "700",
     brandStyle: "normal",
-    sloganStyle: "italic",
+    sloganStyle: "normal",
     codeStyle: "normal",
     codeAlign: "center",
     brandColor: "#111111",
@@ -84,8 +98,8 @@ const DEFAULTS_BY_SIZE: Record<SizeOption, DesignState> = {
     size: "3cm",
     shape: "round",
     hasHole: true,
-    brandText: "DOKUNTAG",
-    sloganText: "Bul • Buluştur",
+    brandText: "dokuntag",
+    sloganText: "",
     codeText: "",
     brandScale: 100,
     sloganScale: 100,
@@ -101,7 +115,7 @@ const DEFAULTS_BY_SIZE: Record<SizeOption, DesignState> = {
     brandWeight: "800",
     sloganWeight: "700",
     brandStyle: "normal",
-    sloganStyle: "italic",
+    sloganStyle: "normal",
     codeStyle: "normal",
     codeAlign: "center",
     brandColor: "#111111",
@@ -118,8 +132,8 @@ const DEFAULTS_BY_SIZE: Record<SizeOption, DesignState> = {
     size: "4cm",
     shape: "round",
     hasHole: true,
-    brandText: "DOKUNTAG",
-    sloganText: "Bul • Buluştur",
+    brandText: "dokuntag",
+    sloganText: "",
     codeText: "",
     brandScale: 110,
     sloganScale: 110,
@@ -135,7 +149,7 @@ const DEFAULTS_BY_SIZE: Record<SizeOption, DesignState> = {
     brandWeight: "800",
     sloganWeight: "700",
     brandStyle: "normal",
-    sloganStyle: "italic",
+    sloganStyle: "normal",
     codeStyle: "normal",
     codeAlign: "center",
     brandColor: "#111111",
@@ -148,6 +162,20 @@ const DEFAULTS_BY_SIZE: Record<SizeOption, DesignState> = {
     badgeOffsetY: 100,
     lockTextAdjustments: false
   }
+};
+
+const DEFAULT_ARTWORK: ArtworkState = {
+  imageUrl: "",
+  fileName: "",
+  fit: "cover",
+  scale: 100,
+  x: 0,
+  y: 0,
+  rotate: 0,
+  caption: "",
+  captionColor: "#111111",
+  captionScale: 100,
+  captionY: 78
 };
 
 function getBaseUrl() {
@@ -198,7 +226,9 @@ function getDefaults(size: SizeOption): DesignState {
 function readStateFromUrl(params: URLSearchParams): DesignState {
   const sizeParam = params.get("size");
   const size: SizeOption =
-    sizeParam === "2.5cm" || sizeParam === "3cm" || sizeParam === "4cm" ? sizeParam : "3cm";
+    sizeParam === "2.5cm" || sizeParam === "3cm" || sizeParam === "4cm"
+      ? sizeParam
+      : "3cm";
   const defaults = getDefaults(size);
 
   return {
@@ -210,13 +240,13 @@ function readStateFromUrl(params: URLSearchParams): DesignState {
           ? "drop"
           : defaults.shape,
     hasHole: params.get("hasHole") === "false" ? false : true,
-    brandText: String(params.get("brandText") || defaults.brandText).slice(0, 24),
-    sloganText: String(params.get("sloganText") || defaults.sloganText).slice(0, 28),
-    codeText: String(params.get("codeText") || defaults.codeText).slice(0, 20),
+    brandText: String(params.get("brandText") ?? defaults.brandText).slice(0, 24),
+    sloganText: String(params.get("sloganText") ?? defaults.sloganText).slice(0, 28),
+    codeText: String(params.get("codeText") ?? defaults.codeText).slice(0, 20),
     brandScale: parsePercent(params.get("brandScale"), defaults.brandScale, 40, 500),
     sloganScale: parsePercent(params.get("sloganScale"), defaults.sloganScale, 40, 500),
     codeScale: parsePercent(params.get("codeScale"), defaults.codeScale, 40, 500),
-    qrScale: parsePercent(params.get("qrScale"), defaults.qrScale, 85, 115),
+    qrScale: parsePercent(params.get("qrScale"), defaults.qrScale, 40, 300),
     verticalBalance: parsePercent(params.get("verticalBalance"), defaults.verticalBalance, 50, 150),
     horizontalBalance: parsePercent(
       params.get("horizontalBalance"),
@@ -281,13 +311,32 @@ function buildDesignQuery(state: DesignState) {
   params.set("badgeOffsetX", String(state.badgeOffsetX));
   params.set("badgeOffsetY", String(state.badgeOffsetY));
   params.set("lockTextAdjustments", state.lockTextAdjustments ? "true" : "false");
+  params.set("designType", "tag");
   return params.toString();
 }
 
 function cmPreviewStyle(size: SizeOption) {
-  if (size === "2.5cm") return { width: "160px", height: "160px" };
-  if (size === "4cm") return { width: "230px", height: "230px" };
-  return { width: "190px", height: "190px" };
+  if (size === "2.5cm") return { width: "240px", height: "300px" };
+  if (size === "4cm") return { width: "330px", height: "410px" };
+  return { width: "285px", height: "355px" };
+}
+
+function getShapeClip(shape: ShapeOption) {
+  if (shape === "round") return "circle(49% at 50% 50%)";
+  if (shape === "square") return "inset(0 round 18px)";
+  return "path('M 50% 2% C 67% 17% 94% 42% 94% 66% C 94% 88% 77% 98% 50% 98% C 23% 98% 6% 88% 6% 66% C 6% 42% 33% 17% 50% 2% Z')";
+}
+
+function getShapeLabel(shape: ShapeOption) {
+  if (shape === "round") return "Daire";
+  if (shape === "square") return "Kare";
+  return "Damla";
+}
+
+function getPreviewFrameClass(shape: ShapeOption) {
+  if (shape === "round") return "rounded-full";
+  if (shape === "square") return "rounded-[1.75rem]";
+  return "rounded-[2rem]";
 }
 
 function TabButton({
@@ -303,10 +352,10 @@ function TabButton({
     <button
       type="button"
       onClick={onClick}
-      className={`rounded-full px-4 py-2 text-sm font-medium transition ${
+      className={`rounded-2xl px-4 py-3 text-sm font-semibold transition ${
         active
-          ? "bg-black text-white"
-          : "bg-white text-neutral-700 ring-1 ring-neutral-300 hover:bg-neutral-50"
+          ? "bg-blue-600 text-white shadow-sm"
+          : "bg-white text-neutral-700 ring-1 ring-neutral-200 hover:bg-neutral-50"
       }`}
     >
       {label}
@@ -324,9 +373,11 @@ function SectionCard({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-[1.75rem] border border-neutral-200 bg-white p-5 shadow-sm">
+    <section className="rounded-[1.5rem] border border-neutral-200 bg-white p-4 shadow-sm">
       <h3 className="text-sm font-semibold text-neutral-900">{title}</h3>
-      {description ? <p className="mt-1 text-xs leading-5 text-neutral-500">{description}</p> : null}
+      {description ? (
+        <p className="mt-1 text-xs leading-5 text-neutral-500">{description}</p>
+      ) : null}
       <div className="mt-4 space-y-3">{children}</div>
     </section>
   );
@@ -337,19 +388,23 @@ function SliderField({
   value,
   min,
   max,
+  suffix,
   onChange
 }: {
   label: string;
   value: number;
   min: number;
   max: number;
+  suffix?: string;
   onChange: (value: number) => void;
 }) {
   return (
     <label className="block rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3">
       <div className="flex items-center justify-between gap-3">
         <span className="text-sm font-medium text-neutral-900">{label}</span>
-        <span className="text-xs font-medium text-neutral-500">%{value}</span>
+        <span className="rounded-lg border border-neutral-200 bg-white px-2 py-1 text-xs font-semibold text-neutral-600">
+          {value}{suffix || ""}
+        </span>
       </div>
       <input
         type="range"
@@ -395,10 +450,12 @@ function SelectField({
 function TextField({
   label,
   value,
+  placeholder,
   onChange
 }: {
   label: string;
   value: string;
+  placeholder?: string;
   onChange: (value: string) => void;
 }) {
   return (
@@ -407,6 +464,7 @@ function TextField({
       <input
         type="text"
         value={value}
+        placeholder={placeholder}
         onChange={(e) => onChange(e.target.value)}
         className="mt-3 w-full rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm"
       />
@@ -444,12 +502,95 @@ function ColorField({
   );
 }
 
+function ShapeButton({
+  active,
+  label,
+  onClick
+}: {
+  active: boolean;
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`rounded-2xl border px-4 py-3 text-sm font-semibold transition ${
+        active
+          ? "border-blue-500 bg-blue-50 text-blue-700 shadow-sm"
+          : "border-neutral-200 bg-white text-neutral-700 hover:bg-neutral-50"
+      }`}
+    >
+      {label}
+    </button>
+  );
+}
+
+function PreviewShell({
+  title,
+  subtitle,
+  shape,
+  children,
+  showGuide
+}: {
+  title: string;
+  subtitle: string;
+  shape: ShapeOption;
+  children: React.ReactNode;
+  showGuide: boolean;
+}) {
+  return (
+    <section className="min-w-0 rounded-[1.75rem] border border-neutral-200 bg-white p-5 shadow-sm">
+      <div className="mb-5">
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-neutral-400">
+          {title}
+        </p>
+        <h2 className="mt-1 text-xl font-semibold tracking-tight text-neutral-900">
+          {subtitle}
+        </h2>
+      </div>
+
+      <div className="flex justify-center">
+        <div
+          className={`relative flex items-center justify-center bg-white shadow-sm ${getPreviewFrameClass(shape)}`}
+          style={cmPreviewStyle("3cm")}
+        >
+          {children}
+
+          {showGuide ? (
+            <div
+              className="pointer-events-none absolute inset-0 border-2 border-dashed border-neutral-400/60"
+              style={{ clipPath: getShapeClip(shape) }}
+            />
+          ) : null}
+
+          <div
+            className="pointer-events-none absolute -inset-5 border border-dashed border-neutral-300"
+            style={{ borderRadius: shape === "round" ? "999px" : "32px" }}
+          />
+        </div>
+      </div>
+    </section>
+  );
+}
+
 export default function QrPage() {
   const [code, setCode] = useState("");
   const [token, setToken] = useState("");
   const [design, setDesign] = useState<DesignState>(getDefaults("3cm"));
+  const [artwork, setArtwork] = useState<ArtworkState>(DEFAULT_ARTWORK);
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState<TabKey>("general");
+  const [showGuide, setShowGuide] = useState(true);
+  const [dragMode, setDragMode] = useState<"qr" | "art" | null>(null);
+  const dragStartRef = useRef<{
+    x: number;
+    y: number;
+    horizontalBalance: number;
+    verticalBalance: number;
+    artX: number;
+    artY: number;
+  } | null>(null);
 
   useEffect(() => {
     const parts = window.location.pathname.split("/");
@@ -467,6 +608,11 @@ export default function QrPage() {
         const parsed = JSON.parse(saved) as DesignState;
         setDesign({ ...getDefaults(parsed.size), ...parsed });
       }
+
+      const savedArtwork = window.localStorage.getItem("dokuntag_front_artwork");
+      if (savedArtwork) {
+        setArtwork({ ...DEFAULT_ARTWORK, ...(JSON.parse(savedArtwork) as Partial<ArtworkState>) });
+      }
     } catch {}
   }, []);
 
@@ -481,6 +627,12 @@ export default function QrPage() {
     } catch {}
   }, [code, design, token]);
 
+  useEffect(() => {
+    try {
+      window.localStorage.setItem("dokuntag_front_artwork", JSON.stringify(artwork));
+    } catch {}
+  }, [artwork]);
+
   const baseUrl = getBaseUrl();
   const designQuery = useMemo(() => buildDesignQuery(design), [design]);
   const qrImageUrl = useMemo(() => `/api/qr/${code}?${designQuery}`, [code, designQuery]);
@@ -488,10 +640,17 @@ export default function QrPage() {
     () => `/api/qr-download/${code}?${designQuery}`,
     [code, designQuery]
   );
-  const qrPageUrl = useMemo(() => `${baseUrl}/qr/${code}?${designQuery}`, [baseUrl, code, designQuery]);
+  const qrPageUrl = useMemo(
+    () => `${baseUrl}/qr/${code}?${designQuery}`,
+    [baseUrl, code, designQuery]
+  );
 
   const updateDesign = <K extends keyof DesignState>(key: K, value: DesignState[K]) => {
     setDesign((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const updateArtwork = <K extends keyof ArtworkState>(key: K, value: ArtworkState[K]) => {
+    setArtwork((prev) => ({ ...prev, [key]: value }));
   };
 
   const updateScaledField = (
@@ -515,7 +674,47 @@ export default function QrPage() {
     });
   };
 
-  const copyLink = async () => {
+  function startDrag(event: React.PointerEvent<HTMLDivElement>, mode: "qr" | "art") {
+    event.currentTarget.setPointerCapture(event.pointerId);
+    setDragMode(mode);
+    dragStartRef.current = {
+      x: event.clientX,
+      y: event.clientY,
+      horizontalBalance: design.horizontalBalance,
+      verticalBalance: design.verticalBalance,
+      artX: artwork.x,
+      artY: artwork.y
+    };
+  }
+
+  function onDrag(event: React.PointerEvent<HTMLDivElement>) {
+    if (!dragMode || !dragStartRef.current) return;
+
+    const dx = event.clientX - dragStartRef.current.x;
+    const dy = event.clientY - dragStartRef.current.y;
+
+    if (dragMode === "qr") {
+      setDesign((prev) => ({
+        ...prev,
+        horizontalBalance: clamp(Math.round(dragStartRef.current!.horizontalBalance + dx / 4), 50, 150),
+        verticalBalance: clamp(Math.round(dragStartRef.current!.verticalBalance + dy / 4), 50, 150)
+      }));
+      return;
+    }
+
+    setArtwork((prev) => ({
+      ...prev,
+      x: clamp(Math.round(dragStartRef.current!.artX + dx), -160, 160),
+      y: clamp(Math.round(dragStartRef.current!.artY + dy), -160, 160)
+    }));
+  }
+
+  function endDrag() {
+    setDragMode(null);
+    dragStartRef.current = null;
+  }
+
+  async function copyLink() {
     try {
       await navigator.clipboard.writeText(qrPageUrl);
       setCopied(true);
@@ -523,9 +722,9 @@ export default function QrPage() {
     } catch {
       setCopied(false);
     }
-  };
+  }
 
-  const openBatchPrintView = () => {
+  function openBatchPrintView() {
     try {
       const storageKey = `dokuntag_batch_${Date.now()}`;
       const items = [{ code }];
@@ -542,7 +741,30 @@ export default function QrPage() {
       const fallbackUrl = `/admin/batch/print?design=${encodeURIComponent(JSON.stringify(design))}`;
       window.open(fallbackUrl, "_blank", "noopener,noreferrer");
     }
-  };
+  }
+
+  function handleArtworkUpload(file: File | undefined) {
+    if (!file) return;
+    if (!file.type.startsWith("image/")) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      setArtwork((prev) => ({
+        ...prev,
+        imageUrl: String(reader.result || ""),
+        fileName: file.name
+      }));
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function resetArtwork() {
+    setArtwork(DEFAULT_ARTWORK);
+  }
+
+  function resetDesign() {
+    setDesign({ ...getDefaults("3cm"), shape: design.shape, hasHole: design.hasHole });
+  }
 
   if (!code) {
     return (
@@ -555,223 +777,313 @@ export default function QrPage() {
   }
 
   return (
-    <main className="min-h-screen bg-neutral-50 px-4 py-6 text-neutral-900 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-7xl space-y-6">
-        <section className="rounded-[2rem] border border-neutral-200 bg-white px-6 py-6 shadow-sm">
-          <p className="text-xs uppercase tracking-[0.2em] text-neutral-400">Dokuntag production mode</p>
-          <h1 className="mt-2 text-3xl font-semibold tracking-tight">QR baskı ayarı</h1>
-          <p className="mt-3 max-w-3xl text-sm leading-6 text-neutral-600">
-            QR ortada sabit kalır. Burada sadece yazıların dengesi, mesafesi, görünümü ve çıktı düzeni ayarlanır.
-          </p>
-        </section>
+    <main className="min-h-screen bg-[#f7f8fb] text-neutral-900">
+      <div className="grid min-h-screen lg:grid-cols-[300px_minmax(0,1fr)]">
+        <aside className="border-b border-neutral-200 bg-white p-4 lg:border-b-0 lg:border-r">
+          <div className="mb-6">
+            <p className="text-2xl font-semibold tracking-tight">dokuntag</p>
+            <p className="mt-2 text-sm font-medium text-neutral-900">Tasarım Ayarları</p>
+            <p className="mt-1 text-xs leading-5 text-neutral-500">
+              Metinleri, görselleri ve konumları düzenleyin.
+            </p>
+          </div>
 
-        <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_420px]">
-          <section className="space-y-6 min-w-0">
-            <section className="rounded-[2rem] border border-neutral-200 bg-white px-5 py-5 shadow-sm sm:px-6">
-              <div className="flex flex-wrap items-center gap-2">
-                <TabButton active={activeTab === "general"} label="Genel" onClick={() => setActiveTab("general")} />
-                <TabButton active={activeTab === "brand"} label={design.shape === "drop" ? "Marka" : "Üst yazı"} onClick={() => setActiveTab("brand")} />
-                <TabButton active={activeTab === "slogan"} label="Slogan" onClick={() => setActiveTab("slogan")} />
-                <TabButton active={activeTab === "code"} label="Kod" onClick={() => setActiveTab("code")} />
-                <TabButton active={activeTab === "badge"} label="® simgesi" onClick={() => setActiveTab("badge")} />
-                <TabButton active={activeTab === "output"} label="Çıktı" onClick={() => setActiveTab("output")} />
-              </div>
-            </section>
+          <div className="mb-5 grid grid-cols-2 gap-2">
+            <TabButton active={activeTab === "general"} label="Genel" onClick={() => setActiveTab("general")} />
+            <TabButton active={activeTab === "front"} label="Ön yüz" onClick={() => setActiveTab("front")} />
+            <TabButton active={activeTab === "back"} label="Arka yüz" onClick={() => setActiveTab("back")} />
+            <TabButton active={activeTab === "qr"} label="QR" onClick={() => setActiveTab("qr")} />
+            <TabButton active={activeTab === "output"} label="Çıktı" onClick={() => setActiveTab("output")} />
+          </div>
 
+          <div className="space-y-4">
             {activeTab === "general" ? (
               <>
-                <SectionCard title="Ölçü ve şekil" description="QR sabit kalır. Boyuta göre yazılar otomatik dengelenir.">
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <SelectField
-                      label="Hazır ölçü"
-                      value={design.size}
-                      onChange={(value) =>
-                        setDesign({ ...getDefaults(value as SizeOption), shape: design.shape, hasHole: design.hasHole, codeAlign: design.codeAlign })
-                      }
-                      options={[
-                        { value: "2.5cm", label: "2,5 cm" },
-                        { value: "3cm", label: "3 cm" },
-                        { value: "4cm", label: "4 cm" }
-                      ]}
-                    />
-                    <SelectField
-                      label="Şekil"
-                      value={design.shape}
-                      onChange={(value) => updateDesign("shape", value as ShapeOption)}
-                      options={[
-                        { value: "round", label: "Yuvarlak" },
-                        { value: "square", label: "Kare" },
-                        { value: "drop", label: "Damla V2" }
-                      ]}
-                    />
+                <SectionCard title="Şekil ve boyut">
+                  <div className="grid grid-cols-3 gap-2">
+                    <ShapeButton active={design.shape === "round"} label="Daire" onClick={() => updateDesign("shape", "round")} />
+                    <ShapeButton active={design.shape === "drop"} label="Damla" onClick={() => updateDesign("shape", "drop")} />
+                    <ShapeButton active={design.shape === "square"} label="Kare" onClick={() => updateDesign("shape", "square")} />
                   </div>
-                </SectionCard>
-                <label className="flex items-center gap-2 rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm">
-                  <input
-                    type="checkbox"
-                    checked={design.hasHole}
-                    disabled={design.shape !== "drop"}
-                    onChange={(e) =>
-                      setDesign((prev) => ({
-                        ...prev,
-                        hasHole: e.target.checked
-                      }))
+
+                  <SelectField
+                    label="Hazır ölçü"
+                    value={design.size}
+                    onChange={(value) =>
+                      setDesign({
+                        ...getDefaults(value as SizeOption),
+                        shape: design.shape,
+                        hasHole: design.hasHole,
+                        codeAlign: design.codeAlign
+                      })
                     }
+                    options={[
+                      { value: "2.5cm", label: "2,5 cm" },
+                      { value: "3cm", label: "3 cm" },
+                      { value: "4cm", label: "4 cm" }
+                    ]}
                   />
-                  Damla V2 delik alanı
-                </label>
-                <SectionCard title="Denge ve güvenli sınırlar" description="Yazılar QR üstüne binmez ve baskı alanı dışına taşmaz.">
-                  <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                    <SliderField label="Dikey denge" value={design.verticalBalance} min={50} max={150} onChange={(v) => updateDesign("verticalBalance", v)} />
-                    <SliderField label="Yatay denge" value={design.horizontalBalance} min={50} max={150} onChange={(v) => updateDesign("horizontalBalance", v)} />
-                    <SliderField label="İç güvenli alan" value={design.innerSafe} min={80} max={160} onChange={(v) => updateDesign("innerSafe", v)} />
-                    <SliderField label="Dış güvenli alan" value={design.outerSafe} min={80} max={180} onChange={(v) => updateDesign("outerSafe", v)} />
-                    <SliderField label="QR oranı" value={design.qrScale} min={85} max={115} onChange={(v) => updateDesign("qrScale", v)} />
-                  </div>
-                  <label className="mt-2 flex items-center gap-2 text-sm text-neutral-700">
+
+                  <label className="flex items-center justify-between gap-3 rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm">
+                    <span className="font-medium text-neutral-900">Dış kenar çizgisi</span>
                     <input
                       type="checkbox"
-                      checked={design.lockTextAdjustments}
-                      onChange={(e) => updateDesign("lockTextAdjustments", e.target.checked)}
+                      checked={showGuide}
+                      onChange={(e) => setShowGuide(e.target.checked)}
                     />
-                    Yazı ölçeklerini ve boşluklarını orantılı ayarla
                   </label>
+
+                  <label className="flex items-center justify-between gap-3 rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm">
+                    <span className="font-medium text-neutral-900">Delik alanı</span>
+                    <input
+                      type="checkbox"
+                      checked={design.hasHole}
+                      disabled={design.shape !== "drop"}
+                      onChange={(e) => updateDesign("hasHole", e.target.checked)}
+                    />
+                  </label>
+                </SectionCard>
+
+                <SectionCard title="Güvenli alan">
+                  <SliderField label="Dikey denge" value={design.verticalBalance} min={50} max={150} onChange={(v) => updateDesign("verticalBalance", v)} />
+                  <SliderField label="Yatay denge" value={design.horizontalBalance} min={50} max={150} onChange={(v) => updateDesign("horizontalBalance", v)} />
+                  <SliderField label="İç güvenli alan" value={design.innerSafe} min={80} max={160} onChange={(v) => updateDesign("innerSafe", v)} />
+                  <SliderField label="Dış güvenli alan" value={design.outerSafe} min={80} max={180} onChange={(v) => updateDesign("outerSafe", v)} />
                 </SectionCard>
               </>
             ) : null}
 
-            {activeTab === "brand" ? (
-              <SectionCard title={design.shape === "drop" ? "Marka yazısı" : "Üst yazı"} description={design.shape === "drop" ? "Damla V2’de marka QR’ın altında görünür; boş bırakırsan görünmez." : "QR’a en yakın konumda bile üstüne binmez."}>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <TextField label="Metin" value={design.brandText} onChange={(v) => updateDesign("brandText", v.slice(0, 24))} />
-                  <ColorField label="Renk" value={design.brandColor} onChange={(v) => updateDesign("brandColor", v)} />
-                  <SliderField label="Yazı boyutu" value={design.brandScale} min={40} max={500} onChange={(v) => updateScaledField("brandScale", v)} />
-                  <SliderField label="QR'a uzaklık" value={design.brandGap} min={50} max={220} onChange={(v) => updateScaledField("brandGap", v)} />
-                  <SelectField label="Kalınlık" value={design.brandWeight} onChange={(v) => updateDesign("brandWeight", v as FontWeightOption)} options={[
-                    { value: "500", label: "Orta" },
-                    { value: "600", label: "Yarı kalın" },
-                    { value: "700", label: "Kalın" },
-                    { value: "800", label: "Çok kalın" }
-                  ]} />
-                  <SelectField label="Hizalama" value={design.brandAlign} onChange={(v) => updateDesign("brandAlign", v as AlignOption)} options={[
-                    { value: "left", label: "Sola" },
-                    { value: "center", label: "Ortala" },
-                    { value: "right", label: "Sağa" }
-                  ]} />
-                  <SelectField label="Stil" value={design.brandStyle} onChange={(v) => updateDesign("brandStyle", v as FontStyleOption)} options={[
-                    { value: "normal", label: "Normal" },
-                    { value: "italic", label: "İtalik" }
-                  ]} />
-                </div>
-              </SectionCard>
+            {activeTab === "front" ? (
+              <>
+                <SectionCard title="Ön yüz marka">
+                  <TextField label="Marka" value={design.brandText} placeholder="Boş bırakılırsa görünmez" onChange={(v) => updateDesign("brandText", v.slice(0, 24))} />
+                  <TextField label="Slogan" value={design.sloganText} placeholder="Boş bırakılırsa görünmez" onChange={(v) => updateDesign("sloganText", v.slice(0, 28))} />
+                  <ColorField label="Marka rengi" value={design.brandColor} onChange={(v) => updateDesign("brandColor", v)} />
+                  <SliderField label="Marka boyutu" value={design.brandScale} min={40} max={500} suffix="%" onChange={(v) => updateScaledField("brandScale", v)} />
+                  <SliderField label="Slogan boyutu" value={design.sloganScale} min={40} max={500} suffix="%" onChange={(v) => updateScaledField("sloganScale", v)} />
+                </SectionCard>
+
+                <SectionCard title="® simgesi">
+                  <SliderField label="Simge boyutu" value={design.badgeScale} min={50} max={300} suffix="%" onChange={(v) => updateDesign("badgeScale", v)} />
+                  <SliderField label="Sağa-sola" value={design.badgeOffsetX} min={0} max={220} onChange={(v) => updateDesign("badgeOffsetX", v)} />
+                  <SliderField label="Yukarı-aşağı" value={design.badgeOffsetY} min={0} max={220} onChange={(v) => updateDesign("badgeOffsetY", v)} />
+                </SectionCard>
+              </>
             ) : null}
 
-            {activeTab === "slogan" ? (
-              <SectionCard title="Slogan" description="Boş bırakırsan görünmez. Damla V2’de marka yazısının altında konumlanır.">
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <TextField label="Metin" value={design.sloganText} onChange={(v) => updateDesign("sloganText", v.slice(0, 28))} />
-                  <ColorField label="Renk" value={design.sloganColor} onChange={(v) => updateDesign("sloganColor", v)} />
-                  <SliderField label="Yazı boyutu" value={design.sloganScale} min={40} max={500} onChange={(v) => updateScaledField("sloganScale", v)} />
-                  <SliderField label="QR'a uzaklık" value={design.sloganGap} min={50} max={220} onChange={(v) => updateScaledField("sloganGap", v)} />
-                  <SelectField label="Kalınlık" value={design.sloganWeight} onChange={(v) => updateDesign("sloganWeight", v as FontWeightOption)} options={[
-                    { value: "500", label: "Orta" },
-                    { value: "600", label: "Yarı kalın" },
-                    { value: "700", label: "Kalın" },
-                    { value: "800", label: "Çok kalın" }
-                  ]} />
-                  <SelectField label="Hizalama" value={design.sloganAlign} onChange={(v) => updateDesign("sloganAlign", v as AlignOption)} options={[
-                    { value: "left", label: "Sola" },
-                    { value: "center", label: "Ortala" },
-                    { value: "right", label: "Sağa" }
-                  ]} />
-                  <SelectField label="Stil" value={design.sloganStyle} onChange={(v) => updateDesign("sloganStyle", v as FontStyleOption)} options={[
-                    { value: "normal", label: "Normal" },
-                    { value: "italic", label: "İtalik" }
-                  ]} />
-                </div>
-              </SectionCard>
+            {activeTab === "back" ? (
+              <>
+                <SectionCard title="Görsel yükle" description="Photoshop/AI görselini burada son forma sığdır.">
+                  <label className="flex cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed border-neutral-300 bg-neutral-50 px-4 py-8 text-center text-sm transition hover:bg-neutral-100">
+                    <span className="font-semibold text-neutral-900">Görsel seç</span>
+                    <span className="mt-1 text-xs text-neutral-500">PNG, JPG, WEBP</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => handleArtworkUpload(e.target.files?.[0])}
+                    />
+                  </label>
+
+                  {artwork.fileName ? (
+                    <div className="rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-xs text-neutral-600">
+                      {artwork.fileName}
+                    </div>
+                  ) : null}
+
+                  <button
+                    type="button"
+                    onClick={resetArtwork}
+                    className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm font-semibold hover:bg-neutral-50"
+                  >
+                    Görseli sıfırla
+                  </button>
+                </SectionCard>
+
+                <SectionCard title="Görsel yerleşimi">
+                  <SelectField
+                    label="Sığdırma"
+                    value={artwork.fit}
+                    onChange={(v) => updateArtwork("fit", v as FitMode)}
+                    options={[
+                      { value: "cover", label: "Doldur / kırp" },
+                      { value: "contain", label: "Tamamı görünsün" }
+                    ]}
+                  />
+                  <SliderField label="Görsel ölçeği" value={artwork.scale} min={40} max={220} suffix="%" onChange={(v) => updateArtwork("scale", v)} />
+                  <SliderField label="Yatay X" value={artwork.x} min={-160} max={160} onChange={(v) => updateArtwork("x", v)} />
+                  <SliderField label="Dikey Y" value={artwork.y} min={-160} max={160} onChange={(v) => updateArtwork("y", v)} />
+                  <SliderField label="Döndürme" value={artwork.rotate} min={-180} max={180} suffix="°" onChange={(v) => updateArtwork("rotate", v)} />
+                </SectionCard>
+
+                <SectionCard title="Arka yüz yazısı">
+                  <TextField label="Yazı" value={artwork.caption} placeholder="İsteğe bağlı" onChange={(v) => updateArtwork("caption", v.slice(0, 28))} />
+                  <ColorField label="Yazı rengi" value={artwork.captionColor} onChange={(v) => updateArtwork("captionColor", v)} />
+                  <SliderField label="Yazı boyutu" value={artwork.captionScale} min={50} max={220} suffix="%" onChange={(v) => updateArtwork("captionScale", v)} />
+                  <SliderField label="Yazı dikey konum" value={artwork.captionY} min={20} max={92} suffix="%" onChange={(v) => updateArtwork("captionY", v)} />
+                </SectionCard>
+              </>
             ) : null}
 
-            {activeTab === "code" ? (
-              <SectionCard title="Kod" description="Damla V2’de kod konumu esnektir; yuvarlak/karede sağ kod mantığı korunur.">
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <TextField label="Metin" value={design.codeText} onChange={(v) => updateDesign("codeText", v.slice(0, 20))} />
-                  <ColorField label="Renk" value={design.codeColor} onChange={(v) => updateDesign("codeColor", v)} />
-                  <SliderField label="Kod boyutu" value={design.codeScale} min={40} max={500} onChange={(v) => updateScaledField("codeScale", v)} />
-                  <SliderField label="Kod boşluğu" value={design.codeInset} min={50} max={180} onChange={(v) => updateDesign("codeInset", v)} />
+            {activeTab === "qr" ? (
+              <>
+                <SectionCard title="QR ayarı" description="Ön yüzde QR alanını sürükleyerek de konumlandırabilirsin.">
+                  <SliderField label="QR boyutu" value={design.qrScale} min={40} max={300} suffix="%" onChange={(v) => updateDesign("qrScale", v)} />
+                  <SliderField label="Yatay konum" value={design.horizontalBalance} min={50} max={150} onChange={(v) => updateDesign("horizontalBalance", v)} />
+                  <SliderField label="Dikey konum" value={design.verticalBalance} min={50} max={150} onChange={(v) => updateDesign("verticalBalance", v)} />
+                </SectionCard>
+
+                <SectionCard title="Kod" description="Kararsızsan boş bırak. Kod zaten QR içinde var.">
+                  <TextField label="Kod metni" value={design.codeText} placeholder={code} onChange={(v) => updateDesign("codeText", v.slice(0, 20))} />
+                  <ColorField label="Kod rengi" value={design.codeColor} onChange={(v) => updateDesign("codeColor", v)} />
+                  <SliderField label="Kod boyutu" value={design.codeScale} min={40} max={500} suffix="%" onChange={(v) => updateScaledField("codeScale", v)} />
                   <SelectField label="Kod konumu" value={design.codeAlign} onChange={(v) => updateDesign("codeAlign", v as AlignOption)} options={[
-                    { value: "left", label: "Sola" },
-                    { value: "center", label: "Ortala" },
-                    { value: "right", label: "Sağa" }
+                    { value: "left", label: "Sol" },
+                    { value: "center", label: "Orta" },
+                    { value: "right", label: "Sağ" }
                   ]} />
-                  <SelectField label="Stil" value={design.codeStyle} onChange={(v) => updateDesign("codeStyle", v as FontStyleOption)} options={[
-                    { value: "normal", label: "Normal" },
-                    { value: "italic", label: "İtalik" }
-                  ]} />
-                </div>
-              </SectionCard>
-            ) : null}
-
-            {activeTab === "badge" ? (
-              <SectionCard title="® simgesi" description="Üst yazıya bağlı kalır ama daha görünür ve esnek konumlanır.">
-                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                  <SliderField label="Simge boyutu" value={design.badgeScale} min={50} max={300} onChange={(v) => updateDesign("badgeScale", v)} />
-                  <SliderField label="Sağa-sola konum" value={design.badgeOffsetX} min={0} max={220} onChange={(v) => updateDesign("badgeOffsetX", v)} />
-                  <SliderField label="Yukarı-aşağı konum" value={design.badgeOffsetY} min={0} max={220} onChange={(v) => updateDesign("badgeOffsetY", v)} />
-                </div>
-              </SectionCard>
+                </SectionCard>
+              </>
             ) : null}
 
             {activeTab === "output" ? (
-              <SectionCard title="Çıktı ve paylaşım" description="Son tasarım toplu baskıya aynı ayarla taşınır.">
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <a href={qrDownloadUrl} className="rounded-2xl bg-black px-4 py-3 text-center text-sm font-medium text-white transition hover:bg-neutral-800">SVG indir</a>
-                  <button
-                    type="button"
-                    onClick={openBatchPrintView}
-                    className="rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-center text-sm font-medium transition hover:border-neutral-400 hover:bg-neutral-50"
-                  >
-                    Toplu baskı görünümünü aç
-                  </button>
-                  <button type="button" onClick={copyLink} className="rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-center text-sm font-medium transition hover:border-neutral-400 hover:bg-neutral-50">
-                    {copied ? "Bağlantı kopyalandı" : "Ayar bağlantısını kopyala"}
-                  </button>
-                </div>
+              <SectionCard title="Çıktı ve indirme">
+                <a href={qrDownloadUrl} className="block rounded-2xl bg-black px-4 py-3 text-center text-sm font-semibold text-white hover:bg-neutral-800">
+                  SVG indir - QR yüzü
+                </a>
+                <button
+                  type="button"
+                  onClick={openBatchPrintView}
+                  className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-center text-sm font-semibold hover:bg-neutral-50"
+                >
+                  Toplu baskı görünümünü aç
+                </button>
+                <button
+                  type="button"
+                  onClick={copyLink}
+                  className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-center text-sm font-semibold hover:bg-neutral-50"
+                >
+                  {copied ? "Bağlantı kopyalandı" : "Ayar bağlantısını kopyala"}
+                </button>
+                <button
+                  type="button"
+                  onClick={resetDesign}
+                  className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-center text-sm font-semibold hover:bg-neutral-50"
+                >
+                  Ayarları sıfırla
+                </button>
               </SectionCard>
             ) : null}
-          </section>
+          </div>
+        </aside>
 
-          <aside className="min-w-0 xl:sticky xl:top-6 self-start space-y-6">
-            <section className="rounded-[2rem] border border-neutral-200 bg-white shadow-sm overflow-hidden">
-              <div className="border-b border-neutral-200 bg-gradient-to-br from-white via-neutral-50 to-neutral-100/80 px-6 py-6">
-                <p className="text-xs uppercase tracking-[0.18em] text-neutral-400">Canlı önizleme</p>
-                <h2 className="mt-2 text-2xl font-semibold tracking-tight">Baskı görünümü</h2>
-                <p className="mt-2 text-sm leading-6 text-neutral-600">
-                  Son ayar burada görünür. Aynı ayar toplu baskı sayfasına ve SVG çıktısına taşınır.
-                </p>
+        <section className="min-w-0 p-4 lg:p-6">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <a href="/admin/batch" className="rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-sm font-semibold hover:bg-neutral-50">
+                ← Geri
+              </a>
+              <div className="rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-sm">
+                <span className="font-semibold">Kod:</span> {code}
               </div>
-              <div className="space-y-5 px-6 py-6">
-                <div className="flex justify-center">
+              <div className="rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-sm">
+                <span className="font-semibold">Form:</span> {getShapeLabel(design.shape)}
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              <button type="button" onClick={() => setShowGuide((v) => !v)} className="rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-sm font-semibold hover:bg-neutral-50">
+                {showGuide ? "Kılavuzu gizle" : "Kılavuzu göster"}
+              </button>
+              <a href={qrDownloadUrl} className="rounded-2xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-blue-700">
+                SVG indir
+              </a>
+            </div>
+          </div>
+
+          <div className="grid gap-6 2xl:grid-cols-2">
+            <PreviewShell
+              title="Ön yüz"
+              subtitle="QR tarafı"
+              shape={design.shape}
+              showGuide={showGuide}
+            >
+              <div
+                className="absolute inset-0 cursor-move select-none"
+                onPointerDown={(e) => startDrag(e, "qr")}
+                onPointerMove={onDrag}
+                onPointerUp={endDrag}
+                onPointerCancel={endDrag}
+              >
+                <img
+                  src={qrImageUrl}
+                  alt={`${code} QR`}
+                  className="h-full w-full object-contain"
+                  draggable={false}
+                />
+              </div>
+            </PreviewShell>
+
+            <PreviewShell
+              title="Arka yüz"
+              subtitle="Görsel tarafı"
+              shape={design.shape}
+              showGuide={showGuide}
+            >
+              <div
+                className="absolute inset-0 overflow-hidden bg-neutral-100"
+                style={{ clipPath: getShapeClip(design.shape) }}
+              >
+                {artwork.imageUrl ? (
                   <div
-                    className={`flex items-center justify-center border border-neutral-200 bg-white p-2 shadow-sm ${
-                      design.shape === "round"
-                        ? "rounded-full"
-                        : design.shape === "square"
-                          ? "rounded-3xl"
-                          : ""
-                    }`}
-                    style={cmPreviewStyle(design.size)}
+                    className="absolute inset-0 cursor-move select-none"
+                    onPointerDown={(e) => startDrag(e, "art")}
+                    onPointerMove={onDrag}
+                    onPointerUp={endDrag}
+                    onPointerCancel={endDrag}
                   >
-                    <img src={qrImageUrl} alt={`${code} QR`} className="h-full w-full" />
+                    <img
+                      src={artwork.imageUrl}
+                      alt="Arka yüz görseli"
+                      draggable={false}
+                      className="h-full w-full"
+                      style={{
+                        objectFit: artwork.fit,
+                        transform: `translate(${artwork.x}px, ${artwork.y}px) scale(${artwork.scale / 100}) rotate(${artwork.rotate}deg)`,
+                        transformOrigin: "center"
+                      }}
+                    />
                   </div>
-                </div>
-                <div className="break-all rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-4 text-xs leading-6 text-neutral-700">
-                  {qrPageUrl}
-                </div>
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center px-10 text-center text-sm leading-6 text-neutral-500">
+                    Arka yüz için görsel yükle. Görsel bu formun içine kırpılır.
+                  </div>
+                )}
+
+                {design.shape === "drop" && design.hasHole ? (
+                  <div className="absolute left-1/2 top-[11%] h-14 w-14 -translate-x-1/2 rounded-full border-4 border-white bg-white/80 shadow-inner" />
+                ) : null}
+
+                {artwork.caption.trim() ? (
+                  <div
+                    className="absolute left-1/2 -translate-x-1/2 whitespace-nowrap text-center font-extrabold tracking-wide drop-shadow-sm"
+                    style={{
+                      top: `${artwork.captionY}%`,
+                      color: artwork.captionColor,
+                      fontSize: `${14 * (artwork.captionScale / 100)}px`
+                    }}
+                  >
+                    {artwork.caption}
+                  </div>
+                ) : null}
               </div>
-            </section>
-          </aside>
-        </div>
+            </PreviewShell>
+          </div>
+
+          <div className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-900">
+            Dış kenar çizgisi ve kılavuz sadece yerleşim içindir. QR SVG çıktısında gerçek form çizilir; arka yüz görseli şimdilik yerel önizleme amaçlıdır.
+          </div>
+        </section>
       </div>
     </main>
   );
