@@ -660,7 +660,8 @@ export default function ManagePage({
   params: Promise<{ code: string }>;
 }) {
   const [code, setCode] = useState("");
-  const [token, sconst [myToken, setMyToken] = useState("");etToken] = useState("");
+  const [token, setToken] = useState("");
+  const [myToken, setMyToken] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [statusSaving, setStatusSaving] = useState(false);
