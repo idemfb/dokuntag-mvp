@@ -101,8 +101,10 @@ export default function RecoverSelectPage() {
           setLoading(false);
 
           redirectTimer = window.setTimeout(() => {
-            window.location.href = nextManagePath;
-          }, 450);
+          const nextUrl = new URL(nextManagePath, window.location.origin);
+          nextUrl.searchParams.set("myToken", token);
+          window.location.replace(nextUrl.toString());
+        }, 450);
         }
       } catch (err) {
         if (!cancelled) {

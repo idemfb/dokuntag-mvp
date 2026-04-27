@@ -30,5 +30,13 @@
     "fingerprint": "10f34b1244566bb397b6ce86323723b3701c6698a1f2a21e8b4e39bd76d13e12",
     "ip": "::1",
     "createdAt": "2026-04-26T09:02:12.406Z"
+  },
+  {
+    "id": "b8768261-536d-49a5-93a3-f04f42f676b1",
+    "email": "i.dem@hotmail.com",
+    "entryType": "my",
+    "fingerprint": "10f34b1244566bb397b6ce86323723b3701c6698a1f2a21e8b4e39bd76d13e12",
+    "ip": "::1",
+    "createdAt": "2026-04-27T07:35:21.372Z"
   }
 ]

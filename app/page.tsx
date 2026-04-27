@@ -6,6 +6,19 @@ export const metadata: Metadata = {
   title: "Dokuntag® | NFC ve QR ile kaybolanı sahibine ulaştırın",
   description:
     "Dokuntag®, NFC ve QR ile çalışan güvenli kayıp buluşturma sistemidir. Birey, evcil hayvan, anahtar ve eşyalar için güvenli iletişim köprüsü kurar.",
+  keywords: [
+    "Dokuntag",
+    "NFC anahtarlık",
+    "QR kayıp eşya",
+    "kayıp anahtar bulma",
+    "kayıp eşya etiketi",
+    "evcil hayvan etiketi",
+    "evcil hayvan QR etiketi",
+    "akıllı anahtarlık",
+    "NFC etiket",
+    "QR etiket",
+    "kayıp eşya nasıl bulunur",
+  ],
   alternates: {
     canonical: "/",
   },
@@ -122,6 +135,29 @@ const trustItems = [
   "Bulan kişi uygulama indirmez",
   "NFC ve QR güvenli profil akışına yönlenir",
   "Bilgiler ürün sahibi tarafından yönetilir",
+];
+
+const guideItems = [
+  {
+    title: "Anahtar kaybolursa ne yapılır?",
+    text: "Anahtarınızı kaybettiğinizde güvenlik ve geri bulma için atılacak adımlar.",
+    href: "/anahtar-kaybolursa-ne-yapilir",
+  },
+  {
+    title: "Evcil hayvan kaybolursa ne yapılır?",
+    text: "Kedi veya köpeğiniz kaybolduğunda hızlı hareket etmek için pratik rehber.",
+    href: "/evcil-hayvan-kaybolursa-ne-yapilir",
+  },
+  {
+  title: "Kayıp eşya nasıl bulunur?",
+  text: "Çanta, valiz, laptop veya kişisel eşyalar kaybolduğunda yapılması gerekenler.",
+  href: "/kayip-esya-nasil-bulunur",
+},
+  {
+    title: "NFC anahtarlık nedir?",
+    text: "NFC teknolojisinin nasıl çalıştığını ve kayıp eşya için nasıl kullanıldığını öğrenin.",
+    href: "/nfc-anahtarlik-nedir",
+  },
 ];
 
 export default function HomePage() {
@@ -471,6 +507,36 @@ export default function HomePage() {
                   {item.answer}
                 </p>
               </details>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section id="rehberler" className="px-5 py-20 sm:px-8">
+        <div className="mx-auto max-w-6xl">
+          <p className="text-sm font-semibold uppercase tracking-[0.22em] text-neutral-500">
+            Rehberler
+          </p>
+
+          <h2 className="mt-4 text-3xl font-semibold tracking-tight sm:text-4xl">
+            Kaybolan eşyalar ve güvenli iletişim hakkında kısa rehberler.
+          </h2>
+
+          <div className="mt-8 grid gap-4 md:grid-cols-3">
+            {guideItems.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="rounded-[1.75rem] border border-neutral-200 bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+              >
+                <h3 className="text-lg font-semibold">{item.title}</h3>
+                <p className="mt-3 text-sm leading-6 text-neutral-600">
+                  {item.text}
+                </p>
+                <span className="mt-5 inline-flex text-sm font-semibold text-neutral-950">
+                  Rehberi oku →
+                </span>
+              </Link>
             ))}
           </div>
         </div>

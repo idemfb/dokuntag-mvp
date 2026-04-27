@@ -660,7 +660,7 @@ export default function ManagePage({
   params: Promise<{ code: string }>;
 }) {
   const [code, setCode] = useState("");
-  const [token, setToken] = useState("");
+  const [token, sconst [myToken, setMyToken] = useState("");etToken] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [statusSaving, setStatusSaving] = useState(false);
@@ -763,10 +763,11 @@ useEffect(() => {
   }
 }, [productType, city, showCity]);
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    const url = new URL(window.location.href);
-    setToken(url.searchParams.get("token") || "");
-  }, []);
+  if (typeof window === "undefined") return;
+  const url = new URL(window.location.href);
+  setToken(url.searchParams.get("token") || "");
+  setMyToken(url.searchParams.get("myToken") || "");
+}, []);
 
   async function loadLogs(currentCode: string, currentToken: string) {
     try {
@@ -1819,7 +1820,7 @@ if (
       <div className="mx-auto max-w-3xl">
         <div className="mb-6">
           <a
-            href="/my/list"
+            href={myToken ? `/my/list?token=${encodeURIComponent(myToken)}` : "/my"}
             className="inline-flex items-center text-sm text-neutral-500 transition hover:text-neutral-900 hover:underline"
           >
             ← Ürünlerim
