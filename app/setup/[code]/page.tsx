@@ -639,28 +639,7 @@ export default function SetupPage({ params }: Props) {
           </div>
         </form>
 
-        <section className="rounded-[1.5rem] border border-neutral-200 bg-white px-4 py-3.5 shadow-sm">
-          <p className="text-sm font-medium text-neutral-900">
-            Dokuntag ile örnek profil ve kullanım akışını inceleyin.
-          </p>
 
-          <div className="mt-3 grid grid-cols-2 gap-1.5">
-            <button
-              type="button"
-              onClick={() => router.push("/demo")}
-              className="rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm font-medium transition hover:border-neutral-400 hover:bg-neutral-50"
-            >
-              Demo sayfası
-            </button>
-            <button
-              type="button"
-              onClick={() => router.push("/how-it-works")}
-              className="rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm font-medium transition hover:border-neutral-400 hover:bg-neutral-50"
-            >
-              Nasıl çalışır?
-            </button>
-          </div>
-        </section>
       </div>
     </main>
   );

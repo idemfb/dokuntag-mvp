@@ -20,6 +20,8 @@ type LayoutOverrides = {
   sloganText: string;
   codeText: string;
   hideCode: boolean;
+  showLogo: boolean;
+  logoScale: number;
   brandScale: number;
   sloganScale: number;
   codeScale: number;
@@ -289,6 +291,8 @@ function readLayoutOverrides(searchParams: URLSearchParams, normalizedCode: stri
     sloganText: normalizeText(searchParams.get("sloganText"), "", 28),
     codeText: resolvedCodeText,
     hideCode,
+    showLogo: normalizeBoolean(searchParams.get("showLogo"), true),
+    logoScale: parsePercent(searchParams.get("logoScale"), 18, 10, 30),
     brandScale: parsePercent(searchParams.get("brandScale"), 100, 40, 500),
     sloganScale: parsePercent(searchParams.get("sloganScale"), 100, 40, 500),
     codeScale: parsePercent(searchParams.get("codeScale"), 100, 40, 500),
@@ -848,30 +852,43 @@ async function buildQrSvg(code: string, overrides: LayoutOverrides) {
         `
         : ""
     }
+<svg viewBox="${viewBox}" x="${layout.qrX}" y="${layout.qrY}" width="${layout.qrSize}" height="${layout.qrSize}">
+  ${innerSvg}
 
-    <svg viewBox="${viewBox}" x="${layout.qrX}" y="${layout.qrY}" width="${layout.qrSize}" height="${layout.qrSize}">
-      ${innerSvg}
-      <rect
-  x="${layout.qrX + layout.qrSize / 2 - layout.qrSize * 0.09}"
-  y="${layout.qrY + layout.qrSize / 2 - layout.qrSize * 0.09}"
-  width="${layout.qrSize * 0.18}"
-  height="${layout.qrSize * 0.18}"
-  rx="${layout.qrSize * 0.04}"
-  fill="#ffffff"
-/>
+  ${
+  overrides.showLogo
+    ? (() => {
+        const size = layout.qrSize * (overrides.logoScale / 100);
+      const half = size / 2;
+      const center = 128;
 
-<text
-  x="${layout.qrX + layout.qrSize / 2}"
-  y="${layout.qrY + layout.qrSize / 2 + 2}"
-  text-anchor="middle"
-  font-family="Arial"
-  font-size="${layout.qrSize * 0.07}"
-  font-weight="800"
-  fill="#000000"
->
-•
-</text>
-    </svg>
+      return `
+        <rect
+          x="${center - half}"
+          y="${center - half}"
+          width="${size}"
+          height="${size}"
+          rx="${size * 0.25}"
+          fill="#ffffff"
+        />
+
+        <text
+          x="${center}"
+          y="${center + 1}"
+          text-anchor="middle"
+          dominant-baseline="middle"
+          font-family="Arial"
+          font-size="${size * 0.55}"
+          font-weight="800"
+          fill="#000000"
+        >
+          ))
+        </text>
+      `;
+          })()
+    : ""
+}
+</svg>
 
     ${renderOptionalText({
       x: layout.codeX,

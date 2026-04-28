@@ -1718,6 +1718,63 @@
       "showAddressDetail": false,
       "showPetName": true,
       "showNote": false
+    },
+    {
+      "publicCode": "WF7BS9",
+      "manageToken": "970d2648-1371-4843-9e18-d0f2d94e8ba7",
+      "productType": "item",
+      "productSubtype": "",
+      "name": "WF7BS9",
+      "ownerName": "",
+      "phone": "",
+      "email": "",
+      "city": "",
+      "addressDetail": "",
+      "distinctiveFeature": "",
+      "petName": "WF7BS9",
+      "note": "",
+      "alerts": [],
+      "allowDirectCall": false,
+      "allowDirectWhatsapp": false,
+      "status": "unclaimed",
+      "createdAt": "2026-04-28T13:26:54.969Z",
+      "updatedAt": "2026-04-28T13:26:54.969Z",
+      "recovery": {
+        "phone": "",
+        "email": ""
+      },
+      "visibility": {
+        "showName": true,
+        "showPhone": false,
+        "showEmail": false,
+        "showCity": false,
+        "showAddressDetail": false,
+        "showPetName": true,
+        "showNote": false
+      },
+      "profile": {
+        "name": "WF7BS9",
+        "ownerName": "",
+        "phone": "",
+        "email": "",
+        "city": "",
+        "addressDetail": "",
+        "distinctiveFeature": "",
+        "petName": "WF7BS9",
+        "note": "",
+        "tagName": "WF7BS9"
+      },
+      "contactOptions": {
+        "allowDirectCall": false,
+        "allowDirectWhatsapp": false
+      },
+      "showName": true,
+      "showPhone": false,
+      "showEmail": false,
+      "showCity": false,
+      "showAddressDetail": false,
+      "showPetName": true,
+      "showNote": false
     }
   ]
 }
