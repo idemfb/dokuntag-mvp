@@ -38,5 +38,21 @@
     "fingerprint": "10f34b1244566bb397b6ce86323723b3701c6698a1f2a21e8b4e39bd76d13e12",
     "ip": "::1",
     "createdAt": "2026-04-27T07:35:21.372Z"
+  },
+  {
+    "id": "c44c75c8-24d5-40ed-9da2-664f3e07d798",
+    "email": "adresesaglik@gmail.com",
+    "entryType": "my",
+    "fingerprint": "40ce786ce64250b03e8ebdf55d03a1e1ab07e507c43879487c007932bad40d25",
+    "ip": "::1",
+    "createdAt": "2026-04-28T07:48:31.618Z"
+  },
+  {
+    "id": "d6b894c4-4837-4537-a8b0-ceef06b02f8d",
+    "email": "i.dem@hotmail.com",
+    "entryType": "my",
+    "fingerprint": "10f34b1244566bb397b6ce86323723b3701c6698a1f2a21e8b4e39bd76d13e12",
+    "ip": "::1",
+    "createdAt": "2026-04-28T07:54:45.205Z"
   }
 ]

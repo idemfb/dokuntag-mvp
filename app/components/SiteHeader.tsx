@@ -94,14 +94,13 @@ export default function SiteHeader({ variant = "default" }: SiteHeaderProps) {
           <button
             type="button"
             onClick={() => setOpen((value) => !value)}
-            className="inline-flex items-center gap-2 rounded-full border border-neutral-300 bg-white/75 px-4 py-2 text-sm font-semibold text-neutral-900 shadow-sm transition hover:bg-white lg:hidden"
+            className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-neutral-300 bg-white/80 shadow-sm transition hover:bg-white active:scale-[0.96] lg:hidden"
             aria-expanded={open}
             aria-label="Menüyü aç"
           >
-            <span>Menü</span>
-            <span className="flex h-4 w-4 flex-col justify-center gap-1">
-              <span className="block h-0.5 w-4 rounded-full bg-neutral-900" />
-              <span className="block h-0.5 w-4 rounded-full bg-neutral-900" />
+            <span className="flex h-4 w-4 flex-col justify-center gap-1.5">
+              <span className="block h-[2px] w-4 rounded-full bg-neutral-900" />
+              <span className="block h-[2px] w-4 rounded-full bg-neutral-900" />
             </span>
           </button>
 

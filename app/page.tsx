@@ -202,7 +202,7 @@ export default function HomePage() {
               </Link>
             </div>
             <p className="mt-4 text-sm text-neutral-500">
-            Tek seferlik fiziksel ürün · Yıllık ücret yok · Uygulama gerekmez
+            Tek seferlik fiziksel ürün · Yıllık ücret yok · Uygulama gerekmez · Şarj gerekmez
           </p>
           </div>
 
@@ -220,6 +220,8 @@ export default function HomePage() {
       </section>
 
       <section id="neden" className="px-5 py-20 sm:px-8">
+
+        
         <div className="mx-auto max-w-7xl">
           <div className="max-w-3xl">
             <p className="text-sm font-semibold uppercase tracking-[0.22em] text-neutral-500">
@@ -229,14 +231,29 @@ export default function HomePage() {
               Çünkü kaybolduğunda sana ulaşacak bir yol gerekir.
             </h2>
             <p className="mt-5 text-lg leading-8 text-neutral-600">
-              Anahtarınızı, çantanızı, evcil hayvanınızı veya yakınınızı bulan
-              kişi iyi niyetli olabilir. Ama size ulaşacak bir yol yoksa geri
-              dönmesi zordur.
+              Yakınınızı, evcil hayvanınızı veya eşyalarınızı bulan kişi iyi niyetli olabilir. Ama size ulaşacak bir yol yoksa geri dönmesi zordur.
             </p>
           </div>
 
-          <div className="mt-10 grid gap-4 lg:grid-cols-3">
-            <div className="overflow-hidden rounded-[2rem] bg-neutral-950 text-white">
+          <div className="mt-10 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <div className="overflow-hidden rounded-[2rem] border border-neutral-200 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-md">
+  <Image
+    src="/images/relief-phone.jpg"
+    alt="Birey güvenli iletişim"
+    width={900}
+    height={900}
+    className="h-72 w-full object-cover"
+  />
+  <div className="p-7">
+    <h3 className="text-2xl font-semibold">
+      Yakınınıza ulaşılması gerekirse?
+    </h3>
+    <p className="mt-3 text-sm leading-6 text-neutral-600">
+      Dokuntag®, acil durumlarda doğru kişinin hızlıca bilgilendirilmesini sağlar.
+    </p>
+  </div>
+</div>
+            <div className="overflow-hidden rounded-[2rem] bg-neutral-950 text-white transition duration-300 hover:-translate-y-1 hover:shadow-md">
               <Image
                 src="/images/lost-key.jpg"
                 alt="Kaybolan anahtar"
@@ -244,6 +261,7 @@ export default function HomePage() {
                 height={900}
                 className="h-72 w-full object-cover opacity-90"
               />
+              
               <div className="p-7">
                 <h3 className="text-2xl font-semibold">
                   Anahtarın kaybolursa?
@@ -255,7 +273,7 @@ export default function HomePage() {
               </div>
             </div>
 
-            <div className="overflow-hidden rounded-[2rem] border border-neutral-200 bg-white shadow-sm">
+            <div className="overflow-hidden rounded-[2rem] border border-neutral-200 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-md">
               <Image
                 src="/images/pet-tag.jpg"
                 alt="Evcil hayvan tasmasında Dokuntag"
@@ -274,7 +292,7 @@ export default function HomePage() {
               </div>
             </div>
 
-            <div className="overflow-hidden rounded-[2rem] border border-neutral-200 bg-white shadow-sm">
+            <div className="overflow-hidden rounded-[2rem] bg-neutral-950 text-white transition duration-300 hover:-translate-y-1 hover:shadow-md">
               <Image
                 src="/images/bag-tag.jpg"
                 alt="Çanta üzerinde Dokuntag"
@@ -286,7 +304,7 @@ export default function HomePage() {
                 <h3 className="text-2xl font-semibold">
                   Çantanı bir yerde unutsan?
                 </h3>
-                <p className="mt-3 text-sm leading-6 text-neutral-600">
+                <p className="mt-3 text-sm leading-6 text-neutral-300">
                   Dokuntag® sayesinde bulan kişi size hızlıca ulaşabilir.
                 </p>
               </div>
@@ -296,6 +314,7 @@ export default function HomePage() {
       </section>
 
       <section id="nasil-calisir" className="px-5 py-20 sm:px-8">
+        
         <div className="mx-auto grid max-w-7xl items-center gap-10 lg:grid-cols-2">
           <div className="overflow-hidden rounded-[2.5rem] border border-neutral-200 bg-white shadow-sm">
             <Image
@@ -318,6 +337,9 @@ export default function HomePage() {
               Dokuntag®, NFC ve QR teknolojisini kullanır. Bulan kişi etiketi
               okutur, güvenli profil açılır ve sizin izin verdiğiniz iletişim
               yollarıyla size ulaşır.
+            </p>
+            <p className="mt-3 text-sm text-neutral-500">
+              Dilerseniz tüm iletişim bilgilerinizi gizleyebilirsiniz. Bu durumda bulan kişi yalnızca mesaj bırakır. Daha hızlı ulaşım için en az bir iletişim seçeneğini açık bırakmanız önerilir.
             </p>
             <p className="mt-3 text-sm text-neutral-500">
               Tüm telefonlarda QR ile çalışır. Destekleyen cihazlarda NFC ile daha hızlı açılır.
@@ -426,7 +448,7 @@ export default function HomePage() {
             {useCases.map((item) => (
               <div
                 key={item.title}
-                className="overflow-hidden rounded-[2rem] border border-neutral-200 bg-white shadow-sm"
+                className="overflow-hidden rounded-[2rem] border border-neutral-200 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-md"
               >
                 <Image
                   src={item.image}
@@ -532,7 +554,7 @@ export default function HomePage() {
               <Link
                 key={item.href}
                 href={item.href}
-                className="rounded-[1.75rem] border border-neutral-200 bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+                className="rounded-[1.75rem] border border-neutral-200 bg-white p-6 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-md"
               >
                 <h3 className="text-lg font-semibold">{item.title}</h3>
                 <p className="mt-3 text-sm leading-6 text-neutral-600">

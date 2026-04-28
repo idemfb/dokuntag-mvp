@@ -35,6 +35,7 @@ type LayoutOverrides = {
   brandStyle: FontStyleOption;
   sloganStyle: FontStyleOption;
   codeStyle: FontStyleOption;
+  codeAlign: AlignOption;
   brandColor: string;
   sloganColor: string;
   codeColor: string;
@@ -238,6 +239,38 @@ function getBasePreset(size: SizeOption): LayoutPreset {
   };
 }
 
+function getPhysicalSizeMm(size: SizeOption) {
+  if (size === "2.5cm") return 25;
+  if (size === "4cm") return 40;
+  return 30;
+}
+
+function getQrSizePx({
+  basePx,
+  size,
+  qrScale,
+  outerSafePx = 0
+}: {
+  basePx: number;
+  size: SizeOption;
+  qrScale: number;
+  outerSafePx?: number;
+}) {
+  const physicalSizeMm = getPhysicalSizeMm(size);
+  const pxPerMm = 256 / physicalSizeMm;
+  const minPx = 10 * pxPerMm;
+  const maxPhysicalMm = Math.max(10, Math.min(35, physicalSizeMm - 4));
+  const maxPx = Math.min(maxPhysicalMm * pxPerMm, 256 - outerSafePx * 2 - 4);
+
+  return Math.round(clamp(basePx * (qrScale / 100), minPx, maxPx));
+}
+
+function getCodeXByAlign(align: AlignOption) {
+  if (align === "left") return 58;
+  if (align === "right") return 198;
+  return 128;
+}
+
 function readLayoutOverrides(searchParams: URLSearchParams, normalizedCode: string): LayoutOverrides {
   return {
     size: normalizeSize(searchParams.get("size")),
@@ -249,7 +282,7 @@ function readLayoutOverrides(searchParams: URLSearchParams, normalizedCode: stri
     brandScale: parsePercent(searchParams.get("brandScale"), 100, 40, 500),
     sloganScale: parsePercent(searchParams.get("sloganScale"), 100, 40, 500),
     codeScale: parsePercent(searchParams.get("codeScale"), 100, 40, 500),
-    qrScale: parsePercent(searchParams.get("qrScale"), 100, 85, 115),
+    qrScale: parsePercent(searchParams.get("qrScale"), 100, 35, 300),
     verticalBalance: parsePercent(searchParams.get("verticalBalance"), 100, 50, 150),
     horizontalBalance: parsePercent(searchParams.get("horizontalBalance"), 100, 50, 150),
     brandGap: parsePercent(searchParams.get("brandGap"), 100, 50, 220),
@@ -262,6 +295,7 @@ function readLayoutOverrides(searchParams: URLSearchParams, normalizedCode: stri
     brandStyle: normalizeStyle(searchParams.get("brandStyle"), "normal"),
     sloganStyle: normalizeStyle(searchParams.get("sloganStyle"), "italic"),
     codeStyle: normalizeStyle(searchParams.get("codeStyle"), "normal"),
+    codeAlign: normalizeAlign(searchParams.get("codeAlign"), "center"),
     brandColor: normalizeColor(searchParams.get("brandColor"), "#111111"),
     sloganColor: normalizeColor(searchParams.get("sloganColor"), "#111111"),
     codeColor: normalizeColor(searchParams.get("codeColor"), "#111111"),
@@ -319,7 +353,12 @@ function computeLayout(preset: LayoutPreset, overrides: LayoutOverrides) {
   const horizontalFactor = overrides.horizontalBalance / 100;
   const verticalFactor = overrides.verticalBalance / 100;
 
-  const qrSize = Math.round(preset.qrSize * (overrides.qrScale / 100));
+  const qrSize = getQrSizePx({
+    basePx: preset.qrSize,
+    size: overrides.size,
+    qrScale: overrides.qrScale,
+    outerSafePx
+  });
   const qrHalf = Math.round(qrSize / 2);
   const qrCenterX = clamp(
     Math.round(preset.qrCenterX + (horizontalFactor - 1) * 20),
@@ -341,7 +380,7 @@ function computeLayout(preset: LayoutPreset, overrides: LayoutOverrides) {
   const brandRequestedFont = Number((preset.brandFontSize * overrides.brandScale / 100).toFixed(2));
   const sloganRequestedFont = Number((preset.sloganFontSize * overrides.sloganScale / 100).toFixed(2));
   const codeRequestedFont = Number((preset.codeFontSize * overrides.codeScale / 100).toFixed(2));
-  const badgeRequestedFont = Number((5.3 * overrides.badgeScale / 100).toFixed(2));
+  const badgeRequestedFont = Number((8.5 * overrides.badgeScale / 100).toFixed(2));
 
   const availableTextWidth = 256 - (preset.outerPadding + outerSafePx + 10) * 2;
 
@@ -453,26 +492,7 @@ function getHoleMarkup(overrides: LayoutOverrides) {
   `;
 }
 
-function getBrandSymbol({
-  x,
-  y,
-  color,
-  scale = 1
-}: {
-  x: number;
-  y: number;
-  color: string;
-  scale?: number;
-}) {
-  const w1 = 24 * scale;
-  const w2 = 14 * scale;
-  const dy2 = 5 * scale;
 
-  return `
-    <path d="M${x - w1 / 2} ${y} C${x - w1 / 4} ${y - 5 * scale}, ${x + w1 / 4} ${y - 5 * scale}, ${x + w1 / 2} ${y}" fill="none" stroke="${color}" stroke-width="${2.1 * scale}" stroke-linecap="round" opacity="0.92" />
-    <path d="M${x - w2 / 2} ${y + dy2} C${x - w2 / 4} ${y + dy2 - 3 * scale}, ${x + w2 / 4} ${y + dy2 - 3 * scale}, ${x + w2 / 2} ${y + dy2}" fill="none" stroke="${color}" stroke-width="${1.9 * scale}" stroke-linecap="round" opacity="0.92" />
-  `;
-}
 
 function renderOptionalText({
   x,
@@ -552,13 +572,8 @@ function getDropTextLayout(overrides: LayoutOverrides, qrY: number, qrSize: numb
   sloganY = clamp(sloganY, brandY + 8, 299);
   codeY = clamp(codeY, brandY + 10, 309);
 
-  const codeAnchor = getTextAnchor(overrides.sloganAlign);
-  const codeX =
-    overrides.sloganAlign === "left"
-      ? 58
-      : overrides.sloganAlign === "right"
-        ? 198
-        : 128;
+  const codeAnchor = getTextAnchor(overrides.codeAlign);
+  const codeX = getCodeXByAlign(overrides.codeAlign);
 
   return {
     brandText,
@@ -604,10 +619,25 @@ async function buildTagQrSvg(code: string, overrides: LayoutOverrides) {
   const holeMarkup = getHoleMarkup(overrides);
 
   if (isDrop) {
-    const qrSize =
+    const baseQrSize =
       overrides.size === "2.5cm" ? 178 : overrides.size === "4cm" ? 198 : 188;
-    const qrX = Math.round((256 - qrSize) / 2);
-    const qrY = overrides.hasHole ? 69 : 48;
+    const qrSize = getQrSizePx({
+      basePx: baseQrSize,
+      size: overrides.size,
+      qrScale: overrides.qrScale,
+      outerSafePx: Math.round((overrides.outerSafe - 100) * 0.22)
+    });
+    const qrX = clamp(
+      Math.round((256 - qrSize) / 2 + (overrides.horizontalBalance - 100) * 0.22),
+      12,
+      244 - qrSize
+    );
+    const qrYBase = overrides.hasHole ? 69 : 48;
+    const qrY = clamp(
+      Math.round(qrYBase + (overrides.verticalBalance - 100) * 0.22),
+      overrides.hasHole ? 56 : 30,
+      230 - qrSize
+    );
     const textLayout = getDropTextLayout(overrides, qrY, qrSize);
 
     return `
@@ -628,13 +658,7 @@ async function buildTagQrSvg(code: string, overrides: LayoutOverrides) {
         ? `
     <text x="128" y="${textLayout.brandY}" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="${textLayout.brandFontSize}" font-weight="${overrides.brandWeight}" font-style="${overrides.brandStyle}" letter-spacing="0.55" fill="${overrides.brandColor}">${escapeXml(textLayout.brandText)}</text>
     <text x="${128 + textLayout.brandText.length * textLayout.brandFontSize * 0.31 + 3}" y="${textLayout.brandY - textLayout.brandFontSize * 0.52}" text-anchor="start" font-family="Arial, Helvetica, sans-serif" font-size="${clamp(textLayout.brandFontSize * 0.52, 4, 8)}" font-weight="800" fill="${overrides.brandColor}">®</text>
-    ${getBrandSymbol({
-      x: 128,
-      y: textLayout.symbolY,
-      color: overrides.brandColor,
-      scale: textLayout.symbolScale
-    })}
-        `
+            `
         : ""
     }
 
@@ -668,12 +692,29 @@ async function buildTagQrSvg(code: string, overrides: LayoutOverrides) {
   const brandText = overrides.brandText.trim();
   const sloganText = overrides.sloganText.trim();
   const codeText = overrides.codeText.trim() || code;
-  const qrSize = overrides.size === "2.5cm" ? 208 : overrides.size === "4cm" ? 220 : 214;
-  const qrX = Math.round((256 - qrSize) / 2);
-  const qrY = overrides.size === "2.5cm" ? 55 : 52;
-  const brandFontSize = overrides.size === "2.5cm" ? 16 : overrides.size === "4cm" ? 20 : 18;
-  const sloganFontSize = overrides.size === "2.5cm" ? 9.2 : overrides.size === "4cm" ? 11.5 : 10.2;
-  const codeFontSize = overrides.size === "2.5cm" ? 8.4 : overrides.size === "4cm" ? 10.6 : 9.3;
+  const baseQrSize = overrides.size === "2.5cm" ? 208 : overrides.size === "4cm" ? 220 : 214;
+  const qrSize = getQrSizePx({
+    basePx: baseQrSize,
+    size: overrides.size,
+    qrScale: overrides.qrScale,
+    outerSafePx: Math.round((overrides.outerSafe - 100) * 0.22)
+  });
+  const qrX = clamp(
+    Math.round((256 - qrSize) / 2 + (overrides.horizontalBalance - 100) * 0.22),
+    8,
+    248 - qrSize
+  );
+  const qrY = clamp(
+    Math.round((overrides.size === "2.5cm" ? 55 : 52) + (overrides.verticalBalance - 100) * 0.22),
+    36,
+    260 - qrSize
+  );
+  const baseBrandFontSize = overrides.size === "2.5cm" ? 16 : overrides.size === "4cm" ? 20 : 18;
+  const baseSloganFontSize = overrides.size === "2.5cm" ? 9.2 : overrides.size === "4cm" ? 11.5 : 10.2;
+  const baseCodeFontSize = overrides.size === "2.5cm" ? 8.4 : overrides.size === "4cm" ? 10.6 : 9.3;
+  const brandFontSize = clamp(baseBrandFontSize * (overrides.brandScale / 100), 7, 42);
+  const sloganFontSize = clamp(baseSloganFontSize * (overrides.sloganScale / 100), 5.5, 30);
+  const codeFontSize = clamp(baseCodeFontSize * (overrides.codeScale / 100), 5.5, 30);
   const brandY = 28;
 
   return `
@@ -690,7 +731,6 @@ async function buildTagQrSvg(code: string, overrides: LayoutOverrides) {
       brandText
         ? `
     <text x="128" y="${brandY}" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="${brandFontSize}" font-weight="800" letter-spacing="1.15" fill="${overrides.brandColor}">${escapeXml(brandText)}</text>
-    ${getBrandSymbol({ x: 128, y: brandY + 11, color: overrides.brandColor, scale: 1 })}
         `
         : ""
     }
@@ -843,11 +883,12 @@ export async function GET(request: Request, { params }: Params) {
     return new NextResponse(svg, {
       headers: {
         "Content-Type": "image/svg+xml; charset=utf-8",
+        "Content-Disposition": `attachment; filename="qr-${normalizedCode}-${overrides.size}.svg"`,
         "Cache-Control": "no-store"
       }
     });
   } catch (error) {
-    console.error("QR_GENERATE_ERROR", error);
-    return NextResponse.json({ error: "QR oluşturulamadı." }, { status: 500 });
+    console.error("QR_DOWNLOAD_ERROR", error);
+    return NextResponse.json({ error: "QR indirilemedi." }, { status: 500 });
   }
 }

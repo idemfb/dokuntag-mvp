@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 type SizeOption = "2.5cm" | "3cm" | "4cm";
 type ShapeOption = "round" | "square" | "drop";
@@ -582,15 +582,6 @@ export default function QrPage() {
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState<TabKey>("general");
   const [showGuide, setShowGuide] = useState(true);
-  const [dragMode, setDragMode] = useState<"qr" | "art" | null>(null);
-  const dragStartRef = useRef<{
-    x: number;
-    y: number;
-    horizontalBalance: number;
-    verticalBalance: number;
-    artX: number;
-    artY: number;
-  } | null>(null);
 
   useEffect(() => {
     const parts = window.location.pathname.split("/");
@@ -673,46 +664,6 @@ export default function QrPage() {
       };
     });
   };
-
-  function startDrag(event: React.PointerEvent<HTMLDivElement>, mode: "qr" | "art") {
-    event.currentTarget.setPointerCapture(event.pointerId);
-    setDragMode(mode);
-    dragStartRef.current = {
-      x: event.clientX,
-      y: event.clientY,
-      horizontalBalance: design.horizontalBalance,
-      verticalBalance: design.verticalBalance,
-      artX: artwork.x,
-      artY: artwork.y
-    };
-  }
-
-  function onDrag(event: React.PointerEvent<HTMLDivElement>) {
-    if (!dragMode || !dragStartRef.current) return;
-
-    const dx = event.clientX - dragStartRef.current.x;
-    const dy = event.clientY - dragStartRef.current.y;
-
-    if (dragMode === "qr") {
-      setDesign((prev) => ({
-        ...prev,
-        horizontalBalance: clamp(Math.round(dragStartRef.current!.horizontalBalance + dx / 4), 50, 150),
-        verticalBalance: clamp(Math.round(dragStartRef.current!.verticalBalance + dy / 4), 50, 150)
-      }));
-      return;
-    }
-
-    setArtwork((prev) => ({
-      ...prev,
-      x: clamp(Math.round(dragStartRef.current!.artX + dx), -160, 160),
-      y: clamp(Math.round(dragStartRef.current!.artY + dy), -160, 160)
-    }));
-  }
-
-  function endDrag() {
-    setDragMode(null);
-    dragStartRef.current = null;
-  }
 
   async function copyLink() {
     try {
@@ -1008,13 +959,7 @@ export default function QrPage() {
               shape={design.shape}
               showGuide={showGuide}
             >
-              <div
-                className="absolute inset-0 cursor-move select-none"
-                onPointerDown={(e) => startDrag(e, "qr")}
-                onPointerMove={onDrag}
-                onPointerUp={endDrag}
-                onPointerCancel={endDrag}
-              >
+              <div className="absolute inset-0 select-none">
                 <img
                   src={qrImageUrl}
                   alt={`${code} QR`}
@@ -1035,13 +980,7 @@ export default function QrPage() {
                 style={{ clipPath: getShapeClip(design.shape) }}
               >
                 {artwork.imageUrl ? (
-                  <div
-                    className="absolute inset-0 cursor-move select-none"
-                    onPointerDown={(e) => startDrag(e, "art")}
-                    onPointerMove={onDrag}
-                    onPointerUp={endDrag}
-                    onPointerCancel={endDrag}
-                  >
+                  <div className="absolute inset-0 select-none">
                     <img
                       src={artwork.imageUrl}
                       alt="Arka yüz görseli"

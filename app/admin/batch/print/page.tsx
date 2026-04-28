@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 
 type PrintPageSize = "A4" | "A3" | "custom";
 type Orientation = "portrait" | "landscape";
+type PrintSideMode = "qr" | "back" | "both";
 type ShapeOption = "round" | "square" | "drop";
 type DesignType = "standard" | "tag" | "card" | "vehicle" | "business";
 
@@ -122,6 +123,26 @@ function padPage<T>(items: T[], size: number): Array<T | null> {
   return next;
 }
 
+
+type PrintEntry = {
+  item: BatchItem;
+  side: "qr" | "back";
+};
+
+function buildPrintEntries(items: BatchItem[], sideMode: PrintSideMode): PrintEntry[] {
+  if (sideMode === "both") {
+    return items.flatMap((item) => [
+      { item, side: "qr" as const },
+      { item, side: "back" as const }
+    ]);
+  }
+
+  return items.map((item) => ({
+    item,
+    side: sideMode === "back" ? "back" : "qr"
+  }));
+}
+
 function getItemSizeMm(design: DesignState | null) {
   if (!design) return 30;
   if (design.size === "2.5cm") return 25;
@@ -149,6 +170,7 @@ export default function BatchPrintPage() {
   const [gapMm, setGapMm] = useState(4);
   const [marginMm, setMarginMm] = useState(8);
   const [showCutMarks, setShowCutMarks] = useState(true);
+  const [printSideMode, setPrintSideMode] = useState<PrintSideMode>("both");
   const [customWidth, setCustomWidth] = useState(420);
   const [customHeight, setCustomHeight] = useState(297);
   const [previewLimit, setPreviewLimit] = useState(120);
@@ -250,7 +272,14 @@ export default function BatchPrintPage() {
     };
   }, [showCutMarks, pageDims.width, pageDims.height, marginMm, itemSizeMm, gapMm]);
 
-  const previewItems = useMemo(() => items.slice(0, previewLimit), [items, previewLimit]);
+  const printEntries = useMemo(
+    () => buildPrintEntries(items, printSideMode),
+    [items, printSideMode]
+  );
+  const previewItems = useMemo(
+    () => printEntries.slice(0, previewLimit),
+    [printEntries, previewLimit]
+  );
   const previewPagesRaw = useMemo(
     () => chunkItems(previewItems, layout.perPage),
     [previewItems, layout.perPage]
@@ -260,7 +289,7 @@ export default function BatchPrintPage() {
     [previewPagesRaw, layout.perPage]
   );
 
-  const totalPages = Math.max(1, Math.ceil(items.length / layout.perPage));
+  const totalPages = Math.max(1, Math.ceil(printEntries.length / layout.perPage));
   const previewPageCount = previewPages.length;
 
   const pageStyle = {
@@ -472,11 +501,24 @@ export default function BatchPrintPage() {
               ) : null}
 
               <label className="rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3">
+                <span className="text-xs font-medium text-neutral-600">Baskı yüzü</span>
+                <select
+                  value={printSideMode}
+                  onChange={(e) => setPrintSideMode(e.target.value as PrintSideMode)}
+                  className="mt-2 w-full rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm"
+                >
+                  <option value="both">Ön + Arka</option>
+                  <option value="qr">Sadece QR yüzü</option>
+                  <option value="back">Sadece arka yüz</option>
+                </select>
+              </label>
+
+              <label className="rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3">
                 <span className="text-xs font-medium text-neutral-600">Önizleme adedi</span>
                 <input
                   type="number"
                   min={1}
-                  max={Math.max(items.length, 1)}
+                  max={Math.max(printEntries.length, 1)}
                   value={previewLimit}
                   onChange={(e) => setPreviewLimit(Math.max(1, Number(e.target.value) || 1))}
                   className="mt-2 w-full rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm"
@@ -501,6 +543,8 @@ export default function BatchPrintPage() {
             <span>Sayfa başına: <strong>{layout.perPage}</strong></span>
             <span>Grid genişliği: <strong>{layout.gridWidth} mm</strong></span>
             <span>Grid yüksekliği: <strong>{layout.gridHeight} mm</strong></span>
+            <span>Yüz modu: <strong>{printSideMode === "both" ? "Ön + Arka" : printSideMode === "qr" ? "QR" : "Arka"}</strong></span>
+            <span>Toplam yüz: <strong>{printEntries.length}</strong></span>
             <span>Toplam baskı sayfası: <strong>{totalPages}</strong></span>
             <span>Önizleme sayfası: <strong>{previewPageCount}</strong></span>
           </div>
@@ -577,12 +621,13 @@ export default function BatchPrintPage() {
                           return <div key={`empty-${pageIndex}-${cellIndex}`} />;
                         }
 
-                        const effectiveCode = item.code || "";
+                        const effectiveCode = item.item.code || "";
+                        const sideLabel = item.side === "qr" ? "ÖN / QR" : "ARKA / GÖRSEL";
                         const imageUrl = `${baseUrl}/api/qr/${effectiveCode}?${designQuery}`;
 
                         return (
                           <div
-                            key={`${effectiveCode}-${cellIndex}`}
+                            key={`${effectiveCode}-${item.side}-${cellIndex}`}
                             className="relative flex items-center justify-center"
                             style={{
                               width: `${layout.cellSize}mm`,
@@ -603,13 +648,24 @@ export default function BatchPrintPage() {
                             ) : null}
 
                             <div
-                              className="flex items-center justify-center"
+                              className="relative flex items-center justify-center overflow-hidden bg-white"
                               style={{
                                 width: `${itemSizeMm}mm`,
                                 height: `${itemSizeMm}mm`
                               }}
                             >
-                              <img src={imageUrl} alt={effectiveCode} className="block h-full w-full" />
+                              {item.side === "qr" ? (
+                                <img src={imageUrl} alt={effectiveCode} className="block h-full w-full" />
+                              ) : (
+                                <div className="flex h-full w-full flex-col items-center justify-center rounded-[24%] border border-dashed border-neutral-300 bg-neutral-50 px-2 text-center text-[8px] leading-tight text-neutral-500">
+                                  <span>Arka görsel yüzü</span>
+                                  <span>{effectiveCode}</span>
+                                </div>
+                              )}
+
+                              <span className="absolute left-1 top-1 rounded bg-white/90 px-1 py-0.5 text-[6px] font-semibold text-neutral-500">
+                                {sideLabel}
+                              </span>
                             </div>
                           </div>
                         );

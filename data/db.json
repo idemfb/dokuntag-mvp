@@ -1604,6 +1604,63 @@
       "showAddressDetail": false,
       "showPetName": true,
       "showNote": false
+    },
+    {
+      "publicCode": "8DWJDF",
+      "manageToken": "db686d20-a5b6-4a97-931d-545bdaf6d4a4",
+      "productType": "item",
+      "productSubtype": "",
+      "name": "8DWJDF",
+      "ownerName": "",
+      "phone": "",
+      "email": "",
+      "city": "",
+      "addressDetail": "",
+      "distinctiveFeature": "",
+      "petName": "8DWJDF",
+      "note": "",
+      "alerts": [],
+      "allowDirectCall": false,
+      "allowDirectWhatsapp": false,
+      "status": "unclaimed",
+      "createdAt": "2026-04-28T08:09:59.856Z",
+      "updatedAt": "2026-04-28T08:09:59.856Z",
+      "recovery": {
+        "phone": "",
+        "email": ""
+      },
+      "visibility": {
+        "showName": true,
+        "showPhone": false,
+        "showEmail": false,
+        "showCity": false,
+        "showAddressDetail": false,
+        "showPetName": true,
+        "showNote": false
+      },
+      "profile": {
+        "name": "8DWJDF",
+        "ownerName": "",
+        "phone": "",
+        "email": "",
+        "city": "",
+        "addressDetail": "",
+        "distinctiveFeature": "",
+        "petName": "8DWJDF",
+        "note": "",
+        "tagName": "8DWJDF"
+      },
+      "contactOptions": {
+        "allowDirectCall": false,
+        "allowDirectWhatsapp": false
+      },
+      "showName": true,
+      "showPhone": false,
+      "showEmail": false,
+      "showCity": false,
+      "showAddressDetail": false,
+      "showPetName": true,
+      "showNote": false
     }
   ]
 }

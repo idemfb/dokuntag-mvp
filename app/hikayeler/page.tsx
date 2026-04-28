@@ -27,9 +27,9 @@ export const metadata: Metadata = {
 
 const stories = [
   {
-    title: "Kaybolan anahtar geri geldi",
-    text: "Ali anahtarını bir kafede unuttu. Masayı temizleyen kişi anahtardaki Dokuntag® etiketini fark etti. QR kodu okuttu ve Ali’ye ulaştı. Aynı gün içinde anahtar geri teslim edildi.",
-    image: "/images/lost-key.jpg",
+    title: "Birine ulaşmak hayat kurtarabilir",
+    text: "Kalabalıkta yalnız kalan bir bireyin çantasındaki Dokuntag® etiketi sayesinde yakınına ulaşıldı. Doğru bilgi, doğru kişiye ulaştı.",
+    image: "/images/relief-phone.jpg",
   },
   {
     title: "Evcil hayvanına saatler içinde ulaştı",
@@ -37,15 +37,17 @@ const stories = [
     image: "/images/pet-tag.jpg",
   },
   {
+    title: "Kaybolan anahtar geri geldi",
+    text: "Ali anahtarını bir kafede unuttu. Masayı temizleyen kişi anahtardaki Dokuntag® etiketini fark etti. QR kodu okuttu ve Ali’ye ulaştı. Aynı gün içinde anahtar geri teslim edildi.",
+    image: "/images/lost-key.jpg",
+  },
+  
+  {
     title: "Çanta unutuldu ama kaybolmadı",
     text: "Ayşe çantasını bir takside unuttu. Şoför çantadaki etiketi fark etti ve QR ile iletişim kurdu. Çanta ertesi gün sahibine ulaştı.",
     image: "/images/bag-tag.jpg",
   },
-  {
-    title: "Birine ulaşmak hayat kurtarabilir",
-    text: "Kalabalıkta yalnız kalan bir bireyin çantasındaki Dokuntag® etiketi sayesinde yakınına ulaşıldı. Doğru bilgi, doğru kişiye ulaştı.",
-    image: "/images/relief-phone.jpg",
-  },
+ 
 ];
 
 export default function StoriesPage() {

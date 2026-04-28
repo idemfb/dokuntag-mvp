@@ -60,7 +60,7 @@ function getMainSiteUrl() {
 }
 
 function buildPrintText(items: BatchItem[]) {
-  return items.map((item) => `${item.code} | ${item.label}`).join("\n");
+  return items.map((item) => `${item.code} | ${item.label} | ${item.setupLink}`).join("\n");
 }
 
 function buildOpsText(items: BatchItem[]) {
@@ -134,6 +134,8 @@ export default function AdminBatchPage() {
 
   const [count, setCount] = useState("20");
   const [labelTemplate, setLabelTemplate] = useState("Dokuntag");
+  const [existingCode, setExistingCode] = useState("");
+  const [customCode, setCustomCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [zipLoading, setZipLoading] = useState(false);
   const [printLoading, setPrintLoading] = useState(false);
@@ -162,6 +164,95 @@ export default function AdminBatchPage() {
   const printText = useMemo(() => buildPrintText(items), [items]);
   const opsText = useMemo(() => buildOpsText(items), [items]);
   const fullText = useMemo(() => buildFullText(items), [items]);
+
+
+  function normalizeAdminCode(value: string) {
+    return value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 10);
+  }
+
+  function makeItemFromExistingCode(rawCode: string): BatchItem | null {
+    const normalizedCode = normalizeAdminCode(rawCode);
+    if (!normalizedCode) return null;
+
+    const designQuery = new URLSearchParams();
+    Object.entries(design).forEach(([key, value]) => {
+      if (value === undefined || value === null || value === "") return;
+      designQuery.set(key, String(value));
+    });
+
+    const query = designQuery.toString() ? `?${designQuery.toString()}` : "";
+    const baseUrl = window.location.origin;
+
+    return {
+      code: normalizedCode,
+      label: normalizedCode,
+      setupLink: `${baseUrl}/t/${normalizedCode}`,
+      qrPageLink: `${baseUrl}/qr/${normalizedCode}${query}`,
+      qrDownloadLink: `${baseUrl}/api/qr-download/${normalizedCode}${query}`
+    };
+  }
+
+  function addExistingCodeToList() {
+    const nextItem = makeItemFromExistingCode(existingCode);
+    if (!nextItem) {
+      setError("Kod girin.");
+      return;
+    }
+
+    setItems((prev) => {
+      const filtered = prev.filter((item) => item.code !== nextItem.code);
+      const nextItems = [nextItem, ...filtered];
+      try {
+        window.localStorage.setItem("dokuntag_batch_items", JSON.stringify(nextItems));
+      } catch {}
+      return nextItems;
+    });
+    setExistingCode(nextItem.code);
+    setError("");
+  }
+
+  async function handleGenerateCustomCode() {
+    try {
+      setLoading(true);
+      setError("");
+
+      const normalizedCode = normalizeAdminCode(customCode);
+      if (normalizedCode.length < 3 || normalizedCode.length > 10) {
+        throw new Error("Özel kod 3-10 karakter arası olmalı ve sadece A-Z / 0-9 içermelidir.");
+      }
+
+      const res = await fetch("/api/admin/generate-batch", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          customCode: normalizedCode,
+          labelTemplate,
+          design
+        })
+      });
+
+      const data = (await res.json()) as {
+        error?: string;
+        items?: BatchItem[];
+      };
+
+      if (!res.ok) {
+        throw new Error(data?.error || "Özel kod üretilemedi.");
+      }
+
+      const nextItems = Array.isArray(data.items) ? data.items : [];
+      setItems(nextItems);
+      try {
+        window.localStorage.setItem("dokuntag_batch_items", JSON.stringify(nextItems));
+      } catch {}
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Özel kod üretilemedi.");
+    } finally {
+      setLoading(false);
+    }
+  }
 
   async function handleGenerate(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -210,6 +301,43 @@ export default function AdminBatchPage() {
   async function copyText(value: string) {
     if (!value) return;
     await navigator.clipboard.writeText(value);
+  }
+
+  function escapeCsvCell(value: string) {
+    const text = String(value || "");
+    return `"${text.replace(/"/g, '""')}"`;
+  }
+
+  function downloadExcelCsv() {
+    if (!items.length) return;
+
+    const headers = ["Kod", "Etiket", "NFC Link", "QR Sayfası", "QR İndir"];
+    const rows = items.map((item) => [
+      item.code,
+      item.label,
+      item.setupLink,
+      item.qrPageLink,
+      item.qrDownloadLink
+    ]);
+
+    const csv = [headers, ...rows]
+      .map((row) => row.map((cell) => escapeCsvCell(cell)).join(";"))
+      .join("\n");
+
+    const blob = new Blob([`\ufeff${csv}`], {
+      type: "text/csv;charset=utf-8"
+    });
+
+    const url = window.URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+
+    anchor.href = url;
+    anchor.download = `dokuntag-batch-${items.length}.csv`;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+
+    window.URL.revokeObjectURL(url);
   }
 
   async function downloadZip() {
@@ -435,6 +563,16 @@ export default function AdminBatchPage() {
                   Tam listeyi kopyala
                 </button>
 
+
+                <button
+                  type="button"
+                  onClick={downloadExcelCsv}
+                  disabled={!items.length}
+                  className="rounded-2xl border border-neutral-300 bg-white px-5 py-3 text-sm font-medium transition hover:border-neutral-400 hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  Excel / CSV indir
+                </button>
+
                 <button
                   type="button"
                   onClick={downloadZip}
@@ -454,6 +592,53 @@ export default function AdminBatchPage() {
                 </button>
               </div>
             </form>
+
+            <div className="mt-5 grid gap-3 rounded-[1.5rem] border border-neutral-200 bg-neutral-50 p-4 md:grid-cols-2">
+              <div>
+                <p className="text-sm font-semibold text-neutral-900">Mevcut QR kodu tekrar hazırla</p>
+                <p className="mt-1 text-xs leading-5 text-neutral-500">
+                  Daha önce oluşturulmuş bir kodu yeniden baskı listesine ekler. NFC linki yine /t/KOD olur.
+                </p>
+                <div className="mt-3 flex gap-2">
+                  <input
+                    value={existingCode}
+                    onChange={(e) => setExistingCode(normalizeAdminCode(e.target.value))}
+                    className="min-w-0 flex-1 rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-neutral-500"
+                    placeholder="Örn. FCMYLK"
+                  />
+                  <button
+                    type="button"
+                    onClick={addExistingCodeToList}
+                    className="rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm font-medium transition hover:border-neutral-400 hover:bg-white"
+                  >
+                    Listeye ekle
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <p className="text-sm font-semibold text-neutral-900">Özel kod üret</p>
+                <p className="mt-1 text-xs leading-5 text-neutral-500">
+                  Premium özel sipariş için 3-10 karakter A-Z / 0-9 kod üretir. Aynısı varsa izin verilmez.
+                </p>
+                <div className="mt-3 flex gap-2">
+                  <input
+                    value={customCode}
+                    onChange={(e) => setCustomCode(normalizeAdminCode(e.target.value))}
+                    className="min-w-0 flex-1 rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-neutral-500"
+                    placeholder="Örn. IBRAHIM"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleGenerateCustomCode}
+                    disabled={loading}
+                    className="rounded-2xl border border-neutral-900 bg-neutral-900 px-4 py-3 text-sm font-medium text-white transition hover:bg-neutral-800 disabled:opacity-60"
+                  >
+                    Özel üret
+                  </button>
+                </div>
+              </div>
+            </div>
 
             {error ? (
               <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-4 text-sm text-red-800">
@@ -697,7 +882,7 @@ export default function AdminBatchPage() {
               <div className="border-b border-neutral-200 px-6 py-5">
                 <h2 className="text-lg font-semibold">Baskı listesi</h2>
                 <p className="mt-1 text-sm text-neutral-600">
-                  Matbaa veya üretim için en sade çıktı.
+                  Matbaa ve NFC yazımı için sade çıktı. Satır sonunda NFC linki bulunur.
                 </p>
               </div>
 

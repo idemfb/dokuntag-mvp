@@ -1,3 +1,4 @@
+import LeadForm from "../components/LeadForm";
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
@@ -5,21 +6,21 @@ import Link from "next/link";
 export const metadata: Metadata = {
   title: "Dokuntag® One Ön Sipariş",
   description:
-    "Dokuntag® One, NFC ve QR ile çalışan güvenli kayıp buluşturma etiketidir. Birey, evcil hayvan, anahtar ve eşyalar için ön sipariş bilgisi alın.",
+    "Dokuntag® One, NFC ve QR ile çalışan güvenli kayıp buluşturma etiketidir. Birey, evcil hayvan, anahtar ve eşyalar için ilk üretim bilgisi alın.",
   alternates: {
     canonical: "/satis",
   },
   openGraph: {
     title: "Dokuntag® One Ön Sipariş",
     description:
-      "NFC ve QR destekli Dokuntag® One ile kaybolanı sahibine ulaştırın.",
+      "QR ve NFC destekli Dokuntag® One ile kaybolanı sahibine ulaştırın.",
     url: "https://dokuntag.com/satis",
     images: [
       {
         url: "/images/product-key.jpg",
         width: 1200,
         height: 630,
-        alt: "Dokuntag One NFC anahtarlık",
+        alt: "Dokuntag One NFC ve QR anahtarlık",
       },
     ],
   },
@@ -27,7 +28,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Dokuntag® One Ön Sipariş",
     description:
-      "NFC ve QR destekli Dokuntag® One ile kaybolanı sahibine ulaştırın.",
+      "QR ve NFC destekli Dokuntag® One ile kaybolanı sahibine ulaştırın.",
     images: ["/images/product-key.jpg"],
   },
 };
@@ -35,26 +36,26 @@ export const metadata: Metadata = {
 const phoneDisplay = "0551 555 15 53";
 const phoneHref = "tel:+905515551553";
 const whatsappHref =
-  "https://wa.me/905515551553?text=Merhaba,%20Dokuntag%20One%20%C3%B6n%20sipari%C5%9F%20hakk%C4%B1nda%20bilgi%20almak%20istiyorum.";
+  "https://wa.me/905515551553?text=Merhaba,%20Dokuntag%20One%20ilk%20%C3%BCretim%20hakk%C4%B1nda%20bilgi%20almak%20istiyorum.";
 const emailHref =
-  "mailto:info@dokuntag.com?subject=Dokuntag%20One%20%C3%96n%20Sipari%C5%9F";
+  "mailto:info@dokuntag.com?subject=Dokuntag%20One%20%C4%B0lk%20%C3%9Cretim%20Bilgi";
 
 const packageItems = [
-  "NFC + QR destekli fiziksel Dokuntag® One",
-  "Birey, evcil hayvan, anahtar ve eşya kullanımı için uygun",
-  "Uygulama indirmeden çalışan herkese açık profil",
-  "Telefon, WhatsApp, e-posta ve not alanı kontrolü",
-  "Dokuntag adres bilgisi istemez ve adres paylaşmanızı önermez",
+  "Tek seferlik fiziksel ürün",
   "Yıllık üyelik yok",
+  "Uygulama gerekmez",
+  "Tüm telefonlarda QR ile çalışır",
+  "Destekleyen cihazlarda NFC ile daha hızlı açılır",
+  "Bilgilerin görünürlüğünü siz belirlersiniz",
 ];
 
 const trustItems = [
-  "Adres paylaşmak zorunda değilsiniz",
+  "Adres bilgisi istemez",
+  "Adres paylaşmanızı önermez",
   "Telefon görünürlüğünü siz seçersiniz",
   "WhatsApp isteğe bağlıdır",
   "Bulan kişi uygulama indirmez",
-  "NFC ve QR güvenli profil akışına gider",
-  "Bilgiler ürün sahibi tarafından yönetilir",
+  "Profil bilgileri ürün sahibi tarafından yönetilir",
 ];
 
 const useCases = [
@@ -65,12 +66,12 @@ const useCases = [
   },
   {
     title: "Evcil hayvan",
-    text: "Tasmaya takıldığında bulan kişi sahibine hızlıca ulaşabilir.",
+    text: "Tasmaya takıldığında bulan kişinin sahibine hızlıca ulaşmasını sağlar.",
     image: "/images/pet-tag.jpg",
   },
   {
     title: "Anahtar",
-    text: "Kaybolduğunda bulan kişinin size ulaşması için güvenli bir yol oluşturur.",
+    text: "Kaybolduğunda açık adres paylaşmadan size ulaşılmasına yardımcı olur.",
     image: "/images/lost-key.jpg",
   },
   {
@@ -84,7 +85,7 @@ const faqItems = [
   {
     question: "Dokuntag® One nedir?",
     answer:
-      "Dokuntag® One, NFC ve QR ile çalışan fiziksel bir güven etiketidir. Bulan kişi etiketi okutarak sizin belirlediğiniz iletişim bilgilerine ulaşabilir.",
+      "Dokuntag® One, QR ve NFC ile çalışan fiziksel bir güven etiketidir. Bulan kişi etiketi okutarak sizin belirlediğiniz iletişim bilgilerine ulaşabilir.",
   },
   {
     question: "Yıllık üyelik var mı?",
@@ -92,9 +93,9 @@ const faqItems = [
       "Hayır. Dokuntag® One fiziksel ürün olarak üyeliksiz kullanılır.",
   },
   {
-    question: "Kurulum zor mu?",
+    question: "Bulan kişi uygulama indirmek zorunda mı?",
     answer:
-      "Hayır. Ürün kodu ile kurulum sayfasına girilir, temel bilgiler doldurulur ve profil dakikalar içinde aktif olur.",
+      "Hayır. QR okutulduğunda veya NFC ile dokundurulduğunda profil sayfası doğrudan tarayıcıda açılır.",
   },
   {
     question: "Telefon numaram herkese açık olur mu?",
@@ -107,14 +108,14 @@ const faqItems = [
       "Hayır. Dokuntag adres bilgisi istemez ve adres paylaşmanızı önermez.",
   },
   {
-    question: "Bulan kişi uygulama indirmek zorunda mı?",
+    question: "QR ve NFC aynı yere mi gider?",
     answer:
-      "Hayır. NFC veya QR okutulduğunda Dokuntag profil sayfası doğrudan tarayıcıda açılır.",
+      "Standart kullanımda QR ve NFC aynı güvenli Dokuntag profil akışına yönlenir.",
   },
   {
     question: "NFC farklı bir adrese tanımlanabilir mi?",
     answer:
-      "Standart kullanımda NFC ve QR aynı güvenli Dokuntag profil akışına yönlenir. Özel yönlendirme ihtiyaçları için bizimle iletişime geçebilirsiniz.",
+      "Özel yönlendirme ihtiyaçları için bizimle iletişime geçebilirsiniz.",
   },
 ];
 
@@ -133,9 +134,9 @@ export default function SalesPage() {
             </h1>
 
             <p className="mt-6 max-w-2xl text-lg leading-8 text-neutral-600">
-              Dokuntag® One, birey, evcil hayvan, anahtar ve eşyalar için NFC /
-              QR tabanlı güvenli buluşturma etiketidir. Bulan kişi size hızlıca
-              ulaşabilir; kontrol sizde kalır.
+              Bulan kişi QR okutur veya etikete dokundurur. Saniyeler içinde
+              size ulaşır; kontrol sizde kalır. Uygulama indirmeden, karmaşa
+              yaşamadan.
             </p>
 
             <div className="mt-8 rounded-[2rem] border border-neutral-200 bg-white p-6 shadow-sm">
@@ -145,11 +146,12 @@ export default function SalesPage() {
                     İlk üretim dönemi
                   </p>
                   <p className="mt-1 text-3xl font-semibold">
-                    Ön sipariş için bilgi alın
+                    İlk üretim için bilgi alın
                   </p>
+                  
                   <p className="mt-2 text-sm leading-6 text-neutral-500">
-                    Ürün modeli, kullanım alanı ve ilk üretim detayları için
-                    bizimle iletişime geçebilirsiniz.
+                    Sabit modeller, kullanım alanları ve üretim detayları için
+                    WhatsApp üzerinden hızlıca bilgi alabilirsiniz.
                   </p>
                 </div>
 
@@ -157,31 +159,35 @@ export default function SalesPage() {
                   href={whatsappHref}
                   target="_blank"
                   rel="noreferrer"
-                  className="rounded-full bg-neutral-950 px-7 py-4 text-center text-sm font-semibold text-white transition hover:bg-neutral-800"
+                  className="rounded-full bg-neutral-950 px-7 py-4 text-center text-sm font-semibold text-white transition hover:scale-[1.02] hover:bg-neutral-800"
                 >
-                  Ön sipariş ver
+                  WhatsApp ile bilgi al
                 </a>
               </div>
             </div>
+            <LeadForm />
+            <p className="mt-4 text-sm text-neutral-500">
+              Tek seferlik fiziksel ürün · Yıllık ücret yok · Uygulama gerekmez
+            </p>
 
             <div className="mt-5 flex flex-col gap-3 sm:flex-row">
               <a
                 href={phoneHref}
-                className="rounded-full border border-neutral-300 bg-white/70 px-6 py-3 text-center text-sm font-semibold hover:bg-white"
+                className="rounded-full border border-neutral-300 bg-white/70 px-6 py-3 text-center text-sm font-semibold transition hover:bg-white"
               >
                 Ara: {phoneDisplay}
               </a>
 
               <a
                 href={emailHref}
-                className="rounded-full border border-neutral-300 bg-white/70 px-6 py-3 text-center text-sm font-semibold hover:bg-white"
+                className="rounded-full border border-neutral-300 bg-white/70 px-6 py-3 text-center text-sm font-semibold transition hover:bg-white"
               >
                 Mail gönder
               </a>
 
               <Link
                 href="/p/DKNTG"
-                className="rounded-full border border-neutral-300 bg-white/70 px-6 py-3 text-center text-sm font-semibold hover:bg-white"
+                className="rounded-full border border-neutral-300 bg-white/70 px-6 py-3 text-center text-sm font-semibold transition hover:bg-white"
               >
                 Demo profil
               </Link>
@@ -191,7 +197,7 @@ export default function SalesPage() {
           <div className="overflow-hidden rounded-[2.5rem] border border-white/50 bg-white shadow-sm">
             <Image
               src="/images/product-key.jpg"
-              alt="Dokuntag One NFC anahtarlık"
+              alt="Dokuntag One NFC ve QR anahtarlık"
               width={1200}
               height={1200}
               priority
@@ -201,7 +207,7 @@ export default function SalesPage() {
         </div>
       </section>
 
-      <section className="px-5 py-16 sm:px-8">
+      <section className="px-5 py-14 sm:px-8">
         <div className="mx-auto grid max-w-7xl gap-4 lg:grid-cols-3">
           <div className="rounded-[2rem] bg-neutral-950 p-7 text-white">
             <p className="text-sm font-semibold uppercase tracking-[0.18em] text-neutral-400">
@@ -237,7 +243,7 @@ export default function SalesPage() {
           <div className="overflow-hidden rounded-[2.5rem] border border-neutral-200 bg-white shadow-sm">
             <Image
               src="/images/nfc-touch.jpg"
-              alt="NFC okutma"
+              alt="QR okutma ve NFC dokundurma"
               width={1200}
               height={1200}
               className="h-[460px] w-full object-cover"
@@ -250,12 +256,18 @@ export default function SalesPage() {
             </p>
 
             <h2 className="mt-4 text-4xl font-semibold tracking-tight sm:text-5xl">
-              Bulan kişi dokunur, profil açılır.
+              Okutulur, profil açılır, size ulaşılır.
             </h2>
 
             <p className="mt-5 text-lg leading-8 text-neutral-600">
-              Dokuntag® One üzerindeki NFC veya QR kod okutulduğunda güvenli
-              profil sayfası açılır. Size ulaşma şekillerini siz belirlersiniz.
+              Dokuntag® One üzerindeki QR okutulduğunda veya NFC ile
+              dokundurulduğunda güvenli profil sayfası açılır. Size ulaşma
+              şekillerini siz belirlersiniz.
+            </p>
+
+            <p className="mt-3 text-sm text-neutral-500">
+              Tüm telefonlarda QR ile çalışır. Destekleyen cihazlarda NFC ile
+              daha hızlı açılır.
             </p>
 
             <div className="mt-8 grid gap-3 sm:grid-cols-2">
@@ -282,8 +294,8 @@ export default function SalesPage() {
               Öncelik can, sonra değer verdiğiniz her şey.
             </h2>
             <p className="mt-5 text-lg leading-8 text-neutral-600">
-              Birey, evcil hayvan, anahtar, çanta, laptop, valiz ve size özel
-              diğer kullanımlar için güvenli bir iletişim katmanı oluşturur.
+              Birey, evcil hayvan, anahtar, çanta, laptop, valiz ve güvenli
+              iletişim gerektiren farklı alanlar için kullanılabilir.
             </p>
           </div>
 
@@ -311,8 +323,8 @@ export default function SalesPage() {
           </div>
 
           <div className="mt-5 rounded-[2rem] border border-neutral-200 bg-white/70 p-5 text-sm leading-6 text-neutral-600">
-            Diğer kullanımlar: laptop, telefon, ekipman, valiz, bisiklet, araç
-            içi eşya ve güvenli iletişim gerektiren farklı alanlar.
+            Diğer kullanımlar: telefon, ekipman, valiz, bisiklet, araç içi eşya
+            ve güvenli iletişim gerektiren farklı alanlar.
           </div>
         </div>
       </section>
@@ -361,16 +373,21 @@ export default function SalesPage() {
       <section className="px-5 py-20 sm:px-8">
         <div className="mx-auto max-w-4xl rounded-[2.5rem] bg-white p-8 text-center shadow-sm sm:p-14">
           <p className="text-sm font-semibold uppercase tracking-[0.22em] text-neutral-500">
-            Ön sipariş
+            İlk üretim
           </p>
 
           <h2 className="mt-4 text-4xl font-semibold tracking-tight sm:text-5xl">
-            İlk üretim için bilgi alın.
+            Satın almadan önce bilgi alın.
           </h2>
 
           <p className="mx-auto mt-5 max-w-2xl text-neutral-600">
-            Dokuntag® One ilk üretim dönemi için iletişime geçebilirsiniz.
-            Mevcut sabit modeller ve kullanım alanları hakkında bilgi verelim.
+            İlk üretim dönemi için ürün modeli, kullanım alanı ve hazırlık
+            detaylarını birlikte netleştirelim.
+          </p>
+
+          <p className="mt-3 text-sm text-neutral-500">
+            Fiyat netleşmeden talep bırakabilir, ilk üretim hakkında bilgi
+            alabilirsiniz.
           </p>
 
           <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
@@ -378,7 +395,7 @@ export default function SalesPage() {
               href={whatsappHref}
               target="_blank"
               rel="noreferrer"
-              className="rounded-full bg-neutral-950 px-8 py-4 text-center text-sm font-semibold text-white transition hover:bg-neutral-800"
+              className="rounded-full bg-neutral-950 px-8 py-4 text-center text-sm font-semibold text-white transition hover:scale-[1.02] hover:bg-neutral-800"
             >
               WhatsApp ile bilgi al
             </a>

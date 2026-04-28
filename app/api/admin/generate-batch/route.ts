@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateUniqueCode } from "@/lib/code";
-import { upsertTagAsync } from "@/lib/tags";
+import { findTagByCodeAsync, upsertTagAsync } from "@/lib/tags";
 
 type BatchItem = {
   code: string;
@@ -27,6 +27,10 @@ function getBaseUrl(request: NextRequest) {
 
 function getString(value: unknown) {
   return typeof value === "string" ? value.trim() : "";
+}
+
+function normalizeSpecialCode(value: unknown) {
+  return getString(value).toUpperCase().replace(/[^A-Z0-9]/g, "");
 }
 
 function getSafeLabelTemplate(value: string) {
@@ -56,20 +60,95 @@ function buildDesignQuery(design?: DesignState) {
   return params.toString();
 }
 
+function buildItem({
+  baseUrl,
+  code,
+  label,
+  designQuery
+}: {
+  baseUrl: string;
+  code: string;
+  label: string;
+  designQuery: string;
+}): BatchItem {
+  const query = designQuery ? `?${designQuery}` : "";
+
+  return {
+    code,
+    label,
+    setupLink: `${baseUrl}/t/${code}`,
+    qrPageLink: `${baseUrl}/qr/${code}${query}`,
+    qrDownloadLink: `${baseUrl}/api/qr-download/${code}${query}`
+  };
+}
+
+async function createUnclaimedTag(code: string) {
+  await upsertTagAsync({
+    code,
+    productType: "item",
+    tagName: code,
+    petName: code,
+    status: "unclaimed",
+    visibility: {
+      showName: true,
+      showPhone: false,
+      showEmail: false,
+      showCity: false,
+      showAddressDetail: false,
+      showPetName: true,
+      showNote: false
+    }
+  });
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = (await request.json()) as {
       count?: number;
       labelTemplate?: string;
       design?: DesignState;
+      customCode?: string;
     };
 
+    const customCode = normalizeSpecialCode(body?.customCode);
     const count =
       typeof body?.count === "number" && Number.isFinite(body.count)
         ? Math.floor(body.count)
         : 0;
 
     const labelTemplate = getString(body?.labelTemplate);
+    const baseUrl = getBaseUrl(request);
+    const designQuery = buildDesignQuery(body.design);
+    const items: BatchItem[] = [];
+
+    if (customCode) {
+      if (customCode.length < 3 || customCode.length > 10) {
+        return NextResponse.json(
+          { error: "Özel kod 3-10 karakter arası olmalı ve sadece A-Z / 0-9 içermelidir." },
+          { status: 400 }
+        );
+      }
+
+      const existing = await findTagByCodeAsync(customCode);
+      if (existing) {
+        return NextResponse.json(
+          { error: "Bu özel kod zaten kullanılıyor. Farklı bir kod seçin." },
+          { status: 409 }
+        );
+      }
+
+      await createUnclaimedTag(customCode);
+      items.push(
+        buildItem({
+          baseUrl,
+          code: customCode,
+          label: labelTemplate ? getSafeLabelTemplate(labelTemplate) : customCode,
+          designQuery
+        })
+      );
+
+      return NextResponse.json({ success: true, count: items.length, items });
+    }
 
     if (!count || count < 1) {
       return NextResponse.json(
@@ -85,47 +164,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const baseUrl = getBaseUrl(request);
-    const items: BatchItem[] = [];
-    const designQuery = buildDesignQuery(body.design);
-
     for (let i = 0; i < count; i += 1) {
       const code = generateUniqueCode();
+      await createUnclaimedTag(code);
 
-      await upsertTagAsync({
-        code,
-        productType: "item",
-        tagName: code,
-        petName: code,
-        status: "unclaimed",
-        visibility: {
-          showName: true,
-          showPhone: false,
-          showEmail: false,
-          showCity: false,
-          showAddressDetail: false,
-          showPetName: true,
-          showNote: false
-        }
-      });
-
-      const label = buildLabel(labelTemplate, code, i);
-      const query = designQuery ? `?${designQuery}` : "";
-
-      items.push({
-        code,
-        label,
-        setupLink: `${baseUrl}/t/${code}`,
-        qrPageLink: `${baseUrl}/qr/${code}${query}`,
-        qrDownloadLink: `${baseUrl}/api/qr-download/${code}${query}`
-      });
+      items.push(
+        buildItem({
+          baseUrl,
+          code,
+          label: buildLabel(labelTemplate, code, i),
+          designQuery
+        })
+      );
     }
 
-    return NextResponse.json({
-      success: true,
-      count: items.length,
-      items
-    });
+    return NextResponse.json({ success: true, count: items.length, items });
   } catch (error) {
     console.error("GENERATE_BATCH_ERROR", error);
 

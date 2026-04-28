@@ -395,7 +395,8 @@ export default function PublicPage({
         const json: PublicApiResponse = await res.json();
 
         if (!res.ok || !json.success || !json.data) {
-          throw new Error(json.message || "Sayfa yüklenemedi.");
+          window.location.href = `/setup/${code}`;
+          return;
         }
         if (json.data.status === "unclaimed") {
           window.location.href = `/setup/${code}`;
