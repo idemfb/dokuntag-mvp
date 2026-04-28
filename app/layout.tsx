@@ -1,19 +1,8 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
 import AddToHomePrompt from "./components/AddToHomePrompt";
 import SiteFooter from "./components/SiteFooter";
 import SiteHeader from "./components/SiteHeader";
 import "./globals.css";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin-ext"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin-ext"],
-});
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://dokuntag.com"),
@@ -100,8 +89,7 @@ export default function RootLayout({
   return (
     <html
       lang="tr"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-    >
+className="antialiased"    >
       <body className="min-h-full flex flex-col bg-[#f7f5ef] text-[#171717]">
         <SiteHeader />
         <div className="flex-1">{children}</div>

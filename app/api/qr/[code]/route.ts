@@ -672,7 +672,43 @@ async function buildTagQrSvg(code: string, overrides: LayoutOverrides) {
   ${clipMarkup.background}
   <g clip-path="url(#shapeClip)">
     ${holeMarkup}
-    <svg viewBox="${viewBox}" x="${qrX}" y="${qrY}" width="${qrSize}" height="${qrSize}">${innerSvg}</svg>
+    <svg viewBox="${viewBox}" x="${qrX}" y="${qrY}" width="${qrSize}" height="${qrSize}">
+  ${innerSvg}
+  ${
+  overrides.showLogo
+    ? (() => {
+        const size = qrSize * (overrides.logoScale / 100);
+        const half = size / 2;
+        const centerX = qrX + qrSize / 2;
+        const centerY = qrY + qrSize / 2;
+
+        return `
+          <rect
+            x="${centerX - half}"
+            y="${centerY - half}"
+            width="${size}"
+            height="${size}"
+            rx="${size * 0.25}"
+            fill="#ffffff"
+          />
+
+          <text
+            x="${centerX}"
+            y="${centerY + 1}"
+            text-anchor="middle"
+            dominant-baseline="middle"
+            font-family="Arial"
+            font-size="${size * 0.55}"
+            font-weight="800"
+            fill="#000000"
+          >
+            ))
+          </text>
+        `;
+      })()
+    : ""
+}
+</svg>
 
     ${
       textLayout.brandText
@@ -756,7 +792,43 @@ async function buildTagQrSvg(code: string, overrides: LayoutOverrides) {
         `
         : ""
     }
-    <svg viewBox="${viewBox}" x="${qrX}" y="${qrY}" width="${qrSize}" height="${qrSize}">${innerSvg}</svg>
+    <svg viewBox="${viewBox}" x="${qrX}" y="${qrY}" width="${qrSize}" height="${qrSize}">
+  ${innerSvg}
+  ${
+  overrides.showLogo
+    ? (() => {
+        const size = qrSize * (overrides.logoScale / 100);
+        const half = size / 2;
+        const centerX = qrX + qrSize / 2;
+        const centerY = qrY + qrSize / 2;
+
+        return `
+          <rect
+            x="${centerX - half}"
+            y="${centerY - half}"
+            width="${size}"
+            height="${size}"
+            rx="${size * 0.25}"
+            fill="#ffffff"
+          />
+
+          <text
+            x="${centerX}"
+            y="${centerY + 1}"
+            text-anchor="middle"
+            dominant-baseline="middle"
+            font-family="Arial"
+            font-size="${size * 0.55}"
+            font-weight="800"
+            fill="#000000"
+          >
+            ))
+          </text>
+        `;
+      })()
+    : ""
+}
+</svg>
     ${renderOptionalText({
       x: 128,
       y: qrY + qrSize + 17,
@@ -854,38 +926,38 @@ async function buildQrSvg(code: string, overrides: LayoutOverrides) {
     }
 <svg viewBox="${viewBox}" x="${layout.qrX}" y="${layout.qrY}" width="${layout.qrSize}" height="${layout.qrSize}">
   ${innerSvg}
-
   ${
   overrides.showLogo
     ? (() => {
         const size = layout.qrSize * (overrides.logoScale / 100);
-      const half = size / 2;
-      const center = 128;
+        const half = size / 2;
+        const centerX = layout.qrX + layout.qrSize / 2;
+        const centerY = layout.qrY + layout.qrSize / 2;
 
-      return `
-        <rect
-          x="${center - half}"
-          y="${center - half}"
-          width="${size}"
-          height="${size}"
-          rx="${size * 0.25}"
-          fill="#ffffff"
-        />
+        return `
+          <rect
+            x="${centerX - half}"
+            y="${centerY - half}"
+            width="${size}"
+            height="${size}"
+            rx="${size * 0.25}"
+            fill="#ffffff"
+          />
 
-        <text
-          x="${center}"
-          y="${center + 1}"
-          text-anchor="middle"
-          dominant-baseline="middle"
-          font-family="Arial"
-          font-size="${size * 0.55}"
-          font-weight="800"
-          fill="#000000"
-        >
-          ))
-        </text>
-      `;
-          })()
+          <text
+            x="${centerX}"
+            y="${centerY + 1}"
+            text-anchor="middle"
+            dominant-baseline="middle"
+            font-family="Arial"
+            font-size="${size * 0.55}"
+            font-weight="800"
+            fill="#000000"
+          >
+            ))
+          </text>
+        `;
+      })()
     : ""
 }
 </svg>

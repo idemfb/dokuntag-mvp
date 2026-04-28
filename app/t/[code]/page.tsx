@@ -10,7 +10,7 @@ export default async function TagRedirectPage({ params }: PageProps) {
   const code = resolvedParams.code.trim().toUpperCase();
 
   if (!code) {
-    return <main className="p-10">Geçersiz etiket kodu.</main>;
+    redirect("/start");
   }
 
   let tag: Awaited<ReturnType<typeof findTagByCodeAsync>> = null;
@@ -19,11 +19,11 @@ export default async function TagRedirectPage({ params }: PageProps) {
     tag = await findTagByCodeAsync(code);
   } catch (error) {
     console.error("TAG_REDIRECT_PAGE_ERROR", error);
-    return <main className="p-10">Yönlendirme sırasında bir hata oluştu.</main>;
+    redirect(`/setup/${code}`);
   }
 
   if (!tag) {
-    return <main className="p-10">Etiket bulunamadı.</main>;
+    redirect(`/setup/${code}`);
   }
 
   if (tag.status === "unclaimed") {

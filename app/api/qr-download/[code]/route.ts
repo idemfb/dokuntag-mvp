@@ -20,6 +20,8 @@ type LayoutOverrides = {
   sloganText: string;
   codeText: string;
   hideCode: boolean;
+  showLogo: boolean;
+  logoScale: number;
   brandScale: number;
   sloganScale: number;
   codeScale: number;
@@ -289,6 +291,8 @@ function readLayoutOverrides(searchParams: URLSearchParams, normalizedCode: stri
     sloganText: normalizeText(searchParams.get("sloganText"), "", 28),
     codeText: resolvedCodeText,
     hideCode,
+    showLogo: normalizeBoolean(searchParams.get("showLogo"), true),
+    logoScale: parsePercent(searchParams.get("logoScale"), 18, 10, 30),
     brandScale: parsePercent(searchParams.get("brandScale"), 100, 40, 500),
     sloganScale: parsePercent(searchParams.get("sloganScale"), 100, 40, 500),
     codeScale: parsePercent(searchParams.get("codeScale"), 100, 40, 500),
@@ -669,7 +673,40 @@ async function buildTagQrSvg(code: string, overrides: LayoutOverrides) {
   ${clipMarkup.background}
   <g clip-path="url(#shapeClip)">
     ${holeMarkup}
-    <svg viewBox="${viewBox}" x="${qrX}" y="${qrY}" width="${qrSize}" height="${qrSize}">${innerSvg}</svg>
+    <svg viewBox="${viewBox}" x="${qrX}" y="${qrY}" width="${qrSize}" height="${qrSize}">
+  ${innerSvg}
+  ${
+    overrides.showLogo
+      ? (() => {
+          const size = qrSize * (overrides.logoScale / 100);
+          const half = size / 2;
+          const centerX = qrX + qrSize / 2;
+          const centerY = qrY + qrSize / 2;
+
+          return `
+            <rect
+              x="${centerX - half}"
+              y="${centerY - half}"
+              width="${size}"
+              height="${size}"
+              rx="${size * 0.25}"
+              fill="#ffffff"
+            />
+            <text
+              x="${centerX}"
+              y="${centerY + 1}"
+              text-anchor="middle"
+              dominant-baseline="middle"
+              font-family="Arial"
+              font-size="${size * 0.52}"
+              font-weight="800"
+              fill="#000000"
+            >•</text>
+          `;
+        })()
+      : ""
+  }
+</svg>
 
     ${
       textLayout.brandText
@@ -752,7 +789,43 @@ async function buildTagQrSvg(code: string, overrides: LayoutOverrides) {
         `
         : ""
     }
-    <svg viewBox="${viewBox}" x="${qrX}" y="${qrY}" width="${qrSize}" height="${qrSize}">${innerSvg}</svg>
+    <svg viewBox="${viewBox}" x="${qrX}" y="${qrY}" width="${qrSize}" height="${qrSize}">
+  ${innerSvg}
+  ${
+  overrides.showLogo
+    ? (() => {
+        const size = qrSize * (overrides.logoScale / 100);
+        const half = size / 2;
+        const centerX = qrX + qrSize / 2;
+        const centerY = qrY + qrSize / 2;
+
+        return `
+          <rect
+            x="${centerX - half}"
+            y="${centerY - half}"
+            width="${size}"
+            height="${size}"
+            rx="${size * 0.25}"
+            fill="#ffffff"
+          />
+
+          <text
+            x="${centerX}"
+            y="${centerY + 1}"
+            text-anchor="middle"
+            dominant-baseline="middle"
+            font-family="Arial"
+            font-size="${size * 0.55}"
+            font-weight="800"
+            fill="#000000"
+          >
+            ))
+          </text>
+        `;
+      })()
+    : ""
+}
+</svg>
     ${renderOptionalText({
       x: 128,
       y: qrY + qrSize + 17,

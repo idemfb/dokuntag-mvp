@@ -366,7 +366,7 @@ export default function PublicPage({
   const [data, setData] = useState<PublicProfile | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
-
+  const [redirecting, setRedirecting] = useState(false);
   const [senderName, setSenderName] = useState("");
   const [senderPhone, setSenderPhone] = useState("");
   const [senderEmail, setSenderEmail] = useState("");
@@ -384,37 +384,46 @@ export default function PublicPage({
     let cancelled = false;
 
     async function load() {
-      try {
-        setLoading(true);
-        setError("");
+  let redirectStarted = false;
 
-        const res = await fetch(`/api/public/${code}`, {
-          cache: "no-store"
-        });
+  try {
+    setLoading(true);
+    setError("");
 
-        const json: PublicApiResponse = await res.json();
+    const res = await fetch(`/api/public/${code}`, {
+      cache: "no-store",
+    });
 
-        if (!res.ok || !json.success || !json.data) {
-          window.location.href = `/setup/${code}`;
-          return;
-        }
-        if (json.data.status === "unclaimed") {
-          window.location.href = `/setup/${code}`;
-          return;
-        }
-        if (!cancelled) {
-          setData(json.data);
-        }
-      } catch (err) {
-        if (!cancelled) {
-          setError(err instanceof Error ? err.message : "Bir hata oluştu.");
-        }
-      } finally {
-        if (!cancelled) {
-          setLoading(false);
-        }
-      }
+    const json: PublicApiResponse = await res.json();
+
+    if (!res.ok || !json.success || !json.data) {
+      redirectStarted = true;
+      setRedirecting(true);
+      window.location.replace(`/setup/${code}`);
+      return;
     }
+
+    if (json.data.status === "unclaimed") {
+      redirectStarted = true;
+      setRedirecting(true);
+      window.location.replace(`/setup/${code}`);
+      return;
+    }
+
+    if (!cancelled) {
+      setData(json.data);
+    }
+  } catch (error) {
+    redirectStarted = true;
+    setRedirecting(true);
+    window.location.replace(`/setup/${code}`);
+    return;
+  } finally {
+    if (!cancelled && !redirectStarted) {
+      setLoading(false);
+    }
+  }
+}
 
     void load();
 
@@ -591,7 +600,7 @@ export default function PublicPage({
     return "E-posta";
   }, [showCallAction, showWhatsappAction, data?.productType]);
 
-  if (loading) {
+  if (loading || redirecting) {
     return (
       <main className="min-h-screen bg-neutral-100 px-4 py-8 text-neutral-900 sm:px-5 sm:py-10">
         <div className="mx-auto max-w-3xl rounded-[2rem] border border-neutral-200 bg-white px-6 py-8 shadow-sm">
@@ -606,7 +615,7 @@ export default function PublicPage({
       <main className="min-h-screen bg-neutral-100 px-4 py-8 text-neutral-900 sm:px-5 sm:py-10">
         <div className="mx-auto max-w-3xl rounded-[2rem] border border-red-200 bg-white px-6 py-8 shadow-sm">
           <p className="text-sm font-medium text-red-700">
-            {error || "Sayfa yüklenemedi."}
+            Kurulum sayfasına yönlendiriliyorsunuz...
           </p>
         </div>
       </main>

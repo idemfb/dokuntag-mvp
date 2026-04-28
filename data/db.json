@@ -1775,6 +1775,63 @@
       "showAddressDetail": false,
       "showPetName": true,
       "showNote": false
+    },
+    {
+      "publicCode": "6UK7D6",
+      "manageToken": "41ca9231-5c41-4c7a-9aa5-1a460efd0495",
+      "productType": "item",
+      "productSubtype": "",
+      "name": "6UK7D6",
+      "ownerName": "",
+      "phone": "",
+      "email": "",
+      "city": "",
+      "addressDetail": "",
+      "distinctiveFeature": "",
+      "petName": "6UK7D6",
+      "note": "",
+      "alerts": [],
+      "allowDirectCall": false,
+      "allowDirectWhatsapp": false,
+      "status": "unclaimed",
+      "createdAt": "2026-04-28T14:36:43.719Z",
+      "updatedAt": "2026-04-28T14:36:43.719Z",
+      "recovery": {
+        "phone": "",
+        "email": ""
+      },
+      "visibility": {
+        "showName": true,
+        "showPhone": false,
+        "showEmail": false,
+        "showCity": false,
+        "showAddressDetail": false,
+        "showPetName": true,
+        "showNote": false
+      },
+      "profile": {
+        "name": "6UK7D6",
+        "ownerName": "",
+        "phone": "",
+        "email": "",
+        "city": "",
+        "addressDetail": "",
+        "distinctiveFeature": "",
+        "petName": "6UK7D6",
+        "note": "",
+        "tagName": "6UK7D6"
+      },
+      "contactOptions": {
+        "allowDirectCall": false,
+        "allowDirectWhatsapp": false
+      },
+      "showName": true,
+      "showPhone": false,
+      "showEmail": false,
+      "showCity": false,
+      "showAddressDetail": false,
+      "showPetName": true,
+      "showNote": false
     }
   ]
 }
