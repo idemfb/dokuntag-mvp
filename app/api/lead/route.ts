@@ -37,7 +37,7 @@ export async function POST(req: Request) {
     const result = await resend.emails.send({
       from,
       to: "dokuntag@gmail.com",
-      subject: "Dokuntag İlk Üretim Talebi",
+      subject: "🔥 Yeni Talep (Dokuntag İlk Üretim)",
       html: `
         <h2>Yeni ilk üretim talebi</h2>
         <p><strong>E-posta:</strong> ${escapeHtml(email)}</p>

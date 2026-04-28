@@ -167,8 +167,18 @@ export default function AdminBatchPage() {
 
 
   function normalizeAdminCode(value: string) {
-    return value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 10);
-  }
+  return value
+    .toLocaleUpperCase("tr-TR")
+    .replace(/Ç/g, "C")
+    .replace(/Ğ/g, "G")
+    .replace(/İ/g, "I")
+    .replace(/I/g, "I")
+    .replace(/Ö/g, "O")
+    .replace(/Ş/g, "S")
+    .replace(/Ü/g, "U")
+    .replace(/[^A-Z0-9]/g, "")
+    .slice(0, 10);
+}
 
   function makeItemFromExistingCode(rawCode: string): BatchItem | null {
     const normalizedCode = normalizeAdminCode(rawCode);

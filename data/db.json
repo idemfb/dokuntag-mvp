@@ -1661,6 +1661,63 @@
       "showAddressDetail": false,
       "showPetName": true,
       "showNote": false
+    },
+    {
+      "publicCode": "AEC4NL",
+      "manageToken": "a863660b-2830-4857-b9ca-b5d909ba4477",
+      "productType": "item",
+      "productSubtype": "",
+      "name": "AEC4NL",
+      "ownerName": "",
+      "phone": "",
+      "email": "",
+      "city": "",
+      "addressDetail": "",
+      "distinctiveFeature": "",
+      "petName": "AEC4NL",
+      "note": "",
+      "alerts": [],
+      "allowDirectCall": false,
+      "allowDirectWhatsapp": false,
+      "status": "unclaimed",
+      "createdAt": "2026-04-28T13:04:47.050Z",
+      "updatedAt": "2026-04-28T13:04:47.050Z",
+      "recovery": {
+        "phone": "",
+        "email": ""
+      },
+      "visibility": {
+        "showName": true,
+        "showPhone": false,
+        "showEmail": false,
+        "showCity": false,
+        "showAddressDetail": false,
+        "showPetName": true,
+        "showNote": false
+      },
+      "profile": {
+        "name": "AEC4NL",
+        "ownerName": "",
+        "phone": "",
+        "email": "",
+        "city": "",
+        "addressDetail": "",
+        "distinctiveFeature": "",
+        "petName": "AEC4NL",
+        "note": "",
+        "tagName": "AEC4NL"
+      },
+      "contactOptions": {
+        "allowDirectCall": false,
+        "allowDirectWhatsapp": false
+      },
+      "showName": true,
+      "showPhone": false,
+      "showEmail": false,
+      "showCity": false,
+      "showAddressDetail": false,
+      "showPetName": true,
+      "showNote": false
     }
   ]
 }

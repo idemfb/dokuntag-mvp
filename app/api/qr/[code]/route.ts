@@ -19,6 +19,7 @@ type LayoutOverrides = {
   brandText: string;
   sloganText: string;
   codeText: string;
+  hideCode: boolean;
   brandScale: number;
   sloganScale: number;
   codeScale: number;
@@ -272,13 +273,22 @@ function getCodeXByAlign(align: AlignOption) {
 }
 
 function readLayoutOverrides(searchParams: URLSearchParams, normalizedCode: string): LayoutOverrides {
+  const hideCode = normalizeBoolean(searchParams.get("hideCode"), false);
+  const rawCodeText = searchParams.get("codeText");
+  const resolvedCodeText = hideCode
+    ? ""
+    : rawCodeText === "" || rawCodeText === null
+      ? normalizedCode
+      : normalizeText(rawCodeText, normalizedCode, 20);
+
   return {
     size: normalizeSize(searchParams.get("size")),
     shape: normalizeShape(searchParams.get("shape")),
     hasHole: normalizeBoolean(searchParams.get("hasHole"), true),
     brandText: normalizeText(searchParams.get("brandText"), "dokuntag", 24),
     sloganText: normalizeText(searchParams.get("sloganText"), "", 28),
-    codeText: normalizeText(searchParams.get("codeText"), normalizedCode, 20),
+    codeText: resolvedCodeText,
+    hideCode,
     brandScale: parsePercent(searchParams.get("brandScale"), 100, 40, 500),
     sloganScale: parsePercent(searchParams.get("sloganScale"), 100, 40, 500),
     codeScale: parsePercent(searchParams.get("codeScale"), 100, 40, 500),
@@ -537,7 +547,7 @@ function renderOptionalText({
 function getDropTextLayout(overrides: LayoutOverrides, qrY: number, qrSize: number) {
   const brandText = overrides.brandText.trim();
   const sloganText = overrides.sloganText.trim();
-  const codeText = overrides.codeText.trim();
+  const codeText = overrides.hideCode ? "" : overrides.codeText.trim();
 
   const brandFontSize = clamp(
     (overrides.size === "2.5cm" ? 9.8 : overrides.size === "4cm" ? 13 : 11.2) *
@@ -560,16 +570,24 @@ function getDropTextLayout(overrides: LayoutOverrides, qrY: number, qrSize: numb
     16
   );
 
-  const baseY = qrY + qrSize + 16;
-  const brandY = clamp(baseY, qrY + qrSize + 12, 284);
+  const textGapOffset = Math.round((overrides.codeInset - 100) * 0.55);
+  const minAfterQr = qrY + qrSize + codeFontSize + 5;
+  const baseY = qrY + qrSize + 13;
+  const brandY = clamp(baseY, qrY + qrSize + 10, 282);
   const symbolScale = clamp(brandFontSize / 12, 0.75, 1.35);
   const symbolY = brandY - brandFontSize + 3;
 
-  let sloganY = brandY + (sloganText ? sloganFontSize + 6 : 0);
-  let codeY = sloganText ? sloganY + codeFontSize + 7 : brandY + codeFontSize + 9;
+  let sloganY = brandText ? brandY + (sloganText ? sloganFontSize + 6 : 0) : qrY + qrSize + sloganFontSize + 7;
+  let codeY = brandText
+    ? sloganText
+      ? sloganY + codeFontSize + 7 + textGapOffset
+      : brandY + codeFontSize + 8 + textGapOffset
+    : sloganText
+      ? sloganY + codeFontSize + 7 + textGapOffset
+      : minAfterQr + textGapOffset;
 
-  sloganY = clamp(sloganY, brandY + 8, 299);
-  codeY = clamp(codeY, brandY + 10, 309);
+  sloganY = clamp(sloganY, qrY + qrSize + sloganFontSize + 5, 298);
+  codeY = clamp(codeY, minAfterQr, 309);
 
   const codeAnchor = getTextAnchor(overrides.codeAlign);
   const codeX = getCodeXByAlign(overrides.codeAlign);
@@ -691,7 +709,7 @@ async function buildTagQrSvg(code: string, overrides: LayoutOverrides) {
 
   const brandText = overrides.brandText.trim();
   const sloganText = overrides.sloganText.trim();
-  const codeText = overrides.codeText.trim() || code;
+  const codeText = overrides.hideCode ? "" : overrides.codeText.trim() || code;
   const baseQrSize = overrides.size === "2.5cm" ? 208 : overrides.size === "4cm" ? 220 : 214;
   const qrSize = getQrSizePx({
     basePx: baseQrSize,
@@ -787,7 +805,7 @@ async function buildQrSvg(code: string, overrides: LayoutOverrides) {
   const safeCode = escapeXml(code);
   const safeBrandText = overrides.brandText;
   const safeSloganText = overrides.sloganText;
-  const safeCodeText = overrides.codeText || code;
+  const safeCodeText = overrides.hideCode ? "" : overrides.codeText || code;
   const clipMarkup = getClipMarkup(overrides.shape, preset.viewBoxHeight);
   const holeMarkup = getHoleMarkup(overrides);
 
@@ -833,6 +851,26 @@ async function buildQrSvg(code: string, overrides: LayoutOverrides) {
 
     <svg viewBox="${viewBox}" x="${layout.qrX}" y="${layout.qrY}" width="${layout.qrSize}" height="${layout.qrSize}">
       ${innerSvg}
+      <rect
+  x="${layout.qrX + layout.qrSize / 2 - layout.qrSize * 0.09}"
+  y="${layout.qrY + layout.qrSize / 2 - layout.qrSize * 0.09}"
+  width="${layout.qrSize * 0.18}"
+  height="${layout.qrSize * 0.18}"
+  rx="${layout.qrSize * 0.04}"
+  fill="#ffffff"
+/>
+
+<text
+  x="${layout.qrX + layout.qrSize / 2}"
+  y="${layout.qrY + layout.qrSize / 2 + 2}"
+  text-anchor="middle"
+  font-family="Arial"
+  font-size="${layout.qrSize * 0.07}"
+  font-weight="800"
+  fill="#000000"
+>
+•
+</text>
     </svg>
 
     ${renderOptionalText({

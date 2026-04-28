@@ -17,6 +17,7 @@ type DesignState = {
   brandText: string;
   sloganText: string;
   codeText: string;
+  hideCode: boolean;
   brandScale: number;
   sloganScale: number;
   codeScale: number;
@@ -67,6 +68,7 @@ const DEFAULTS_BY_SIZE: Record<SizeOption, DesignState> = {
     brandText: "dokuntag",
     sloganText: "",
     codeText: "",
+    hideCode: false,
     brandScale: 100,
     sloganScale: 100,
     codeScale: 100,
@@ -101,6 +103,7 @@ const DEFAULTS_BY_SIZE: Record<SizeOption, DesignState> = {
     brandText: "dokuntag",
     sloganText: "",
     codeText: "",
+    hideCode: false,
     brandScale: 100,
     sloganScale: 100,
     codeScale: 100,
@@ -135,6 +138,7 @@ const DEFAULTS_BY_SIZE: Record<SizeOption, DesignState> = {
     brandText: "dokuntag",
     sloganText: "",
     codeText: "",
+    hideCode: false,
     brandScale: 110,
     sloganScale: 110,
     codeScale: 110,
@@ -243,6 +247,7 @@ function readStateFromUrl(params: URLSearchParams): DesignState {
     brandText: String(params.get("brandText") ?? defaults.brandText).slice(0, 24),
     sloganText: String(params.get("sloganText") ?? defaults.sloganText).slice(0, 28),
     codeText: String(params.get("codeText") ?? defaults.codeText).slice(0, 20),
+    hideCode: params.get("hideCode") === "true",
     brandScale: parsePercent(params.get("brandScale"), defaults.brandScale, 40, 500),
     sloganScale: parsePercent(params.get("sloganScale"), defaults.sloganScale, 40, 500),
     codeScale: parsePercent(params.get("codeScale"), defaults.codeScale, 40, 500),
@@ -285,6 +290,7 @@ function buildDesignQuery(state: DesignState) {
   params.set("brandText", state.brandText);
   params.set("sloganText", state.sloganText);
   params.set("codeText", state.codeText);
+  params.set("hideCode", state.hideCode ? "true" : "false");
   params.set("brandScale", String(state.brandScale));
   params.set("sloganScale", String(state.sloganScale));
   params.set("codeScale", String(state.codeScale));
@@ -878,16 +884,25 @@ export default function QrPage() {
 
             {activeTab === "qr" ? (
               <>
-                <SectionCard title="QR ayarı" description="Ön yüzde QR alanını sürükleyerek de konumlandırabilirsin.">
-                  <SliderField label="QR boyutu" value={design.qrScale} min={40} max={300} suffix="%" onChange={(v) => updateDesign("qrScale", v)} />
+                <SectionCard title="QR ayarı" description="QR konumu slider ile güvenli sınırlar içinde ayarlanır.">
+                  <SliderField label="QR boyutu" value={design.qrScale} min={35} max={300} suffix="%" onChange={(v) => updateDesign("qrScale", v)} />
                   <SliderField label="Yatay konum" value={design.horizontalBalance} min={50} max={150} onChange={(v) => updateDesign("horizontalBalance", v)} />
                   <SliderField label="Dikey konum" value={design.verticalBalance} min={50} max={150} onChange={(v) => updateDesign("verticalBalance", v)} />
                 </SectionCard>
 
-                <SectionCard title="Kod" description="Kararsızsan boş bırak. Kod zaten QR içinde var.">
-                  <TextField label="Kod metni" value={design.codeText} placeholder={code} onChange={(v) => updateDesign("codeText", v.slice(0, 20))} />
+                <SectionCard title="Kod" description="Kod varsayılan olarak görünür. Boş bırakırsan ürün kodu yazılır; sadece Kodu kaldır seçilirse gizlenir.">
+                  <label className="flex items-center gap-2 rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm font-medium text-neutral-800">
+                    <input
+                      type="checkbox"
+                      checked={design.hideCode}
+                      onChange={(e) => updateDesign("hideCode", e.target.checked)}
+                    />
+                    Kodu kaldır
+                  </label>
+                  <TextField label="Kod metni" value={design.codeText} placeholder={code} onChange={(v) => updateDesign("codeText", v.slice(0, 20).toUpperCase())} />
                   <ColorField label="Kod rengi" value={design.codeColor} onChange={(v) => updateDesign("codeColor", v)} />
                   <SliderField label="Kod boyutu" value={design.codeScale} min={40} max={500} suffix="%" onChange={(v) => updateScaledField("codeScale", v)} />
+                  <SliderField label="Kod yukarı/aşağı" value={design.codeInset} min={50} max={180} onChange={(v) => updateDesign("codeInset", v)} />
                   <SelectField label="Kod konumu" value={design.codeAlign} onChange={(v) => updateDesign("codeAlign", v as AlignOption)} options={[
                     { value: "left", label: "Sol" },
                     { value: "center", label: "Orta" },

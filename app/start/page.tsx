@@ -1,30 +1,24 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { FormEvent, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+
+function normalizeCode(value: string) {
+  return String(value || "")
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, "")
+    .slice(0, 10);
+}
 
 export default function StartPage() {
   const router = useRouter();
   const [code, setCode] = useState("");
 
-  const isValid = useMemo(() => code.length === 6, [code]);
-
-  function normalizeCode(value: string) {
-    return value
-      .toUpperCase()
-      .replace(/[^A-Z0-9]/g, "")
-      .slice(0, 6);
-  }
-
-  function handleChange(value: string) {
-    setCode(normalizeCode(value));
-  }
+  const isValid = useMemo(() => code.length >= 3 && code.length <= 10, [code]);
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-
     if (!isValid) return;
-
     router.push(`/t/${code}`);
   }
 
@@ -46,7 +40,7 @@ export default function StartPage() {
         <form onSubmit={handleSubmit} className="mt-8 space-y-4">
           <input
             value={code}
-            onChange={(event) => handleChange(event.target.value)}
+            onChange={(event) => setCode(normalizeCode(event.target.value))}
             placeholder="Ürün kodunu gir"
             inputMode="text"
             autoCapitalize="characters"
@@ -57,7 +51,7 @@ export default function StartPage() {
           <button
             type="submit"
             disabled={!isValid}
-            className="h-14 w-full rounded-2xl bg-neutral-950 text-sm font-semibold text-white transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40"
+            className="h-14 w-full rounded-2xl bg-neutral-950 text-sm font-semibold text-white transition hover:scale-[1.02] hover:bg-neutral-800 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40"
           >
             Devam et
           </button>

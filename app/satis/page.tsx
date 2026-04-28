@@ -165,7 +165,12 @@ export default function SalesPage() {
                 </a>
               </div>
             </div>
-            <LeadForm />
+            <p className="text-sm font-medium text-neutral-600 mb-2">
+  İlk üretim için haberdar olun
+</p>
+
+<LeadForm />
+            
             <p className="mt-4 text-sm text-neutral-500">
               Tek seferlik fiziksel ürün · Yıllık ücret yok · Uygulama gerekmez
             </p>
