@@ -16,11 +16,12 @@ const navItems = [
 
 export default function SiteHeader({ variant = "default" }: SiteHeaderProps) {
   const [open, setOpen] = useState(false);
-  const panelRef = useRef<HTMLDivElement | null>(null);
   const touchStartX = useRef<number | null>(null);
+  const touchStartY = useRef<number | null>(null);
 
   useEffect(() => {
     document.body.style.overflow = open ? "hidden" : "";
+
     return () => {
       document.body.style.overflow = "";
     };
@@ -29,25 +30,47 @@ export default function SiteHeader({ variant = "default" }: SiteHeaderProps) {
   useEffect(() => {
     function handleTouchStart(event: TouchEvent) {
       touchStartX.current = event.touches[0]?.clientX ?? null;
+      touchStartY.current = event.touches[0]?.clientY ?? null;
     }
 
     function handleTouchEnd(event: TouchEvent) {
-      if (!open) return;
-
       const startX = touchStartX.current;
+      const startY = touchStartY.current;
       const endX = event.changedTouches[0]?.clientX ?? null;
+      const endY = event.changedTouches[0]?.clientY ?? null;
 
-      if (startX === null || endX === null) return;
+      if (
+        startX === null ||
+        startY === null ||
+        endX === null ||
+        endY === null
+      ) {
+        return;
+      }
 
-      if (startX - endX > 60) {
+      const diffX = endX - startX;
+      const diffY = endY - startY;
+      const isHorizontalSwipe = Math.abs(diffX) > 70 && Math.abs(diffX) > Math.abs(diffY);
+
+      if (!isHorizontalSwipe) return;
+
+      const screenWidth = window.innerWidth;
+      const startedNearRightEdge = startX > screenWidth - 56;
+
+      if (!open && startedNearRightEdge && diffX < -70) {
+        setOpen(true);
+      }
+
+      if (open && diffX > 70) {
         setOpen(false);
       }
 
       touchStartX.current = null;
+      touchStartY.current = null;
     }
 
-    document.addEventListener("touchstart", handleTouchStart);
-    document.addEventListener("touchend", handleTouchEnd);
+    document.addEventListener("touchstart", handleTouchStart, { passive: true });
+    document.addEventListener("touchend", handleTouchEnd, { passive: true });
 
     return () => {
       document.removeEventListener("touchstart", handleTouchStart);
@@ -110,13 +133,10 @@ export default function SiteHeader({ variant = "default" }: SiteHeaderProps) {
             type="button"
             aria-label="Menüyü kapat"
             onClick={() => setOpen(false)}
-            className="fixed inset-0 z-[70] cursor-default bg-[#f7f3ea]/85 backdrop-blur-2xl"
+            className="fixed inset-0 z-[100] cursor-default bg-[#f7f3ea]/85 backdrop-blur-2xl"
           />
 
-          <div
-            ref={panelRef}
-            className="fixed right-0 top-0 z-[80] h-dvh w-[86%] max-w-sm border-l border-neutral-200 bg-[#f7f3ea] shadow-2xl"
-          >
+          <aside className="fixed right-0 top-0 z-[110] h-dvh w-[86%] max-w-sm border-l border-neutral-200 bg-[#f7f3ea] shadow-2xl">
             <div className="flex h-full flex-col p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -163,7 +183,7 @@ export default function SiteHeader({ variant = "default" }: SiteHeaderProps) {
                 Bir kere alırsın · Yıllık ücret yok · Uygulama gerekmez
               </p>
             </div>
-          </div>
+          </aside>
         </>
       ) : null}
     </header>
