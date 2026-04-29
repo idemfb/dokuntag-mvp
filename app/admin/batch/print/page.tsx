@@ -4,8 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 
 type PrintPageSize = "A4" | "A3" | "custom";
 type Orientation = "portrait" | "landscape";
-type PrintSideMode = "qr" | "back" | "both";
-type ShapeOption = "round" | "square" | "drop";
+type PrintSideMode = "qr" | "front" | "both";
+type ShapeOption = "round" | "square";
 type DesignType = "standard" | "tag" | "card" | "vehicle" | "business";
 
 type BatchItem = {
@@ -14,37 +14,20 @@ type BatchItem = {
 };
 
 type DesignState = {
-  size: "2.5cm" | "3cm" | "4cm";
+  size: "1cm" | "2cm" | "2.5cm" | "3cm" | "4cm" | "5cm" | "6cm";
   shape: ShapeOption;
-  hasHole: boolean;
-  brandText: string;
-  sloganText: string;
+  topText: string;
   codeText: string;
-  brandScale: number;
-  sloganScale: number;
-  codeScale: number;
+  hideCode: boolean;
   qrScale: number;
-  verticalBalance: number;
-  horizontalBalance: number;
-  brandGap: number;
-  sloganGap: number;
-  codeInset: number;
-  innerSafe: number;
-  outerSafe: number;
-  brandWeight: "500" | "600" | "700" | "800";
-  sloganWeight: "500" | "600" | "700" | "800";
-  brandStyle: "normal" | "italic";
-  sloganStyle: "normal" | "italic";
-  codeStyle: "normal" | "italic";
-  brandColor: string;
-  sloganColor: string;
-  codeColor: string;
-  brandAlign: "left" | "center" | "right";
-  sloganAlign: "left" | "center" | "right";
-  badgeScale: number;
-  badgeOffsetX: number;
-  badgeOffsetY: number;
-  lockTextAdjustments?: boolean;
+  codeScale?: number;
+  topGap: number;
+  codeGap: number;
+  qrOffsetY: number;
+  foregroundColor: string;
+  guideColor: string;
+  showGuide: boolean;
+  outputMode?: "qr" | "front" | "both";
 };
 
 type PageDims = {
@@ -126,27 +109,31 @@ function padPage<T>(items: T[], size: number): Array<T | null> {
 
 type PrintEntry = {
   item: BatchItem;
-  side: "qr" | "back";
+  side: "qr" | "front";
 };
 
 function buildPrintEntries(items: BatchItem[], sideMode: PrintSideMode): PrintEntry[] {
   if (sideMode === "both") {
     return items.flatMap((item) => [
       { item, side: "qr" as const },
-      { item, side: "back" as const }
+      { item, side: "front" as const }
     ]);
   }
 
   return items.map((item) => ({
     item,
-    side: sideMode === "back" ? "back" : "qr"
+    side: sideMode === "front" ? "front" : "qr"
   }));
 }
 
 function getItemSizeMm(design: DesignState | null) {
   if (!design) return 30;
+  if (design.size === "1cm") return 10;
+  if (design.size === "2cm") return 20;
   if (design.size === "2.5cm") return 25;
   if (design.size === "4cm") return 40;
+  if (design.size === "5cm") return 50;
+  if (design.size === "6cm") return 60;
   return 30;
 }
 
@@ -170,7 +157,7 @@ export default function BatchPrintPage() {
   const [gapMm, setGapMm] = useState(4);
   const [marginMm, setMarginMm] = useState(8);
   const [showCutMarks, setShowCutMarks] = useState(true);
-  const [printSideMode, setPrintSideMode] = useState<PrintSideMode>("both");
+  const [printSideMode, setPrintSideMode] = useState<PrintSideMode>("qr");
   const [customWidth, setCustomWidth] = useState(420);
   const [customHeight, setCustomHeight] = useState(297);
   const [previewLimit, setPreviewLimit] = useState(120);
@@ -181,6 +168,11 @@ export default function BatchPrintPage() {
     const dataRaw = params.get("data");
     const designRaw = params.get("design");
     const storageKey = params.get("storageKey");
+    const outputMode = params.get("outputMode");
+
+    if (outputMode === "front" || outputMode === "both" || outputMode === "qr") {
+      setPrintSideMode(outputMode);
+    }
 
     let loadedItems: BatchItem[] = [];
     let loadedDesign: DesignState | null = null;
@@ -387,6 +379,7 @@ export default function BatchPrintPage() {
             gapMm,
             marginMm,
             showCutMarks,
+            outputMode: printSideMode,
             fileName: `dokuntag-batch-${items.length}-${pageSize}`
           }
         })
@@ -402,7 +395,7 @@ export default function BatchPrintPage() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `dokuntag-batch-${items.length}.pdf`;
+      a.download = `dokuntag-batch-${items.length}-${printSideMode}.pdf`;
       a.click();
       URL.revokeObjectURL(url);
     } finally {
@@ -426,7 +419,7 @@ export default function BatchPrintPage() {
               <p className="text-xs uppercase tracking-[0.18em] text-neutral-400">Baskı üretimi</p>
               <h1 className="mt-2 text-3xl font-semibold tracking-tight">Toplu baskı görünümü</h1>
               <p className="mt-2 text-sm leading-6 text-neutral-600">
-                Önizleme, gerçek PDF ve SVG ZIP aynı sayfada. Burada gördüğün ayarla gerçek PDF alabilirsin.
+                Varsayılan olarak sadece QR yüzü açılır. Ön yüz veya çift yüz çıktıyı buradan seçebilirsin.
               </p>
             </div>
 
@@ -507,9 +500,9 @@ export default function BatchPrintPage() {
                   onChange={(e) => setPrintSideMode(e.target.value as PrintSideMode)}
                   className="mt-2 w-full rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm"
                 >
-                  <option value="both">Ön + Arka</option>
                   <option value="qr">Sadece QR yüzü</option>
-                  <option value="back">Sadece arka yüz</option>
+                  <option value="front">Sadece ön yüz</option>
+                  <option value="both">Ön + arka</option>
                 </select>
               </label>
 
@@ -543,7 +536,7 @@ export default function BatchPrintPage() {
             <span>Sayfa başına: <strong>{layout.perPage}</strong></span>
             <span>Grid genişliği: <strong>{layout.gridWidth} mm</strong></span>
             <span>Grid yüksekliği: <strong>{layout.gridHeight} mm</strong></span>
-            <span>Yüz modu: <strong>{printSideMode === "both" ? "Ön + Arka" : printSideMode === "qr" ? "QR" : "Arka"}</strong></span>
+            <span>Yüz modu: <strong>{printSideMode === "both" ? "Ön + Arka" : printSideMode === "front" ? "Ön yüz" : "QR"}</strong></span>
             <span>Toplam yüz: <strong>{printEntries.length}</strong></span>
             <span>Toplam baskı sayfası: <strong>{totalPages}</strong></span>
             <span>Önizleme sayfası: <strong>{previewPageCount}</strong></span>
@@ -622,7 +615,7 @@ export default function BatchPrintPage() {
                         }
 
                         const effectiveCode = item.item.code || "";
-                        const sideLabel = item.side === "qr" ? "ÖN / QR" : "ARKA / GÖRSEL";
+                        const sideLabel = item.side === "qr" ? "QR" : "ÖN";
                         const imageUrl = `${baseUrl}/api/qr/${effectiveCode}?${designQuery}`;
 
                         return (
@@ -658,7 +651,7 @@ export default function BatchPrintPage() {
                                 <img src={imageUrl} alt={effectiveCode} className="block h-full w-full" />
                               ) : (
                                 <div className="flex h-full w-full flex-col items-center justify-center rounded-[24%] border border-dashed border-neutral-300 bg-neutral-50 px-2 text-center text-[8px] leading-tight text-neutral-500">
-                                  <span>Arka görsel yüzü</span>
+                                  <span>Ön yüz yerleşim alanı</span>
                                   <span>{effectiveCode}</span>
                                 </div>
                               )}

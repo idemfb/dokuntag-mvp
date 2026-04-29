@@ -164,224 +164,254 @@ export default function HomePage() {
   return (
     <main className="min-h-screen bg-[#f7f3ea] text-neutral-950">
       <section className="px-5 py-16 sm:px-8 sm:py-24">
-        <div className="mx-auto grid max-w-7xl items-center gap-10 lg:grid-cols-[0.95fr_1.05fr]">
-          <div>
-            <p className="mb-5 text-sm font-semibold uppercase tracking-[0.24em] text-neutral-500">
-              NFC / QR güvenli buluşturma sistemi
-            </p>
+  <div className="mx-auto grid max-w-7xl items-center gap-10 lg:grid-cols-[0.95fr_1.05fr]">
+    <div>
+      <p className="mb-5 text-sm font-semibold uppercase tracking-[0.24em] text-neutral-500">
+        NFC veya QR ile güvenle buluşturma sistemi
+      </p>
 
-            <h1 className="max-w-3xl text-5xl font-semibold tracking-tight text-neutral-950 sm:text-6xl lg:text-7xl">
-              Kaybolanı sahibine ulaştırmanın en hızlı yolu
-            </h1>
+      <h1 className="max-w-3xl text-5xl font-semibold tracking-tight text-neutral-950 sm:text-6xl lg:text-7xl">
+        Bulunduğunda, sahibine saniyeler içinde ulaşılır.
+      </h1>
 
-            <p className="mt-6 max-w-2xl text-lg leading-8 text-neutral-600 sm:text-xl">
-            Bulan kişi QR okutur veya etikete dokundurur. Saniyeler içinde size ulaşır;
-            kontrol sizde kalır. Uygulama indirmeden, karmaşa yaşamadan.
-          </p>
+      <p className="mt-5 text-lg font-medium tracking-wide text-neutral-500">
+        Dokun. Bul. Buluştur.
+      </p>
 
-            <div className="mt-10 flex flex-col gap-3 sm:flex-row">
-              <Link
-                href="/satis"
-                className="rounded-full bg-neutral-950 px-8 py-4 text-center text-sm font-semibold text-white transition hover:scale-[1.02] hover:bg-neutral-800"
-              >
-                İlk üretim için bilgi al
-              </Link>
+      <p className="mt-6 max-w-2xl text-lg leading-8 text-neutral-600 sm:text-xl">
+        Bulan kişi etiketi okutur veya dokundurur. Tek dokunuşla sana ulaşır - karmaşa yok - uygulama yok.
+      </p>
 
-              <a
-                href="#nasil-calisir"
-                className="rounded-full border border-neutral-300 bg-white/70 px-8 py-4 text-center text-sm font-semibold text-neutral-950 transition hover:bg-white"
-              >
-                Nasıl çalışır?
-              </a>
+      <div className="mt-10 flex flex-col gap-3 sm:flex-row">
+        <Link
+          href="/satis"
+          className="rounded-full bg-neutral-950 px-8 py-4 text-center text-sm font-semibold text-white transition hover:scale-[1.02] hover:bg-neutral-800"
+        >
+          İlk üretim için bilgi al
+        </Link>
 
-              <Link
-                href="/scan"
-                className="rounded-full border border-neutral-300 bg-white/70 px-8 py-4 text-center text-sm font-semibold text-neutral-950 transition hover:bg-white"
-              >
-                QR okut / NFC dokundur
-              </Link>
-            </div>
-            <p className="mt-4 text-sm text-neutral-500">
-            Tek seferlik fiziksel ürün · Yıllık ücret yok · Uygulama gerekmez · Şarj gerekmez
-          </p>
-          </div>
+        <a
+          href="#neden"
+          className="rounded-full border border-neutral-300 bg-white/70 px-8 py-4 text-center text-sm font-semibold text-neutral-950 transition hover:bg-white"
+        >
+          Kullanım alanları
+        </a>
 
-          <div className="relative overflow-hidden rounded-[2.5rem] border border-white/50 bg-white shadow-sm">
-            <Image
-              src="/images/hero-main.jpg"
-              alt="Dokuntag kullanım senaryosu"
-              width={1400}
-              height={1000}
-              priority
-              className="h-[420px] w-full object-cover sm:h-[560px]"
-            />
-          </div>
+        <Link
+          href="/scan"
+          className="rounded-full border border-neutral-300 bg-white/70 px-8 py-4 text-center text-sm font-semibold text-neutral-950 transition hover:bg-white"
+        >
+          QR okut / NFC dokundur
+        </Link>
+      </div>
+
+      <p className="mt-4 text-sm text-neutral-500">
+        Bir kere alırsın · Yıllık ücret yok · Uygulama gerekmez
+      </p>
+    </div>
+
+    <div className="relative">
+      <div className="absolute -inset-5 -z-10 rounded-[3rem] bg-neutral-200/60 blur-3xl" />
+
+      <div className="relative overflow-hidden rounded-[2.5rem] border border-white/60 bg-white shadow-2xl shadow-neutral-200/70">
+        <Image
+          src="/images/hero-new.jpg"
+          alt="Dokuntag kullanım senaryosu"
+          width={1400}
+          height={1000}
+          priority
+          sizes="(max-width: 1024px) 100vw, 50vw"
+          className="h-[420px] w-full object-cover sm:h-[560px]"
+        />
+
+        <div className="absolute bottom-5 left-5 right-5 rounded-2xl border border-black/10 bg-white/85 p-4 shadow-xl backdrop-blur-md">
+          <p className="text-sm font-semibold text-neutral-950">
+          Telefonunu yaklaştırman yeterli.
+        </p>
+
+        <p className="mt-1 text-xs leading-5 text-neutral-600">
+          Bulan kişi saniyeler içinde sana ulaşır.
+        </p>
         </div>
-      </section>
+      </div>
+    </div>
+  </div>
+</section>
 
       <section id="neden" className="px-5 py-20 sm:px-8">
+  <div className="mx-auto max-w-7xl">
+    <div className="max-w-3xl">
+      <p className="text-sm font-semibold uppercase tracking-[0.22em] text-neutral-500">
+        Neden Dokuntag®?
+      </p>
+      <h2 className="mt-4 text-4xl font-semibold tracking-tight sm:text-5xl">
+        Çünkü kaybolduğunda sana ulaşacak bir yol gerekir.
+      </h2>
+      <p className="mt-5 text-lg leading-8 text-neutral-600">
+        Yakınınızı, evcil hayvanınızı veya eşyalarınızı bulan kişi iyi niyetli olabilir. Ama size ulaşacak bir yol yoksa geri dönmesi zordur.
+      </p>
+    </div>
 
-        
-        <div className="mx-auto max-w-7xl">
-          <div className="max-w-3xl">
-            <p className="text-sm font-semibold uppercase tracking-[0.22em] text-neutral-500">
-              Neden Dokuntag®?
-            </p>
-            <h2 className="mt-4 text-4xl font-semibold tracking-tight sm:text-5xl">
-              Çünkü kaybolduğunda sana ulaşacak bir yol gerekir.
-            </h2>
-            <p className="mt-5 text-lg leading-8 text-neutral-600">
-              Yakınınızı, evcil hayvanınızı veya eşyalarınızı bulan kişi iyi niyetli olabilir. Ama size ulaşacak bir yol yoksa geri dönmesi zordur.
-            </p>
-          </div>
-
-          <div className="mt-10 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            <div className="overflow-hidden rounded-[2rem] border border-neutral-200 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-md">
-  <Image
-    src="/images/relief-phone.jpg"
-    alt="Birey güvenli iletişim"
-    width={900}
-    height={900}
-    className="h-72 w-full object-cover"
-  />
-  <div className="p-7">
-    <h3 className="text-2xl font-semibold">
-      Yakınınıza ulaşılması gerekirse?
-    </h3>
-    <p className="mt-3 text-sm leading-6 text-neutral-600">
-      Dokuntag®, acil durumlarda doğru kişinin hızlıca bilgilendirilmesini sağlar.
-    </p>
-  </div>
-</div>
-            <div className="overflow-hidden rounded-[2rem] bg-neutral-950 text-white transition duration-300 hover:-translate-y-1 hover:shadow-md">
-              <Image
-                src="/images/lost-key.jpg"
-                alt="Kaybolan anahtar"
-                width={900}
-                height={900}
-                className="h-72 w-full object-cover opacity-90"
-              />
-              
-              <div className="p-7">
-                <h3 className="text-2xl font-semibold">
-                  Anahtarın kaybolursa?
-                </h3>
-                <p className="mt-3 text-sm leading-6 text-neutral-300">
-                  Bulan kişi sana ulaşamazsa, anahtarın büyük ihtimalle geri
-                  dönmez.
-                </p>
-              </div>
-            </div>
-
-            <div className="overflow-hidden rounded-[2rem] border border-neutral-200 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-md">
-              <Image
-                src="/images/pet-tag.jpg"
-                alt="Evcil hayvan tasmasında Dokuntag"
-                width={900}
-                height={900}
-                className="h-72 w-full object-cover"
-              />
-              <div className="p-7">
-                <h3 className="text-2xl font-semibold">
-                  Evcil hayvanın uzaklaşırsa?
-                </h3>
-                <p className="mt-3 text-sm leading-6 text-neutral-600">
-                  Tasmadaki Dokuntag®, bulan kişiyle aranızda güvenli bir köprü
-                  kurar.
-                </p>
-              </div>
-            </div>
-
-            <div className="overflow-hidden rounded-[2rem] bg-neutral-950 text-white transition duration-300 hover:-translate-y-1 hover:shadow-md">
-              <Image
-                src="/images/bag-tag.jpg"
-                alt="Çanta üzerinde Dokuntag"
-                width={900}
-                height={900}
-                className="h-72 w-full object-cover"
-              />
-              <div className="p-7">
-                <h3 className="text-2xl font-semibold">
-                  Çantanı bir yerde unutsan?
-                </h3>
-                <p className="mt-3 text-sm leading-6 text-neutral-300">
-                  Dokuntag® sayesinde bulan kişi size hızlıca ulaşabilir.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section id="nasil-calisir" className="px-5 py-20 sm:px-8">
-        
-        <div className="mx-auto grid max-w-7xl items-center gap-10 lg:grid-cols-2">
-          <div className="overflow-hidden rounded-[2.5rem] border border-neutral-200 bg-white shadow-sm">
+    <div className="mt-10 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      {[
+        {
+          src: "/images/child.jpg",
+          alt: "Birey güvenli iletişim",
+          dark: false,
+          title: "Yakınınıza ulaşılması gerekirse?",
+          text: "Dokuntag®, acil durumlarda doğru kişinin hızlıca bilgilendirilmesini sağlar.",
+        },
+        {
+          src: "/images/lost-key.jpg",
+          alt: "Kaybolan anahtar",
+          dark: true,
+          title: "Anahtarın kaybolursa?",
+          text: "Bulan kişi sana ulaşamazsa, anahtarın büyük ihtimalle geri dönmez.",
+        },
+        {
+          src: "/images/pet-tag.jpg",
+          alt: "Evcil hayvan tasmasında Dokuntag",
+          dark: false,
+          title: "Evcil hayvanın uzaklaşırsa?",
+          text: "Tasmadaki Dokuntag®, bulan kişiyle aranızda güvenli bir köprü kurar.",
+        },
+        {
+          src: "/images/bag-tag.jpg",
+          alt: "Çanta üzerinde Dokuntag",
+          dark: true,
+          title: "Çantanı bir yerde unutsan?",
+          text: "Dokuntag® sayesinde bulan kişi size hızlıca ulaşabilir.",
+        },
+      ].map((item) => (
+        <div
+          key={item.title}
+          className={[
+            "group overflow-hidden rounded-[2rem] border shadow-sm transition-all duration-500",
+            "hover:-translate-y-1 hover:shadow-xl",
+            item.dark
+              ? "border-neutral-900 bg-neutral-950 text-white"
+              : "border-neutral-200 bg-white text-neutral-950",
+          ].join(" ")}
+        >
+          <div className="relative aspect-[4/3] w-full overflow-hidden">
             <Image
-              src="/images/nfc-touch.jpg"
-              alt="NFC okutma anı"
-              width={1200}
-              height={1200}
-              className="h-[460px] w-full object-cover"
+              src={item.src}
+              alt={item.alt}
+              fill
+              sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 25vw"
+              className="object-cover transition duration-700 group-hover:scale-[1.04]"
             />
+
+            <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-black/5 to-transparent opacity-70 transition duration-500 group-hover:opacity-90" />
+
+       
           </div>
 
-          <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.22em] text-neutral-500">
-              Nasıl çalışır?
+          <div className="p-7">
+            <h3 className="text-2xl font-semibold tracking-tight">
+              {item.title}
+            </h3>
+            <p
+              className={[
+                "mt-3 text-sm leading-6",
+                item.dark ? "text-neutral-300" : "text-neutral-600",
+              ].join(" ")}
+            >
+              {item.text}
             </p>
-            <h2 className="mt-4 text-4xl font-semibold tracking-tight sm:text-5xl">
-              Tek dokunuşla güvenli bağlantı açılır.
-            </h2>
-            <p className="mt-5 text-lg leading-8 text-neutral-600">
-              Dokuntag®, NFC ve QR teknolojisini kullanır. Bulan kişi etiketi
-              okutur, güvenli profil açılır ve sizin izin verdiğiniz iletişim
-              yollarıyla size ulaşır.
-            </p>
-            <p className="mt-3 text-sm text-neutral-500">
-              Dilerseniz tüm iletişim bilgilerinizi gizleyebilirsiniz. Bu durumda bulan kişi yalnızca mesaj bırakır. Daha hızlı ulaşım için en az bir iletişim seçeneğini açık bırakmanız önerilir.
-            </p>
-            <p className="mt-3 text-sm text-neutral-500">
-              Tüm telefonlarda QR ile çalışır. Destekleyen cihazlarda NFC ile daha hızlı açılır.
-            </p>
-            <div className="mt-8 space-y-4">
-              {steps.map((item, index) => (
-                <div
-                  key={item.title}
-                  className="flex items-start gap-4 rounded-3xl border border-neutral-200 bg-white/70 p-4"
-                >
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-neutral-950 text-sm font-semibold text-white">
-                    {index + 1}
-                  </span>
-                  <div>
-                    <h3 className="font-semibold">{item.title}</h3>
-                    <p className="mt-1 text-sm leading-6 text-neutral-600">
-                      {item.text}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <Link
-                href="/p/DKNTG"
-                className="inline-flex justify-center rounded-full border border-neutral-300 bg-white px-6 py-3 text-sm font-semibold transition hover:bg-neutral-100"
-              >
-                Demo profili gör
-              </Link>
-
-              <Link
-                href="/scan"
-                className="inline-flex justify-center rounded-full bg-neutral-950 px-6 py-3 text-sm font-semibold text-white transition hover:bg-neutral-800"
-              >
-                QR okut / NFC dokundur
-              </Link>
-            </div>
           </div>
         </div>
-      </section>
+      ))}
+    </div>
+  </div>
+</section>
 
+<section id="nasil-calisir" className="px-5 py-20 sm:px-8">
+  <div className="mx-auto grid max-w-7xl items-center gap-10 lg:grid-cols-2">
+
+    {/* GÖRSEL */}
+    <div className="relative mx-auto mt-4 max-w-4xl overflow-hidden rounded-[2rem] border border-neutral-200 bg-white shadow-sm lg:mt-0">
+      
+      <Image
+        src="/images/how-all.jpg"
+        alt="Dokuntag nasıl çalışır"
+        width={1200}
+        height={1200}
+        className="w-full object-cover"
+      />
+
+      {/* 🔥 MOBİL PREMIUM OVERLAY */}
+      <div className="absolute inset-0 flex flex-col justify-end md:hidden">
+        <div className="m-3 rounded-2xl bg-white/80 backdrop-blur-md border border-black/10 p-4 text-neutral-900 shadow-lg">
+  
+  <p className="text-[11px] font-semibold uppercase tracking-[0.25em] text-neutral-500">
+    Nasıl çalışır?
+  </p>
+
+  <h2 className="mt-1 text-lg font-semibold leading-tight text-neutral-900">
+    Bulunduğunda, saniyeler içinde size ulaşılır.
+  </h2>
+
+  <p className="mt-2 text-xs text-neutral-600">
+    Bulundu · Okutuldu · Profil açıldı · Ulaşıldı
+  </p>
+
+</div>
+      </div>
+
+    </div>
+
+    {/* TEXT */}
+    <div>
+      <div className="hidden md:block">
+        <p className="text-sm font-semibold uppercase tracking-[0.22em] text-neutral-500">
+          Nasıl çalışır?
+        </p>
+
+        <h2 className="mt-4 text-4xl font-semibold tracking-tight sm:text-5xl">
+          Bulunduğunda, saniyeler içinde size ulaşılır.
+        </h2>
+      </div>
+
+      <p className="mt-5 text-lg leading-8 text-neutral-600">
+        Dokuntag®, NFC ve QR teknolojisini kullanır. Bulan kişi etiketi okutur,
+        profil açılır ve sizin izin verdiğiniz iletişim yollarıyla size ulaşır.
+      </p>
+
+      <p className="mt-3 text-sm text-neutral-500">
+        Dilerseniz tüm iletişim bilgilerinizi gizleyebilirsiniz. Bu durumda
+        bulan kişi yalnızca mesaj bırakır. Daha hızlı ulaşım için en az bir
+        iletişim seçeneğini açık bırakmanız önerilir.
+      </p>
+
+      <p className="mt-3 text-sm text-neutral-500">
+        Tüm telefonlarda QR ile çalışır. Destekleyen cihazlarda NFC ile daha
+        hızlı açılır.
+      </p>
+
+      <p className="mt-4 text-sm font-medium text-neutral-500">
+        Bulundu · Okutuldu · Profil açıldı · Ulaşıldı
+      </p>
+
+      <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+        <Link
+          href="/p/DKNTG"
+          className="inline-flex justify-center rounded-full border border-neutral-300 bg-white px-6 py-3 text-sm font-semibold transition hover:bg-neutral-100"
+        >
+          Demo profili gör
+        </Link>
+
+        <Link
+          href="/scan"
+          className="inline-flex justify-center rounded-full bg-neutral-950 px-6 py-3 text-sm font-semibold text-white transition hover:bg-neutral-800"
+        >
+          QR okut / NFC dokundur
+        </Link>
+      </div>
+    </div>
+
+  </div>
+</section>
       <section id="yardim" className="px-5 py-20 sm:px-8">
         <div className="mx-auto max-w-7xl rounded-[2.5rem] border border-neutral-200 bg-white p-8 shadow-sm sm:p-12">
           <div className="mb-8 max-w-3xl">
@@ -444,98 +474,36 @@ export default function HomePage() {
             </p>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            {useCases.map((item) => (
-              <div
-                key={item.title}
-                className="overflow-hidden rounded-[2rem] border border-neutral-200 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-md"
-              >
-                <Image
-                  src={item.image}
-                  alt={item.title}
-                  width={900}
-                  height={900}
-                  className="h-72 w-full object-cover"
-                />
-                <div className="p-7">
-                  <h3 className="text-2xl font-semibold">{item.title}</h3>
-                  <p className="mt-3 text-sm leading-6 text-neutral-600">
-                    {item.text}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
+          <div className="mt-8 space-y-3 max-w-3xl mx-auto">
+  {useCases.map((item, index) => (
+    <details
+      key={item.title}
+      className="group rounded-3xl border border-neutral-200 bg-white p-5 shadow-sm"
+      open={index === 0}
+    >
+      <summary className="flex cursor-pointer items-center justify-between font-semibold text-lg">
+        {item.title}
+        <span className="text-neutral-400 group-open:rotate-45 transition">
+          +
+        </span>
+      </summary>
 
-          <div className="mt-5 rounded-[2rem] border border-neutral-200 bg-white/70 p-5 text-sm leading-6 text-neutral-600">
-            Diğer kullanımlar: laptop, telefon, ekipman, valiz, bisiklet,
-            araç içi eşya ve güvenli iletişim gerektiren farklı alanlar.
-          </div>
-        </div>
-      </section>
+      <div className="mt-4 space-y-4">
+        <p className="text-sm text-neutral-600 leading-6">
+          {item.text}
+        </p>
 
-      <section className="px-5 py-20 sm:px-8">
-        <div className="mx-auto grid max-w-7xl items-center gap-10 rounded-[2.5rem] bg-neutral-950 p-6 text-white sm:p-10 lg:grid-cols-2">
-          <div className="overflow-hidden rounded-[2rem]">
-            <Image
-              src="/images/relief-phone.jpg"
-              alt="Telefon bildirimi alan kullanıcı"
-              width={1100}
-              height={900}
-              className="h-[420px] w-full object-cover"
-            />
-          </div>
-
-          <div className="p-2 sm:p-6">
-            <p className="text-sm font-semibold uppercase tracking-[0.22em] text-neutral-400">
-              Dokuntag® güven sistemi
-            </p>
-            <h2 className="mt-4 text-4xl font-semibold tracking-tight sm:text-5xl">
-              Bilgilerinizin kontrolü sizde.
-            </h2>
-            <p className="mt-5 text-lg leading-8 text-neutral-300">
-              Dokuntag® bir güven köprüsüdür. Bulan kişi yalnızca sizin görünür
-              yapmayı seçtiğiniz bilgilere ulaşır. Amaç, kaybolanı sahibine
-              hızlı ve güvenli şekilde ulaştırmaktır.
-            </p>
-
-            <div className="mt-8 grid gap-3 sm:grid-cols-2">
-              {trustItems.map((item) => (
-                <div
-                  key={item}
-                  className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-neutral-200"
-                >
-                  {item}
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="px-5 py-20 sm:px-8">
-        <div className="mx-auto max-w-4xl">
-          <div className="mb-8 text-center">
-            <h2 className="text-4xl font-semibold tracking-tight sm:text-5xl">
-              Sık sorulan sorular
-            </h2>
-          </div>
-
-          <div className="space-y-3">
-            {faqItems.map((item) => (
-              <details
-                key={item.question}
-                className="rounded-3xl border border-neutral-200 bg-white p-5 shadow-sm"
-              >
-                <summary className="cursor-pointer list-none font-semibold">
-                  {item.question}
-                </summary>
-                <p className="mt-3 text-sm leading-6 text-neutral-600">
-                  {item.answer}
-                </p>
-              </details>
-            ))}
-          </div>
+        <Image
+          src={item.image}
+          alt={item.title}
+          width={800}
+          height={600}
+          className="rounded-2xl w-full object-cover"
+        />
+      </div>
+    </details>
+  ))}
+</div>
         </div>
       </section>
 
