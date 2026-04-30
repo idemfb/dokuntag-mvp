@@ -50,10 +50,14 @@ export default function AddToHomePrompt() {
     setPathname(window.location.pathname);
     setIsIOS(isIOSDevice());
 
-    if (
-      isStandaloneMode() ||
-      window.localStorage.getItem(INSTALLED_KEY) === "1"
-    ) {
+    if (isStandaloneMode()) {
+      window.localStorage.setItem(INSTALLED_KEY, "1");
+      setIsVisible(false);
+      setIsMinimized(false);
+      return;
+    }
+
+    if (window.localStorage.getItem(INSTALLED_KEY) === "1") {
       setIsVisible(false);
       setIsMinimized(false);
       return;
@@ -66,6 +70,14 @@ export default function AddToHomePrompt() {
 
     function handleBeforeInstallPrompt(event: Event) {
       event.preventDefault();
+
+      if (
+        isStandaloneMode() ||
+        window.localStorage.getItem(INSTALLED_KEY) === "1"
+      ) {
+        return;
+      }
+
       setDeferredPrompt(event as BeforeInstallPromptEvent);
       setIsVisible(true);
       setIsMinimized(false);
@@ -77,6 +89,7 @@ export default function AddToHomePrompt() {
       setIsVisible(false);
       setIsMinimized(false);
       setDeferredPrompt(null);
+      setShowGuide(false);
     }
 
     window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
@@ -111,6 +124,15 @@ export default function AddToHomePrompt() {
   }, [isVisible, isMinimized]);
 
   async function handleInstallClick() {
+    if (isStandaloneMode()) {
+      window.localStorage.setItem(INSTALLED_KEY, "1");
+      setIsVisible(false);
+      setIsMinimized(false);
+      setDeferredPrompt(null);
+      setShowGuide(false);
+      return;
+    }
+
     if (deferredPrompt) {
       await deferredPrompt.prompt();
       const choice = await deferredPrompt.userChoice;
@@ -119,6 +141,7 @@ export default function AddToHomePrompt() {
         window.localStorage.setItem(INSTALLED_KEY, "1");
         setIsVisible(false);
         setIsMinimized(false);
+        setShowGuide(false);
       }
 
       setDeferredPrompt(null);
@@ -134,6 +157,13 @@ export default function AddToHomePrompt() {
   }
 
   function openPrompt() {
+    if (isStandaloneMode()) {
+      window.localStorage.setItem(INSTALLED_KEY, "1");
+      setIsVisible(false);
+      setIsMinimized(false);
+      return;
+    }
+
     setIsVisible(true);
     setIsMinimized(false);
   }
@@ -152,7 +182,7 @@ export default function AddToHomePrompt() {
               type="button"
               onClick={minimizePrompt}
               className="absolute right-3 top-3 flex h-7 w-7 items-center justify-center rounded-full bg-neutral-100 text-base leading-none text-neutral-500 transition hover:bg-neutral-200 hover:text-neutral-900"
-              aria-label="Ana ekrana ekle kartını küçült"
+              aria-label="Uygulama yükleme kartını küçült"
             >
               ×
             </button>
@@ -167,14 +197,14 @@ export default function AddToHomePrompt() {
               <div className="min-w-0 flex-1">
                 <p className="pr-3 text-sm font-semibold text-neutral-950">
                   {isManagePage
-                    ? "Bu ürünün yönetimini kaydedin"
-                    : "Dokuntag®’ı ana ekrana ekleyin"}
+                    ? "Yönetimi uygulama gibi açın"
+                    : "Dokuntag®’ı uygulama olarak yükleyin"}
                 </p>
 
                 <p className="mt-1 text-xs leading-5 text-neutral-600">
                   {isManagePage
-                    ? "Yönetim bağlantınız kişiseldir. Kendi cihazınızın ana ekranına ekleyerek daha hızlı ulaşabilirsiniz."
-                    : "Telefonunuzda uygulama gibi açmak için ana ekrana ekleyebilirsiniz."}
+                    ? "Yönetim bağlantınıza kendi cihazınızdan daha hızlı ulaşabilirsiniz."
+                    : "Dokuntag’ı telefonunuzda uygulama gibi açarak daha hızlı kullanabilirsiniz."}
                 </p>
 
                 {showGuide ? (
@@ -193,10 +223,6 @@ export default function AddToHomePrompt() {
                         <span className="inline-flex rounded-full bg-white px-2 py-0.5 font-semibold text-neutral-950 ring-1 ring-neutral-200">
                           Uygulamayı yükle
                         </span>{" "}
-                        ya da{" "}
-                        <span className="inline-flex rounded-full bg-white px-2 py-0.5 font-semibold text-neutral-950 ring-1 ring-neutral-200">
-                          Ana ekrana ekle
-                        </span>{" "}
                         seçeneğini kullanabilirsiniz.
                       </>
                     )}
@@ -209,7 +235,7 @@ export default function AddToHomePrompt() {
                     onClick={() => void handleInstallClick()}
                     className="rounded-full bg-neutral-950 px-4 py-2.5 text-xs font-semibold text-white transition hover:bg-neutral-800"
                   >
-                    Ana ekrana ekle
+                    Uygulama olarak yükle
                   </button>
 
                   {isManagePage ? (
@@ -224,7 +250,7 @@ export default function AddToHomePrompt() {
                       href="/scan"
                       className="rounded-full border border-neutral-300 px-4 py-2.5 text-center text-xs font-semibold text-neutral-800 transition hover:bg-neutral-50"
                     >
-                      QR okut/NFC
+                      QR okut / NFC
                     </Link>
                   )}
                 </div>
@@ -239,7 +265,7 @@ export default function AddToHomePrompt() {
           type="button"
           onClick={openPrompt}
           className="fixed bottom-4 right-4 z-[100] flex h-14 w-14 items-center justify-center rounded-2xl border border-neutral-200 bg-white/95 text-sm font-semibold text-neutral-950 shadow-xl backdrop-blur transition hover:scale-[1.03] hover:bg-white"
-          aria-label="Ana ekrana ekle kartını aç"
+          aria-label="Uygulama yükleme kartını aç"
         >
           <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#f7f3ea] ring-1 ring-neutral-200">
             D

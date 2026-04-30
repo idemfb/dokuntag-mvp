@@ -379,7 +379,9 @@ export default function PublicPage({
   const [sendSuccess, setSendSuccess] = useState("");
 
   const dokuntagHref = getMainSiteUrl();
-
+  const isDemoProfile = ["DKNTG", "DEMO01", "DEMO02", "DEMO03"].includes(
+  code.toUpperCase()
+);
   useEffect(() => {
     let cancelled = false;
 
@@ -534,7 +536,11 @@ export default function PublicPage({
     e.preventDefault();
 
     if (!data) return;
-
+    if (isDemoProfile) {
+  setSendError("");
+  setSendSuccess("Bu bir demo profildir. Gerçek mesaj gönderilmez.");
+  return;
+}
     try {
       setSending(true);
       setSendError("");
@@ -884,7 +890,11 @@ export default function PublicPage({
                   onChange={(e) => setMessage(e.target.value)}
                   rows={3}
                   className={`w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition focus:ring-2 ${theme.ring}`}
-                  placeholder="Kısa bir bilgi yazın (nerede bulduğunuz gibi)"
+                  placeholder={
+                  isDemoProfile
+                    ? "Demo mesajı deneyebilirsiniz. Gerçek mesaj gönderilmez."
+                    : "Kısa bir bilgi yazın (nerede bulduğunuz gibi)"
+                }
                 />
               </div>
 

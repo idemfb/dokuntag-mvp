@@ -97,6 +97,12 @@ export async function POST(request: Request) {
     const website = getString(body.website);
     const preferredContactMethods = normalizeMethods(body.preferredContactMethods);
 
+    if (["DKNTG", "DEMO01", "DEMO02", "DEMO03"].includes(code)) {
+  return NextResponse.json({
+    success: true,
+    message: "Bu bir demo profildir. Gerçek mesaj gönderilmez."
+  });
+}
     if (website) {
       return NextResponse.json({ success: true });
     }

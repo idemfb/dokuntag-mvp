@@ -160,6 +160,38 @@ const guideItems = [
   },
 ];
 
+const shareLinks = [
+  {
+    name: "WhatsApp",
+    href: "https://wa.me/?text=Dokuntag%C2%AE%20-%20Kaybolan%C4%B1%20sahibine%20ula%C5%9Ft%C4%B1rman%C4%B1n%20en%20kolay%20yolu:%20https%3A%2F%2Fdokuntag.com",
+    style: "bg-green-500 text-white hover:bg-green-600",
+  },
+  {
+    name: "X",
+    href: "https://twitter.com/intent/tweet?text=Dokuntag%C2%AE%20-%20Kaybolan%C4%B1%20sahibine%20ula%C5%9Ft%C4%B1rman%C4%B1n%20en%20kolay%20yolu&url=https%3A%2F%2Fdokuntag.com",
+    style: "bg-black text-white hover:bg-neutral-800",
+  },
+  {
+    name: "Facebook",
+    href: "https://www.facebook.com/sharer/sharer.php?u=https%3A%2F%2Fdokuntag.com",
+    style: "bg-blue-600 text-white hover:bg-blue-700",
+  },
+  {
+    name: "Instagram",
+    href: "https://instagram.com/dokuntag",
+    style: "bg-gradient-to-r from-pink-500 via-red-500 to-yellow-500 text-white",
+  },
+  {
+    name: "TikTok",
+    href: "https://tiktok.com/@dokuntag",
+    style: "bg-black text-white",
+  },
+  {
+    name: "YouTube",
+    href: "https://youtube.com/@dokuntag",
+    style: "bg-red-600 text-white hover:bg-red-700",
+  },
+];
 export default function HomePage() {
   return (
     <main className="min-h-screen bg-[#f7f3ea] text-neutral-950">
@@ -325,13 +357,9 @@ export default function HomePage() {
     </div>
   </div>
 </section>
-
-<section id="nasil-calisir" className="px-5 py-20 sm:px-8">
+<section id="nasil-calisir" className="px-5 pt-10 pb-20 sm:px-8 sm:py-20">
   <div className="mx-auto grid max-w-7xl items-center gap-10 lg:grid-cols-2">
-
-    {/* GÖRSEL */}
-    <div className="relative mx-auto mt-4 max-w-4xl overflow-hidden rounded-[2rem] border border-neutral-200 bg-white shadow-sm lg:mt-0">
-      
+    <div className="relative mx-auto w-full max-w-4xl overflow-hidden rounded-[2rem] border border-neutral-200 bg-white shadow-sm">
       <Image
         src="/images/how-all.jpg"
         alt="Dokuntag nasıl çalışır"
@@ -340,28 +368,23 @@ export default function HomePage() {
         className="w-full object-cover"
       />
 
-      {/* 🔥 MOBİL PREMIUM OVERLAY */}
-      <div className="absolute inset-0 flex flex-col justify-end md:hidden">
-        <div className="m-3 rounded-2xl bg-white/80 backdrop-blur-md border border-black/10 p-4 text-neutral-900 shadow-lg">
-  
-  <p className="text-[11px] font-semibold uppercase tracking-[0.25em] text-neutral-500">
-    Nasıl çalışır?
-  </p>
+      <div className="absolute inset-x-0 top-0 md:hidden">
+        <div className="m-3 rounded-2xl border border-black/10 bg-white/90 p-4 text-neutral-900 shadow-lg backdrop-blur-xl">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.25em] text-neutral-500">
+            Nasıl çalışır?
+          </p>
 
-  <h2 className="mt-1 text-lg font-semibold leading-tight text-neutral-900">
-    Bulunduğunda, saniyeler içinde size ulaşılır.
-  </h2>
+          <h2 className="mt-1 text-xl font-semibold leading-tight text-neutral-900">
+            Bulunduğunda, saniyeler içinde size ulaşılır.
+          </h2>
 
-  <p className="mt-2 text-xs text-neutral-600">
-    Bulundu · Okutuldu · Profil açıldı · Ulaşıldı
-  </p>
-
-</div>
+          <p className="mt-2 text-xs text-neutral-600">
+            Bulundu · Okutuldu · Profil açıldı · Ulaşıldı
+          </p>
+        </div>
       </div>
-
     </div>
 
-    {/* TEXT */}
     <div>
       <div className="hidden md:block">
         <p className="text-sm font-semibold uppercase tracking-[0.22em] text-neutral-500">
@@ -389,10 +412,6 @@ export default function HomePage() {
         hızlı açılır.
       </p>
 
-      <p className="mt-4 text-sm font-medium text-neutral-500">
-        Bulundu · Okutuldu · Profil açıldı · Ulaşıldı
-      </p>
-
       <div className="mt-8 flex flex-col gap-3 sm:flex-row">
         <Link
           href="/p/DKNTG"
@@ -409,9 +428,9 @@ export default function HomePage() {
         </Link>
       </div>
     </div>
-
   </div>
 </section>
+
       <section id="yardim" className="px-5 py-20 sm:px-8">
         <div className="mx-auto max-w-7xl rounded-[2.5rem] border border-neutral-200 bg-white p-8 shadow-sm sm:p-12">
           <div className="mb-8 max-w-3xl">
@@ -616,6 +635,37 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+<section className="px-5 py-16 sm:px-8">
+  <div className="mx-auto max-w-4xl rounded-[2.5rem] border border-neutral-200 bg-white p-8 text-center shadow-sm sm:p-10">
+    <p className="text-sm font-semibold uppercase tracking-[0.22em] text-neutral-500">
+      Paylaş
+    </p>
+
+    <h2 className="mt-4 text-3xl font-semibold tracking-tight sm:text-4xl">
+      Dokuntag® fikrini sevdin mi?
+    </h2>
+
+    <p className="mx-auto mt-4 max-w-xl text-sm leading-6 text-neutral-600">
+      Kaybolan eşyaların, evcil hayvanların ve yakınların sahibine daha kolay
+      ulaşması için Dokuntag®’ı paylaşabilirsiniz.
+    </p>
+
+    <div className="mt-6 flex flex-wrap justify-center gap-3">
+  {shareLinks.map((item) => (
+    <a
+      key={item.name}
+      href={item.href}
+      target="_blank"
+      rel="noreferrer"
+      className={`rounded-full px-5 py-3 text-sm font-semibold transition ${item.style}`}
+    >
+      {item.name}
+    </a>
+  ))}
+</div>
+  </div>
+</section>
 
       <section className="px-5 py-24 sm:px-8">
         <div className="mx-auto max-w-4xl text-center">
