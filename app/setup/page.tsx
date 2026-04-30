@@ -16,7 +16,8 @@ function normalizeCode(value: string) {
   return String(value || "")
     .trim()
     .toUpperCase()
-    .replace(/[^A-Z0-9]/g, "");
+    .replace(/[^A-Z0-9]/g, "")
+    .slice(0, 10);
 }
 
 export default function SetupEntryPage() {
@@ -36,7 +37,12 @@ export default function SetupEntryPage() {
       return;
     }
 
-    router.push(`/t/${normalizedCode}`);
+    if (normalizedCode.length < 3 || normalizedCode.length > 10) {
+      setError("Kod 3–10 karakter olmalı.");
+      return;
+    }
+
+    router.push(`/t/${normalizedCode}?from=start`);
   }
 
   return (
@@ -61,27 +67,18 @@ export default function SetupEntryPage() {
           </h1>
 
           <p className="mt-2 text-sm leading-6 text-neutral-600">
-            QR veya NFC etiketi okuttuğunuzda kurulum otomatik başlar. Kodu
-            elle girmek isterseniz aşağıya yazabilirsiniz.
+            QR veya NFC etiketi okuttuğunuzda yönlendirme otomatik yapılır.
+            Kodu elle girmek isterseniz aşağıya yazabilirsiniz.
           </p>
-
-          <div className="mt-3 flex flex-wrap gap-2">
-            <span className="rounded-full border border-neutral-200 bg-neutral-50 px-3 py-1 text-xs font-medium text-neutral-700">
-              Akıllı yönlendirme
-            </span>
-            <span className="rounded-full border border-neutral-200 bg-neutral-50 px-3 py-1 text-xs font-medium text-neutral-700">
-              /t/kod
-            </span>
-          </div>
         </section>
 
         <section className="rounded-[1.35rem] border border-blue-200 bg-blue-50 px-3 py-4">
           <p className="text-sm font-medium text-blue-950">
-            Bu sayfa kodla kurulum içindir
+            Bu sayfa kodla yönlendirme içindir
           </p>
           <p className="mt-1.5 text-xs leading-5 text-blue-900">
-            Ürün kayıtlı değilse hızlı kurulum açılır. Kayıtlıysa herkese açık
-            profile yönlendirilir.
+            Kod sistemde kayıtlıysa ilgili sayfaya yönlendirilir. Kayıtlı
+            olmayan kodlar kabul edilmez.
           </p>
         </section>
 
@@ -104,6 +101,9 @@ export default function SetupEntryPage() {
                 setError("");
               }}
               placeholder="Ürün kodu"
+              inputMode="text"
+              autoCapitalize="characters"
+              autoComplete="off"
               className="w-full rounded-2xl border border-neutral-300 bg-white px-3 py-2.5 text-sm uppercase outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
             />
 

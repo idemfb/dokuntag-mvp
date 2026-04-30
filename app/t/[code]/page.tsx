@@ -1,16 +1,69 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { findTagByCodeAsync } from "@/lib/tags";
 
 type PageProps = {
   params: Promise<{ code: string }>;
+  searchParams?: Promise<{ from?: string }>;
 };
 
-export default async function TagRedirectPage({ params }: PageProps) {
-  const resolvedParams = await params;
-  const code = resolvedParams.code.trim().toUpperCase();
+function normalizeCode(value: string) {
+  return String(value || "")
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, "")
+    .slice(0, 10);
+}
 
-  if (!code) {
-    redirect("/start");
+function InfoScreen({
+  title,
+  text,
+  retryHref,
+}: {
+  title: string;
+  text: string;
+  retryHref: string;
+}) {
+  return (
+    <main className="flex min-h-screen items-center justify-center bg-[#f7f3ea] px-5 py-10 text-neutral-950">
+      <section className="w-full max-w-md rounded-[2rem] border border-neutral-200 bg-white p-7 text-center shadow-sm">
+        <p className="text-sm font-semibold uppercase tracking-[0.22em] text-neutral-400">
+          Dokuntag®
+        </p>
+
+        <h1 className="mt-4 text-2xl font-semibold">{title}</h1>
+
+        <p className="mt-3 text-sm leading-6 text-neutral-600">{text}</p>
+
+        <Link
+          href={retryHref}
+          className="mt-6 inline-flex rounded-full bg-neutral-950 px-5 py-3 text-sm font-semibold text-white"
+        >
+          Kodu tekrar gir
+        </Link>
+      </section>
+    </main>
+  );
+}
+
+export default async function TagRedirectPage({
+  params,
+  searchParams,
+}: PageProps) {
+  const resolvedParams = await params;
+  const resolvedSearchParams = searchParams ? await searchParams : {};
+  const retryHref = resolvedSearchParams.from === "scan" ? "/scan" : "/start";
+
+  const code = normalizeCode(resolvedParams.code);
+
+  if (code.length < 3 || code.length > 10) {
+    return (
+      <InfoScreen
+        title="Geçersiz ürün kodu"
+        text="Kod 3–10 karakter olmalı ve sadece harf/rakam içermelidir."
+        retryHref={retryHref}
+      />
+    );
   }
 
   let tag: Awaited<ReturnType<typeof findTagByCodeAsync>> = null;
@@ -19,11 +72,24 @@ export default async function TagRedirectPage({ params }: PageProps) {
     tag = await findTagByCodeAsync(code);
   } catch (error) {
     console.error("TAG_REDIRECT_PAGE_ERROR", error);
-    redirect(`/setup/${code}`);
+
+    return (
+      <InfoScreen
+        title="Yönlendirme yapılamadı"
+        text="Lütfen biraz sonra tekrar deneyin."
+        retryHref={retryHref}
+      />
+    );
   }
 
   if (!tag) {
-    redirect(`/setup/${code}`);
+    return (
+      <InfoScreen
+        title="Ürün bulunamadı"
+        text="Bu kod sistemde kayıtlı değil. Lütfen etiketteki kodu kontrol edin."
+        retryHref={retryHref}
+      />
+    );
   }
 
   if (tag.status === "unclaimed") {
@@ -34,5 +100,11 @@ export default async function TagRedirectPage({ params }: PageProps) {
     redirect(`/p/${code}`);
   }
 
-  return <main className="p-10">Bu etiket şu an aktif değil.</main>;
+  return (
+    <InfoScreen
+      title="Bu ürün aktif değil"
+      text="Ürün sahibi herkese açık profili geçici olarak kapatmış olabilir."
+      retryHref={retryHref}
+    />
+  );
 }

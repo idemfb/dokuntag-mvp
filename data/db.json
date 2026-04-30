@@ -1889,6 +1889,120 @@
       "showAddressDetail": false,
       "showPetName": true,
       "showNote": false
+    },
+    {
+      "publicCode": "5RHSUR",
+      "manageToken": "67e146e0-10d4-48ee-979a-b39bc878e0c1",
+      "productType": "item",
+      "productSubtype": "",
+      "name": "5RHSUR",
+      "ownerName": "",
+      "phone": "",
+      "email": "",
+      "city": "",
+      "addressDetail": "",
+      "distinctiveFeature": "",
+      "petName": "5RHSUR",
+      "note": "",
+      "alerts": [],
+      "allowDirectCall": false,
+      "allowDirectWhatsapp": false,
+      "status": "unclaimed",
+      "createdAt": "2026-04-30T13:55:11.123Z",
+      "updatedAt": "2026-04-30T13:55:11.123Z",
+      "recovery": {
+        "phone": "",
+        "email": ""
+      },
+      "visibility": {
+        "showName": true,
+        "showPhone": false,
+        "showEmail": false,
+        "showCity": false,
+        "showAddressDetail": false,
+        "showPetName": true,
+        "showNote": false
+      },
+      "profile": {
+        "name": "5RHSUR",
+        "ownerName": "",
+        "phone": "",
+        "email": "",
+        "city": "",
+        "addressDetail": "",
+        "distinctiveFeature": "",
+        "petName": "5RHSUR",
+        "note": "",
+        "tagName": "5RHSUR"
+      },
+      "contactOptions": {
+        "allowDirectCall": false,
+        "allowDirectWhatsapp": false
+      },
+      "showName": true,
+      "showPhone": false,
+      "showEmail": false,
+      "showCity": false,
+      "showAddressDetail": false,
+      "showPetName": true,
+      "showNote": false
+    },
+    {
+      "publicCode": "MNLPSF",
+      "manageToken": "11ddfee3-e084-4849-afdc-01abff33ddcf",
+      "productType": "item",
+      "productSubtype": "",
+      "name": "MNLPSF",
+      "ownerName": "",
+      "phone": "",
+      "email": "",
+      "city": "",
+      "addressDetail": "",
+      "distinctiveFeature": "",
+      "petName": "MNLPSF",
+      "note": "",
+      "alerts": [],
+      "allowDirectCall": false,
+      "allowDirectWhatsapp": false,
+      "status": "unclaimed",
+      "createdAt": "2026-04-30T14:24:44.956Z",
+      "updatedAt": "2026-04-30T14:24:44.956Z",
+      "recovery": {
+        "phone": "",
+        "email": ""
+      },
+      "visibility": {
+        "showName": true,
+        "showPhone": false,
+        "showEmail": false,
+        "showCity": false,
+        "showAddressDetail": false,
+        "showPetName": true,
+        "showNote": false
+      },
+      "profile": {
+        "name": "MNLPSF",
+        "ownerName": "",
+        "phone": "",
+        "email": "",
+        "city": "",
+        "addressDetail": "",
+        "distinctiveFeature": "",
+        "petName": "MNLPSF",
+        "note": "",
+        "tagName": "MNLPSF"
+      },
+      "contactOptions": {
+        "allowDirectCall": false,
+        "allowDirectWhatsapp": false
+      },
+      "showName": true,
+      "showPhone": false,
+      "showEmail": false,
+      "showCity": false,
+      "showAddressDetail": false,
+      "showPetName": true,
+      "showNote": false
     }
   ]
 }

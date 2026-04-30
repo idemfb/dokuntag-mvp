@@ -200,7 +200,7 @@ export default function SetupPage({ params }: Props) {
   const [done, setDone] = useState(false);
   const [manageLink, setManageLink] = useState("");
   const [error, setError] = useState("");
-
+  const [invalidCode, setInvalidCode] = useState(false);
   const theme = getTheme(form.productType);
 
   const subtypeOptions = useMemo(
@@ -228,6 +228,7 @@ export default function SetupPage({ params }: Props) {
       if (cancelled) return;
 
       setCode(nextCode);
+      let redirected = false;
 
       try {
         const res = await fetch(`/api/public/${nextCode}`, {
@@ -236,20 +237,33 @@ export default function SetupPage({ params }: Props) {
 
         if (cancelled) return;
 
-        if (res.ok) {
-          const data = await res.json();
+        if (!res.ok) {
+  setInvalidCode(true);
+  return;
+}
 
-          const status = data?.data?.status;
+const data = await res.json();
+const status = data?.data?.status;
 
-        if (status === "active" || status === "inactive") {
-          router.replace(`/p/${nextCode}`);
-          return;
-        }
-        }
+if (!data?.success || !data?.data) {
+  setInvalidCode(true);
+  return;
+}
+
+if (status === "active" || status === "inactive") {
+  redirected = true;
+  router.replace(`/t/${nextCode}`);
+  return;
+}
+
+if (status !== "unclaimed") {
+  setInvalidCode(true);
+  return;
+}
       } catch {
         // Etiket bulunamazsa veya henüz aktif değilse setup devam eder.
       } finally {
-        if (!cancelled) {
+        if (!cancelled && !redirected) {
           setLoading(false);
         }
       }
@@ -367,7 +381,33 @@ export default function SetupPage({ params }: Props) {
       </main>
     );
   }
+if (invalidCode) {
+  return (
+    <main className="min-h-screen bg-[#f5f5f3] px-4 py-8 text-neutral-900">
+      <div className="mx-auto max-w-md rounded-[1.5rem] border border-neutral-200 bg-white px-5 py-6 text-center shadow-sm">
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-neutral-400">
+          Dokuntag
+        </p>
 
+        <h1 className="mt-3 text-2xl font-semibold tracking-tight">
+          Ürün bulunamadı
+        </h1>
+
+        <p className="mt-2 text-sm leading-6 text-neutral-600">
+          Bu kod sistemde kayıtlı değil. Lütfen etiketteki kodu kontrol edin.
+        </p>
+
+        <button
+          type="button"
+          onClick={() => router.push("/start")}
+          className="mt-5 rounded-full bg-neutral-900 px-5 py-3 text-sm font-medium text-white"
+        >
+          Kodu tekrar gir
+        </button>
+      </div>
+    </main>
+  );
+}
   if (done) {
     return (
       <main className="min-h-screen bg-[#f5f5f3] px-4 py-5 text-neutral-900">

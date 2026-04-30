@@ -19,7 +19,7 @@ export default function StartPage() {
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!isValid) return;
-    router.push(`/t/${code}`);
+router.push(`/t/${code}?from=start`);
   }
 
   return (

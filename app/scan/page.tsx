@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 type ScanStatus = "idle" | "starting" | "scanning" | "success" | "error";
@@ -16,23 +15,8 @@ function isValidCode(value: string) {
   return value.length >= 3 && value.length <= 10;
 }
 
-function isDokuntagUrl(value: string) {
-  try {
-    const url = new URL(value);
-
-    return (
-      url.hostname === "dokuntag.com" ||
-      url.hostname === "www.dokuntag.com" ||
-      url.hostname.endsWith(".vercel.app")
-    );
-  } catch {
-    return false;
-  }
-}
-
 function extractCode(value: string) {
   const trimmed = String(value || "").trim();
-
   if (!trimmed) return "";
 
   try {
@@ -60,6 +44,7 @@ export default function ScanPage() {
   const [manualCode, setManualCode] = useState("");
 
   const manualCodeValid = useMemo(() => isValidCode(manualCode), [manualCode]);
+  const cameraOpen = status === "starting" || status === "scanning";
 
   function stopCamera() {
     stopRef.current = true;
@@ -72,6 +57,12 @@ export default function ScanPage() {
     if (videoRef.current) {
       videoRef.current.srcObject = null;
     }
+  }
+
+  function resetCamera() {
+    stopCamera();
+    setStatus("idle");
+    setMessage("");
   }
 
   function goToCode(code: string) {
@@ -87,7 +78,7 @@ export default function ScanPage() {
     setMessage(`Kod bulundu: ${normalized}`);
     stopCamera();
 
-    window.location.href = `/t/${normalized}`;
+    window.location.href = `/t/${normalized}?from=scan`;
   }
 
   async function startScan() {
@@ -117,9 +108,7 @@ export default function ScanPage() {
       }
 
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode: "environment",
-        },
+        video: { facingMode: "environment" },
         audio: false,
       });
 
@@ -149,20 +138,14 @@ export default function ScanPage() {
           const rawValue = codes[0]?.rawValue || "";
 
           if (rawValue) {
-            if (isDokuntagUrl(rawValue)) {
-              goToCode(rawValue);
-              return;
-            }
-
             const code = extractCode(rawValue);
-
             if (code) {
               goToCode(code);
               return;
             }
           }
         } catch {
-          // Kamera görüntüsü hazır değilse bir sonraki frame beklenir.
+          // Kamera görüntüsü hazır değilse sonraki frame beklenir.
         }
 
         window.requestAnimationFrame(loop);
@@ -176,6 +159,15 @@ export default function ScanPage() {
       );
       stopCamera();
     }
+  }
+
+  function toggleCamera() {
+    if (cameraOpen) {
+      resetCamera();
+      return;
+    }
+
+    void startScan();
   }
 
   useEffect(() => {
@@ -198,8 +190,8 @@ export default function ScanPage() {
             </h1>
 
             <p className="mt-4 max-w-2xl text-sm leading-6 text-neutral-600">
-              Ürünün üzerindeki QR kodu kameraya gösterin. Kamera kullanmak
-              istemiyorsanız ürün kodunu elle girebilirsiniz.
+              Ürünün üzerindeki QR kodu kameraya gösterin. QR okunmuyorsa
+              etiketteki ürün kodunu aşağıdan yazabilirsiniz.
             </p>
           </div>
 
@@ -227,82 +219,50 @@ export default function ScanPage() {
               </div>
             ) : null}
 
-            <div className="mt-5 grid gap-3 sm:grid-cols-2">
-              <button
-                type="button"
-                onClick={startScan}
-                disabled={status === "starting" || status === "scanning"}
-                className="min-h-12 rounded-full bg-neutral-950 px-6 py-3 text-sm font-semibold text-white transition hover:scale-[1.02] hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {status === "scanning"
-                  ? "Okutma açık"
-                  : status === "starting"
-                    ? "Kamera açılıyor..."
-                    : "QR okut"}
-              </button>
+            <button
+              type="button"
+              onClick={toggleCamera}
+              disabled={status === "starting"}
+              className="mt-5 min-h-12 w-full rounded-full bg-neutral-950 px-6 py-3 text-sm font-semibold text-white transition hover:scale-[1.02] hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {status === "starting"
+                ? "Kamera açılıyor..."
+                : cameraOpen
+                  ? "Kamerayı kapat"
+                  : "QR okut"}
+            </button>
+
+            <form
+              className="mt-6 grid gap-3 sm:grid-cols-[1fr_auto]"
+              onSubmit={(event) => {
+                event.preventDefault();
+                goToCode(manualCode);
+              }}
+            >
+              <input
+                value={manualCode}
+                onChange={(event) =>
+                  setManualCode(normalizeCode(event.target.value))
+                }
+                placeholder="Ürün kodu"
+                inputMode="text"
+                autoCapitalize="characters"
+                autoComplete="off"
+                className="min-h-12 w-full rounded-2xl border border-neutral-300 bg-white px-4 text-center text-sm font-semibold tracking-[0.16em] outline-none transition focus:border-neutral-900 focus:ring-2 focus:ring-neutral-200"
+              />
 
               <button
-                type="button"
-                onClick={() => {
-                  stopCamera();
-                  setStatus("idle");
-                  setMessage("");
-                }}
-                className="min-h-12 rounded-full border border-neutral-300 bg-white px-6 py-3 text-sm font-semibold transition hover:bg-neutral-50"
+                type="submit"
+                disabled={!manualCodeValid}
+                className="min-h-12 rounded-2xl bg-neutral-950 px-6 py-3 text-sm font-semibold text-white transition hover:scale-[1.02] hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-40"
               >
-                Kamerayı kapat
+                Kodu aç
               </button>
-            </div>
+            </form>
 
-            <div className="mt-8 rounded-[2rem] border border-neutral-200 bg-[#f7f3ea] p-5">
-              <h2 className="text-lg font-semibold">Kod elle girilebilir</h2>
-
-              <p className="mt-2 text-sm leading-6 text-neutral-600">
-                QR okunmuyorsa ürün üzerindeki kodu yazın. Kod otomatik büyük
-                harfe çevrilir; Türkçe karakter ve özel karakterler temizlenir.
-              </p>
-
-              <form
-                className="mt-4 grid gap-3 sm:grid-cols-[1fr_auto]"
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  goToCode(manualCode);
-                }}
-              >
-                <input
-                  value={manualCode}
-                  onChange={(event) =>
-                    setManualCode(normalizeCode(event.target.value))
-                  }
-                  placeholder="Ürün kodu"
-                  inputMode="text"
-                  autoCapitalize="characters"
-                  autoComplete="off"
-                  className="min-h-12 w-full rounded-2xl border border-neutral-300 bg-white px-4 text-center text-sm font-semibold tracking-[0.16em] outline-none transition focus:border-neutral-900 focus:ring-2 focus:ring-neutral-200"
-                />
-
-                <button
-                  type="submit"
-                  disabled={!manualCodeValid}
-                  className="min-h-12 rounded-2xl bg-neutral-950 px-6 py-3 text-sm font-semibold text-white transition hover:scale-[1.02] hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-40"
-                >
-                  Kodu aç
-                </button>
-              </form>
-
-              <p className="mt-3 text-xs text-neutral-500">
-                Kod 3–10 karakter olmalı. Sadece harf ve rakam kullanılabilir.
-              </p>
-            </div>
-
-            <div className="mt-6 flex justify-center">
-              <Link
-                href="/"
-                className="text-sm font-medium text-neutral-500 transition hover:text-neutral-950"
-              >
-                Ana sayfaya dön
-              </Link>
-            </div>
+            <p className="mt-3 text-center text-xs text-neutral-500">
+              Kod 3–10 karakter olmalı. Sadece harf ve rakam kullanılabilir.
+            </p>
           </div>
         </section>
       </div>
