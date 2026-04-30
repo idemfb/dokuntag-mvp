@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+import ScrollToTopButton from "./components/ScrollToTopButton";
 
 export const metadata: Metadata = {
   title: "Dokuntag® | NFC ve QR ile kaybolanı sahibine ulaştırın",
@@ -29,7 +30,7 @@ export const metadata: Metadata = {
     url: "https://dokuntag.com",
     images: [
       {
-        url: "/images/hero-main.jpg",
+        url: "/images/hero-new.jpg",
         width: 1200,
         height: 630,
         alt: "Dokuntag NFC ve QR kayıp buluşturma sistemi",
@@ -41,7 +42,7 @@ export const metadata: Metadata = {
     title: "Dokuntag® | Dokun, Bul, Buluştur",
     description:
       "NFC ve QR ile kaybolanı sahibine ulaştıran güvenli iletişim sistemi.",
-    images: ["/images/hero-main.jpg"],
+    images: ["/images/hero-new.jpg"],
   },
 };
 
@@ -85,57 +86,6 @@ const useCases = [
   },
 ];
 
-const steps = [
-  {
-    title: "Etiketi tak",
-    text: "Dokuntag®’ı birey, evcil hayvan, anahtar, çanta veya değer verdiğiniz eşyalar için kullanın.",
-  },
-  {
-    title: "Bulan kişi okutur",
-    text: "NFC ile dokunur veya QR kodu okutur. Uygulama indirmesine gerek yoktur.",
-  },
-  {
-    title: "Size ulaşır",
-    text: "Açılan güvenli profil üzerinden sizin belirlediğiniz yöntemle iletişim kurar.",
-  },
-];
-
-const faqItems = [
-  {
-    question: "Adres paylaşmak zorunda mıyım?",
-    answer:
-      "Hayır. Dokuntag adres bilgisi istemez ve adres paylaşmanızı önermez.",
-  },
-  {
-    question: "Bulan kişinin uygulama indirmesi gerekir mi?",
-    answer:
-      "Hayır. NFC ya da QR okutulduğunda Dokuntag profil sayfası tarayıcıda açılır.",
-  },
-  {
-    question: "Telefon numaram görünmek zorunda mı?",
-    answer:
-      "Hayır. Telefon, WhatsApp, e-posta ve not alanlarını isteğinize göre açıp kapatabilirsiniz.",
-  },
-  {
-    question: "NFC ve QR aynı yere mi gider?",
-    answer:
-      "Evet. Varsayılan olarak NFC ve QR aynı güvenli Dokuntag profil akışına yönlenir. Özel yönlendirme ihtiyaçları için bizimle iletişime geçebilirsiniz.",
-  },
-  {
-    question: "Yıllık üyelik var mı?",
-    answer:
-      "Hayır. Dokuntag® One fiziksel ürün olarak üyeliksiz kullanılır.",
-  },
-];
-
-const trustItems = [
-  "Adres bilgisi istemez ve adres paylaşmanızı önermez",
-  "Telefon görünürlüğünü siz seçersiniz",
-  "WhatsApp isteğe bağlıdır",
-  "Bulan kişi uygulama indirmez",
-  "NFC ve QR güvenli profil akışına yönlenir",
-  "Bilgiler ürün sahibi tarafından yönetilir",
-];
 
 const guideItems = [
   {
@@ -197,21 +147,22 @@ export default function HomePage() {
     <main className="min-h-screen bg-[#f7f3ea] text-neutral-950">
       <section className="px-5 py-16 sm:px-8 sm:py-24">
   <div className="mx-auto grid max-w-7xl items-center gap-10 lg:grid-cols-[0.95fr_1.05fr]">
+    
     <div>
       <p className="mb-5 text-sm font-semibold uppercase tracking-[0.24em] text-neutral-500">
-        NFC veya QR ile güvenle buluşturma sistemi
+        Dokuntag®
       </p>
 
       <h1 className="max-w-3xl text-5xl font-semibold tracking-tight text-neutral-950 sm:text-6xl lg:text-7xl">
-        Bulunduğunda, sahibine saniyeler içinde ulaşılır.
+        Kaybolduğunda, sana ulaşırlar.
       </h1>
 
-      <p className="mt-5 text-lg font-medium tracking-wide text-neutral-500">
-        Dokun. Bul. Buluştur.
+      <p className="mt-6 max-w-2xl text-lg leading-8 text-neutral-600 sm:text-xl">
+        Bulan kişi etiketi okutur veya dokundurur. Saniyeler içinde size ulaşır; uygulama indirmez, karmaşa yaşamaz.
       </p>
 
-      <p className="mt-6 max-w-2xl text-lg leading-8 text-neutral-600 sm:text-xl">
-        Bulan kişi etiketi okutur veya dokundurur. Tek dokunuşla sana ulaşır - karmaşa yok - uygulama yok.
+      <p className="mt-4 text-sm text-neutral-500">
+        Bir kere alırsın · Yıllık ücret yok · Uygulama gerekmez
       </p>
 
       <div className="mt-10 flex flex-col gap-3 sm:flex-row">
@@ -222,24 +173,13 @@ export default function HomePage() {
           İlk üretim için bilgi al
         </Link>
 
-        <a
-          href="#neden"
-          className="rounded-full border border-neutral-300 bg-white/70 px-8 py-4 text-center text-sm font-semibold text-neutral-950 transition hover:bg-white"
-        >
-          Kullanım alanları
-        </a>
-
         <Link
-          href="/scan"
+          href="/p/DKNTG"
           className="rounded-full border border-neutral-300 bg-white/70 px-8 py-4 text-center text-sm font-semibold text-neutral-950 transition hover:bg-white"
         >
-          QR okut / NFC dokundur
+          Demo gör
         </Link>
       </div>
-
-      <p className="mt-4 text-sm text-neutral-500">
-        Bir kere alırsın · Yıllık ücret yok · Uygulama gerekmez
-      </p>
     </div>
 
     <div className="relative">
@@ -248,28 +188,27 @@ export default function HomePage() {
       <div className="relative overflow-hidden rounded-[2.5rem] border border-white/60 bg-white shadow-2xl shadow-neutral-200/70">
         <Image
           src="/images/hero-new.jpg"
-          alt="Dokuntag kullanım senaryosu"
+          alt="Dokuntag kullanım"
           width={1400}
           height={1000}
           priority
-          sizes="(max-width: 1024px) 100vw, 50vw"
           className="h-[420px] w-full object-cover sm:h-[560px]"
         />
 
         <div className="absolute bottom-5 left-5 right-5 rounded-2xl border border-black/10 bg-white/85 p-4 shadow-xl backdrop-blur-md">
           <p className="text-sm font-semibold text-neutral-950">
-          Telefonunu yaklaştırman yeterli.
-        </p>
+            Telefonunu yaklaştırman yeterli.
+          </p>
 
-        <p className="mt-1 text-xs leading-5 text-neutral-600">
-          Bulan kişi saniyeler içinde sana ulaşır.
-        </p>
+          <p className="mt-1 text-xs text-neutral-600">
+            Bulan kişi doğrudan sana ulaşır.
+          </p>
         </div>
       </div>
     </div>
+
   </div>
 </section>
-
       <section id="neden" className="px-5 py-20 sm:px-8">
   <div className="mx-auto max-w-7xl">
     <div className="max-w-3xl">
@@ -358,8 +297,25 @@ export default function HomePage() {
   </div>
 </section>
 <section id="nasil-calisir" className="px-5 pt-10 pb-20 sm:px-8 sm:py-20">
-  <div className="mx-auto grid max-w-7xl items-center gap-10 lg:grid-cols-2">
-    <div className="relative mx-auto w-full max-w-4xl overflow-hidden rounded-[2rem] border border-neutral-200 bg-white shadow-sm">
+  <div className="mx-auto max-w-5xl">
+
+    {/* 🔥 BAŞLIK (MOBİL + DESKTOP ORTAK) */}
+    <div className="mb-8 text-center">
+      <p className="text-xs font-semibold uppercase tracking-[0.25em] text-neutral-500">
+        Nasıl çalışır?
+      </p>
+
+      <h2 className="mt-3 text-2xl font-semibold tracking-tight text-neutral-900 sm:text-4xl">
+        Bulunduğunda, saniyeler içinde size ulaşılır.
+      </h2>
+
+      <p className="mt-3 text-sm text-neutral-500">
+        Bulundu · Okutuldu · Profil açıldı · Ulaşıldı
+      </p>
+    </div>
+
+    {/* 🔥 GÖRSEL */}
+    <div className="overflow-hidden rounded-[2rem] border border-neutral-200 bg-white shadow-sm">
       <Image
         src="/images/how-all.jpg"
         alt="Dokuntag nasıl çalışır"
@@ -367,70 +323,23 @@ export default function HomePage() {
         height={1200}
         className="w-full object-cover"
       />
-
-      <div className="absolute inset-x-0 top-0 md:hidden">
-        <div className="m-3 rounded-2xl border border-black/10 bg-white/90 p-4 text-neutral-900 shadow-lg backdrop-blur-xl">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.25em] text-neutral-500">
-            Nasıl çalışır?
-          </p>
-
-          <h2 className="mt-1 text-xl font-semibold leading-tight text-neutral-900">
-            Bulunduğunda, saniyeler içinde size ulaşılır.
-          </h2>
-
-          <p className="mt-2 text-xs text-neutral-600">
-            Bulundu · Okutuldu · Profil açıldı · Ulaşıldı
-          </p>
-        </div>
-      </div>
     </div>
 
-    <div>
-      <div className="hidden md:block">
-        <p className="text-sm font-semibold uppercase tracking-[0.22em] text-neutral-500">
-          Nasıl çalışır?
-        </p>
-
-        <h2 className="mt-4 text-4xl font-semibold tracking-tight sm:text-5xl">
-          Bulunduğunda, saniyeler içinde size ulaşılır.
-        </h2>
-      </div>
-
-      <p className="mt-5 text-lg leading-8 text-neutral-600">
+    {/* 🔥 AÇIKLAMA */}
+    <div className="mt-10 text-center">
+      <p className="text-lg leading-8 text-neutral-600">
         Dokuntag®, NFC ve QR teknolojisini kullanır. Bulan kişi etiketi okutur,
         profil açılır ve sizin izin verdiğiniz iletişim yollarıyla size ulaşır.
       </p>
 
-      <p className="mt-3 text-sm text-neutral-500">
+      <p className="mt-4 text-sm text-neutral-500">
         Dilerseniz tüm iletişim bilgilerinizi gizleyebilirsiniz. Bu durumda
-        bulan kişi yalnızca mesaj bırakır. Daha hızlı ulaşım için en az bir
-        iletişim seçeneğini açık bırakmanız önerilir.
+        bulan kişi yalnızca mesaj bırakır.
       </p>
-
-      <p className="mt-3 text-sm text-neutral-500">
-        Tüm telefonlarda QR ile çalışır. Destekleyen cihazlarda NFC ile daha
-        hızlı açılır.
-      </p>
-
-      <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-        <Link
-          href="/p/DKNTG"
-          className="inline-flex justify-center rounded-full border border-neutral-300 bg-white px-6 py-3 text-sm font-semibold transition hover:bg-neutral-100"
-        >
-          Demo profili gör
-        </Link>
-
-        <Link
-          href="/scan"
-          className="inline-flex justify-center rounded-full bg-neutral-950 px-6 py-3 text-sm font-semibold text-white transition hover:bg-neutral-800"
-        >
-          QR okut / NFC dokundur
-        </Link>
-      </div>
     </div>
+
   </div>
 </section>
-
       <section id="yardim" className="px-5 py-20 sm:px-8">
         <div className="mx-auto max-w-7xl rounded-[2.5rem] border border-neutral-200 bg-white p-8 shadow-sm sm:p-12">
           <div className="mb-8 max-w-3xl">
@@ -695,6 +604,7 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+      <ScrollToTopButton />
     </main>
   );
 }
