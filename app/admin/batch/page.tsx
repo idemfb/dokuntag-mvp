@@ -9,6 +9,7 @@ type BatchItem = {
   setupLink: string;
   qrPageLink: string;
   qrDownloadLink: string;
+  status?: "production_hold" | "unclaimed" | "active" | "inactive" | "void";
 };
 
 type PdfPageSize = "A4" | "A3" | "custom";
@@ -198,7 +199,8 @@ export default function AdminBatchPage() {
       label: normalizedCode,
       setupLink: `${baseUrl}/t/${normalizedCode}`,
       qrPageLink: `${baseUrl}/qr/${normalizedCode}${query}`,
-      qrDownloadLink: `${baseUrl}/api/qr-download/${normalizedCode}${query}`
+      qrDownloadLink: `${baseUrl}/api/qr-download/${normalizedCode}${query}`,
+      status: "production_hold",
     };
   }
 
@@ -219,6 +221,54 @@ export default function AdminBatchPage() {
     });
     setExistingCode(nextItem.code);
     setError("");
+  }
+
+  function getStatusLabel(status?: BatchItem["status"]) {
+    if (status === "production_hold") return "Kontrol bekliyor";
+    if (status === "unclaimed") return "Satışa açık";
+    if (status === "active") return "Kuruldu";
+    if (status === "inactive") return "Pasif";
+    if (status === "void") return "İptal";
+    return "Kontrol bekliyor";
+  }
+
+  async function updateItemStatus(code: string, action: "release" | "void") {
+    const message = action === "release"
+      ? `${code} kodu kontrol edildi ve kurulum/satışa açılacak. Onaylıyor musunuz?`
+      : `${code} kodu hatalı/iptal olarak kapatılacak. Bu kod artık kullanılamaz. Onaylıyor musunuz?`;
+
+    if (!window.confirm(message)) return;
+
+    try {
+      setLoading(true);
+      setError("");
+
+      const res = await fetch("/api/admin/generate-batch", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action, code })
+      });
+
+      const data = (await res.json()) as { error?: string; status?: BatchItem["status"] };
+
+      if (!res.ok) {
+        throw new Error(data?.error || "Durum güncellenemedi.");
+      }
+
+      setItems((prev) => {
+        const nextItems = prev.map((item) =>
+          item.code === code ? { ...item, status: data.status } : item
+        );
+        try {
+          window.localStorage.setItem("dokuntag_batch_items", JSON.stringify(nextItems));
+        } catch {}
+        return nextItems;
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Durum güncellenemedi.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function handleGenerateCustomCode() {
@@ -321,9 +371,10 @@ export default function AdminBatchPage() {
   function downloadExcelCsv() {
     if (!items.length) return;
 
-    const headers = ["Kod", "Etiket", "NFC Link", "QR Sayfası", "QR İndir"];
+    const headers = ["Kod", "Durum", "Etiket", "NFC Link", "QR Sayfası", "QR İndir"];
     const rows = items.map((item) => [
       item.code,
+      getStatusLabel(item.status),
       item.label,
       item.setupLink,
       item.qrPageLink,
@@ -505,7 +556,7 @@ export default function AdminBatchPage() {
             </h1>
 
             <p className="mt-3 max-w-3xl text-sm leading-6 text-neutral-600">
-              Üretilen tüm kodlar veritabanına <strong>unclaimed</strong> olarak eklenir.
+              Üretilen tüm kodlar önce <strong>kontrol bekliyor</strong> durumunda oluşturulur.
               ZIP ve gerçek PDF çıktısı tek yerden alınır.
             </p>
           </div>
@@ -829,7 +880,7 @@ export default function AdminBatchPage() {
               <div className="border-b border-neutral-200 px-6 py-5">
                 <h2 className="text-lg font-semibold">Üretilen kodlar</h2>
                 <p className="mt-1 text-sm text-neutral-600">
-                  Toplam {items.length} adet kod üretildi.
+                  Toplam {items.length} adet kod üretildi. Yeni üretimler önce kontrol bekliyor durumundadır.
                 </p>
               </div>
 
@@ -838,48 +889,34 @@ export default function AdminBatchPage() {
                   <thead className="bg-neutral-50 text-left text-neutral-600">
                     <tr>
                       <th className="px-4 py-3 font-medium">Kod</th>
+                      <th className="px-4 py-3 font-medium">Durum</th>
                       <th className="px-4 py-3 font-medium">Yazı</th>
                       <th className="px-4 py-3 font-medium">Kurulum</th>
                       <th className="px-4 py-3 font-medium">QR sayfası</th>
                       <th className="px-4 py-3 font-medium">QR indir</th>
+                      <th className="px-4 py-3 font-medium">Son kontrol</th>
                     </tr>
                   </thead>
                   <tbody>
                     {items.map((item) => (
                       <tr key={item.code} className="border-t border-neutral-200">
-                        <td className="px-4 py-3 font-semibold text-neutral-900">
-                          {item.code}
-                        </td>
+                        <td className="px-4 py-3 font-semibold text-neutral-900">{item.code}</td>
+                        <td className="px-4 py-3 text-neutral-700">{getStatusLabel(item.status)}</td>
                         <td className="px-4 py-3 text-neutral-700">{item.label}</td>
                         <td className="px-4 py-3">
-                          <a
-                            href={item.setupLink}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="break-all text-neutral-700 underline underline-offset-4"
-                          >
-                            Aç
-                          </a>
+                          <a href={item.setupLink} target="_blank" rel="noreferrer" className="break-all text-neutral-700 underline underline-offset-4">Aç</a>
                         </td>
                         <td className="px-4 py-3">
-                          <a
-                            href={item.qrPageLink}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="break-all text-neutral-700 underline underline-offset-4"
-                          >
-                            QR sayfası
-                          </a>
+                          <a href={item.qrPageLink} target="_blank" rel="noreferrer" className="break-all text-neutral-700 underline underline-offset-4">QR sayfası</a>
                         </td>
                         <td className="px-4 py-3">
-                          <a
-                            href={item.qrDownloadLink}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="break-all text-neutral-700 underline underline-offset-4"
-                          >
-                            İndir
-                          </a>
+                          <a href={item.qrDownloadLink} target="_blank" rel="noreferrer" className="break-all text-neutral-700 underline underline-offset-4">İndir</a>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex flex-wrap gap-2">
+                            <button type="button" onClick={() => updateItemStatus(item.code, "release")} disabled={item.status === "unclaimed" || item.status === "active" || item.status === "void" || loading} className="rounded-xl border border-emerald-300 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700 disabled:cursor-not-allowed disabled:opacity-50">Kontrol edildi</button>
+                            <button type="button" onClick={() => updateItemStatus(item.code, "void")} disabled={item.status === "void" || item.status === "active" || loading} className="rounded-xl border border-red-300 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700 disabled:cursor-not-allowed disabled:opacity-50">Hatalı / iptal</button>
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -887,7 +924,6 @@ export default function AdminBatchPage() {
                 </table>
               </div>
             </section>
-
             <section className="overflow-hidden rounded-[2rem] border border-neutral-200 bg-white shadow-sm">
               <div className="border-b border-neutral-200 px-6 py-5">
                 <h2 className="text-lg font-semibold">Baskı listesi</h2>

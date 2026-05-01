@@ -92,6 +92,26 @@ export default async function TagRedirectPage({
     );
   }
 
+  if (tag.status === "production_hold") {
+    return (
+      <InfoScreen
+        title="Bu ürün henüz kullanıma açılmadı"
+        text="Bu Dokuntag üretim kontrolündedir. Ürün kalite kontrolünden geçtikten sonra kurulum açılır."
+        retryHref={retryHref}
+      />
+    );
+  }
+
+  if (tag.status === "void") {
+    return (
+      <InfoScreen
+        title="Bu ürün kodu iptal edildi"
+        text="Bu kod hatalı baskı veya üretim iptali nedeniyle kullanıma kapatılmıştır."
+        retryHref={retryHref}
+      />
+    );
+  }
+
   if (tag.status === "unclaimed") {
     redirect(`/setup/${code}`);
   }

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateUniqueCode } from "@/lib/code";
-import { findTagByCodeAsync, upsertTagAsync } from "@/lib/tags";
+import { findTagByCodeAsync, updateTagStatusByCodeAsync, upsertTagAsync } from "@/lib/tags";
 
 type BatchItem = {
   code: string;
@@ -8,6 +8,7 @@ type BatchItem = {
   setupLink: string;
   qrPageLink: string;
   qrDownloadLink: string;
+  status?: "production_hold" | "unclaimed" | "active" | "inactive" | "void";
 };
 
 type DesignState = Record<string, string | number | boolean>;
@@ -78,17 +79,18 @@ function buildItem({
     label,
     setupLink: `${baseUrl}/t/${code}`,
     qrPageLink: `${baseUrl}/qr/${code}${query}`,
-    qrDownloadLink: `${baseUrl}/api/qr-download/${code}${query}`
+    qrDownloadLink: `${baseUrl}/api/qr-download/${code}${query}`,
+    status: "production_hold"
   };
 }
 
-async function createUnclaimedTag(code: string) {
+async function createProductionHoldTag(code: string) {
   await upsertTagAsync({
     code,
     productType: "item",
     tagName: code,
     petName: code,
-    status: "unclaimed",
+    status: "production_hold",
     visibility: {
       showName: true,
       showPhone: false,
@@ -121,6 +123,31 @@ export async function POST(request: NextRequest) {
     const designQuery = buildDesignQuery(body.design);
     const items: BatchItem[] = [];
 
+    const action = getString((body as { action?: string })?.action);
+    const actionCode = normalizeSpecialCode((body as { code?: string })?.code);
+
+    if (action === "release" || action === "void") {
+      if (!actionCode) {
+        return NextResponse.json({ error: "Kod zorunludur." }, { status: 400 });
+      }
+
+      const nextStatus = action === "release" ? "unclaimed" : "void";
+      const updated = await updateTagStatusByCodeAsync({
+        code: actionCode,
+        status: nextStatus
+      });
+
+      if (!updated) {
+        return NextResponse.json({ error: "Kod bulunamadı." }, { status: 404 });
+      }
+
+      return NextResponse.json({
+        success: true,
+        code: updated.code,
+        status: updated.status
+      });
+    }
+
     if (customCode) {
       if (customCode.length < 3 || customCode.length > 10) {
         return NextResponse.json(
@@ -137,7 +164,7 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      await createUnclaimedTag(customCode);
+      await createProductionHoldTag(customCode);
       items.push(
         buildItem({
           baseUrl,
@@ -166,7 +193,7 @@ export async function POST(request: NextRequest) {
 
     for (let i = 0; i < count; i += 1) {
       const code = generateUniqueCode();
-      await createUnclaimedTag(code);
+      await createProductionHoldTag(code);
 
       items.push(
         buildItem({

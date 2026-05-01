@@ -1,7 +1,7 @@
 ﻿import { readDB, readDBAsync, writeDB, writeDBAsync } from "@/lib/db";
 
 export type ProductType = "pet" | "item" | "key" | "person" | "other";
-export type TagStatus = "unclaimed" | "active" | "inactive";
+export type TagStatus = "production_hold" | "unclaimed" | "active" | "inactive" | "void";
 export type TransferStatus = "pending" | "used" | "expired" | "cancelled";
 export type RecoveryEntryType = "my" | "recover";
 export type RecoverySessionStatus = "pending" | "used" | "expired";
@@ -410,6 +410,8 @@ function resolveAllowDirectWhatsapp(product: TagRecord) {
 }
 
 function resolveStatus(product: TagRecord): TagStatus {
+  if (product.status === "production_hold") return "production_hold";
+  if (product.status === "void") return "void";
   if (product.status === "inactive") return "inactive";
   if (product.status === "active") return "active";
   return "unclaimed";
@@ -1492,6 +1494,38 @@ export async function updateTagByManageTokenAsync(input: UpdateByManageTokenInpu
       allowDirectWhatsapp: resolvedAllowDirectWhatsapp
     },
     ...nextVisibility
+  };
+
+  await saveProductsAsync(products);
+  return mapProductToTagView(products[index]);
+}
+
+export async function updateTagStatusByCodeAsync({
+  code,
+  status
+}: {
+  code: string;
+  status: TagStatus;
+}): Promise<TagView | null> {
+  const normalizedCode = normalizeCode(code);
+  if (!normalizedCode) return null;
+
+  const products = await cleanupTransientStatesAsync();
+  const index = products.findIndex((item) => {
+    return (
+      normalizeCode(item.publicCode || (item as { code?: string }).code || "") === normalizedCode ||
+      normalizeCode(item.oldCode || "") === normalizedCode
+    );
+  });
+
+  if (index === -1) {
+    return null;
+  }
+
+  products[index] = {
+    ...products[index],
+    status,
+    updatedAt: new Date().toISOString()
   };
 
   await saveProductsAsync(products);

@@ -2,7 +2,12 @@
 import { verifyRecoverySessionTokenAsync } from "@/lib/tags";
 
 type ProductType = "pet" | "item" | "key" | "person" | "other";
-type TagStatus = "unclaimed" | "active" | "inactive";
+type TagStatus =
+  | "production_hold"
+  | "unclaimed"
+  | "active"
+  | "inactive"
+  | "void";
 
 function getMainSiteUrl() {
   const value =
@@ -57,12 +62,22 @@ function getProductTheme(productType: ProductType) {
 }
 
 function getStatusLabel(status: TagStatus) {
+  if (status === "production_hold") return "Kontrol bekliyor";
+  if (status === "void") return "İptal";
   if (status === "inactive") return "Kapalı";
   if (status === "active") return "Aktif";
   return "Kurulum gerekli";
 }
 
 function getStatusBadgeClass(status: TagStatus) {
+  if (status === "production_hold") {
+    return "border border-blue-200 bg-blue-50 text-blue-700";
+  }
+
+  if (status === "void") {
+    return "border border-red-200 bg-red-50 text-red-700";
+  }
+
   if (status === "inactive") {
     return "border border-amber-200 bg-amber-50 text-amber-800";
   }
