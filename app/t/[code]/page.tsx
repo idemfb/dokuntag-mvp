@@ -2,6 +2,13 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { findTagByCodeAsync } from "@/lib/tags";
 
+export const metadata = {
+  robots: {
+    index: false,
+    follow: true,
+  },
+};
+
 type PageProps = {
   params: Promise<{ code: string }>;
   searchParams?: Promise<{ from?: string }>;
