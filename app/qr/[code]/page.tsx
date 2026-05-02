@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 
 type SizeOption = "1cm" | "2cm" | "2.5cm" | "3cm" | "4cm" | "5cm" | "6cm";
-type ShapeOption = "round" | "square";
+type ShapeOption = "round" | "square" | "drop";
 type OutputMode = "qr" | "front" | "both";
 type FitMode = "cover" | "contain";
 
@@ -11,12 +11,10 @@ type DesignState = {
   size: SizeOption;
   shape: ShapeOption;
   hasHole: boolean;
-  topText: string;
   codeText: string;
   hideCode: boolean;
   qrScale: number;
   codeScale: number;
-  topGap: number;
   codeGap: number;
   qrOffsetY: number;
   foregroundColor: string;
@@ -41,12 +39,10 @@ const DEFAULT_DESIGN: DesignState = {
   size: "3cm",
   shape: "round",
   hasHole: true,
-  topText: "OKUT",
   codeText: "",
   hideCode: false,
   qrScale: 80,
   codeScale: 100,
-  topGap: 100,
   codeGap: 100,
   qrOffsetY: 100,
   foregroundColor: "#111111",
@@ -129,12 +125,10 @@ function readDesignFromUrl(params: URLSearchParams): DesignState {
     size,
     shape,
     hasHole: params.get("hasHole") === "false" ? false : true,
-    topText: String(params.get("topText") ?? DEFAULT_DESIGN.topText).slice(0, 12),
     codeText: String(params.get("codeText") ?? DEFAULT_DESIGN.codeText).slice(0, 20),
     hideCode: params.get("hideCode") === "true",
     qrScale: parseNumber(params.get("qrScale"), DEFAULT_DESIGN.qrScale, 40, 96),
     codeScale: parseNumber(params.get("codeScale"), DEFAULT_DESIGN.codeScale, 60, 180),
-    topGap: parseNumber(params.get("topGap"), DEFAULT_DESIGN.topGap, 60, 170),
     codeGap: parseNumber(params.get("codeGap"), DEFAULT_DESIGN.codeGap, 60, 170),
     qrOffsetY: parseNumber(params.get("qrOffsetY"), DEFAULT_DESIGN.qrOffsetY, 70, 130),
     foregroundColor: parseColor(params.get("foregroundColor"), DEFAULT_DESIGN.foregroundColor),
@@ -152,12 +146,10 @@ function buildDesignQuery(design: DesignState) {
   params.set("size", design.size);
   params.set("shape", design.shape);
   params.set("hasHole", design.hasHole ? "true" : "false");
-  params.set("topText", design.topText);
   params.set("codeText", design.codeText);
   params.set("hideCode", design.hideCode ? "true" : "false");
   params.set("qrScale", String(design.qrScale));
   params.set("codeScale", String(design.codeScale));
-  params.set("topGap", String(design.topGap));
   params.set("codeGap", String(design.codeGap));
   params.set("qrOffsetY", String(design.qrOffsetY));
   params.set("foregroundColor", design.foregroundColor);
@@ -338,7 +330,7 @@ export default function QrPage() {
             <p className="text-xs uppercase tracking-[0.2em] text-neutral-400">Dokuntag</p>
             <h1 className="mt-2 text-3xl font-semibold tracking-tight">QR baskı yüzü</h1>
             <p className="mt-3 max-w-3xl text-sm leading-6 text-neutral-600">
-              Sade üretim modu: üstte <strong>OKUT</strong>, ortada QR, altta ürün kodu. NFC linki değişmez: /t/{code}.
+              Sade üretim modu: sadece QR ve altında ürün kodu. NFC linki değişmez: /t/{code}.
             </p>
           </div>
 
@@ -369,21 +361,14 @@ export default function QrPage() {
                   >
                     <option value="round">Daire</option>
                     <option value="square">Kare</option>
+                    <option value="drop">Damla / Şablon</option>
                   </select>
                 </label>
 
               </SectionCard>
 
               <SectionCard title="QR yüzü">
-                <label className="block rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3">
-                  <span className="text-sm font-medium text-neutral-900">Üst yazı</span>
-                  <input
-                    value={design.topText}
-                    onChange={(e) => updateDesign("topText", e.target.value.slice(0, 12).toUpperCase())}
-                    className="mt-3 w-full rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm"
-                    placeholder="OKUT"
-                  />
-                </label>
+                
 
                 <label className="block rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3">
                   <span className="text-sm font-medium text-neutral-900">Ürün kodu</span>
@@ -405,7 +390,6 @@ export default function QrPage() {
 
                 <SliderField label="QR büyüklüğü" value={design.qrScale} min={40} max={96} suffix="%" onChange={(value) => updateDesign("qrScale", value)} />
                 <SliderField label="Kod boyutu" value={design.codeScale} min={60} max={180} suffix="%" onChange={(value) => updateDesign("codeScale", value)} />
-                <SliderField label="OKUT–QR mesafesi" value={design.topGap} min={60} max={170} suffix="%" onChange={(value) => updateDesign("topGap", value)} />
                 <SliderField label="QR–kod mesafesi" value={design.codeGap} min={60} max={170} suffix="%" onChange={(value) => updateDesign("codeGap", value)} />
                 <SliderField label="QR yukarı/aşağı" value={design.qrOffsetY} min={70} max={130} suffix="%" onChange={(value) => updateDesign("qrOffsetY", value)} />
                 <ColorField label="QR ve yazı rengi" value={design.foregroundColor} onChange={(value) => updateDesign("foregroundColor", value)} />

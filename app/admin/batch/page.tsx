@@ -578,13 +578,13 @@ export default function AdminBatchPage() {
 
               <label className="block md:col-span-2">
                 <span className="mb-2 block text-sm font-medium text-neutral-700">
-                  QR alt yazı şablonu
+                  Liste etiketi
                 </span>
                 <input
                   value={labelTemplate}
                   onChange={(e) => setLabelTemplate(e.target.value)}
                   className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-neutral-500"
-                  placeholder="Dokuntag"
+                  placeholder="Üretim etiketi"
                 />
               </label>
 
@@ -712,9 +712,9 @@ export default function AdminBatchPage() {
 
         <section className="overflow-hidden rounded-[2rem] border border-neutral-200 bg-white shadow-sm">
           <div className="border-b border-neutral-200 px-6 py-5">
-            <h2 className="text-lg font-semibold">QR formu</h2>
+            <h2 className="text-lg font-semibold">QR baskı ayarları</h2>
             <p className="mt-1 text-sm text-neutral-600">
-              Damla V2 seçeneği anahtarlık/tasma formu için üst güvenli alanı ve delik işaretini dikkate alır. QR hedefi yine /t/[code] olarak kalır.
+              Sade üretim standardı: sadece QR ve altında ürün kodu. Matbaa şablonu geldiğinde arka plan/template katmanı bu yapıya eklenecek.
             </p>
           </div>
 
@@ -754,26 +754,8 @@ export default function AdminBatchPage() {
               Delik alanı göster
             </label>
 
-            <label className="block md:col-span-1">
-              <span className="mb-2 block text-sm font-medium text-neutral-700">Marka yazısı</span>
-              <input
-                value={design.brandText}
-                onChange={(e) => updateDesign("brandText", e.target.value)}
-                className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-neutral-500"
-              />
-            </label>
-
-            <label className="block md:col-span-1">
-              <span className="mb-2 block text-sm font-medium text-neutral-700">Slogan</span>
-              <input
-                value={design.sloganText}
-                onChange={(e) => updateDesign("sloganText", e.target.value)}
-                className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-neutral-500"
-              />
-            </label>
-
             <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-900 md:col-span-1">
-              Damla V2’de delik seçiliyse QR biraz aşağı alınır. Baskıdan önce tek örnek indirip telefonda okutma testi yap.
+              Baskıdan önce tek örnek indirip telefonda okutma testi yap. QR ve kod güvenli alanı aşmamalı.
             </div>
           </div>
         </section>
