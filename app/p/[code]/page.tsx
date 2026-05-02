@@ -26,7 +26,7 @@ type ProductSubtype =
   | "headphones"
   | "item_other";
 
-type TagStatus = "unclaimed" | "active" | "inactive";
+type TagStatus = "production_hold" | "unclaimed" | "active" | "inactive" | "void";
 
 type Visibility = {
   showName?: boolean;
@@ -398,6 +398,7 @@ export default function PublicPage({
 
     const json: PublicApiResponse = await res.json();
 
+    
     if (!res.ok || !json.success || !json.data) {
       redirectStarted = true;
       setRedirecting(true);
@@ -406,11 +407,22 @@ export default function PublicPage({
     }
 
     if (json.data.status === "unclaimed") {
-      redirectStarted = true;
-      setRedirecting(true);
-      window.location.replace(`/setup/${code}`);
-      return;
-    }
+  redirectStarted = true;
+  setRedirecting(true);
+  window.location.replace(`/setup/${code}`);
+  return;
+}
+
+if (
+  json.data.status === "production_hold" ||
+  json.data.status === "void" ||
+  json.data.status === "inactive"
+) {
+  if (!cancelled) {
+    setData(json.data);
+  }
+  return;
+}
 
     if (!cancelled) {
       setData(json.data);
@@ -628,7 +640,11 @@ export default function PublicPage({
     );
   }
 
-  if (data.status === "inactive") {
+  if (
+  data.status === "production_hold" ||
+  data.status === "void" ||
+  data.status === "inactive"
+) {
     return (
       <main
         className={`min-h-screen px-4 py-8 text-neutral-900 sm:px-5 sm:py-10 ${theme.pageBg}`}

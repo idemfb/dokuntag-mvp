@@ -14,13 +14,19 @@
       "distinctiveFeature": "",
       "petName": "Dokuntag Demo",
       "note": "Bu bir demo profildir. Gerçek mesaj gönderilmez.",
-      "alerts": ["Demo profil", "Gerçek kayıt değildir"],
+      "alerts": [
+        "Demo profil",
+        "Gerçek kayıt değildir"
+      ],
       "allowDirectCall": true,
       "allowDirectWhatsapp": true,
       "status": "active",
       "createdAt": "2026-04-30T00:00:00.000Z",
       "updatedAt": "2026-04-30T00:00:00.000Z",
-      "recovery": { "phone": "", "email": "demo@dokuntag.com" },
+      "recovery": {
+        "phone": "",
+        "email": "demo@dokuntag.com"
+      },
       "visibility": {
         "showName": true,
         "showPhone": true,
@@ -68,13 +74,19 @@
       "distinctiveFeature": "",
       "petName": "Boncuk",
       "note": "Ürkek olabilir. Lütfen güvenli bir yerde bekletip sahibine haber verin.",
-      "alerts": ["Acil bana ulaşın", "Ürkek / yaklaşmayın"],
+      "alerts": [
+        "Acil bana ulaşın",
+        "Ürkek / yaklaşmayın"
+      ],
       "allowDirectCall": true,
       "allowDirectWhatsapp": true,
       "status": "active",
       "createdAt": "2026-04-24T15:51:03.132206Z",
       "updatedAt": "2026-04-24T15:51:03.132206Z",
-      "recovery": { "phone": "", "email": "demo@dokuntag.com" },
+      "recovery": {
+        "phone": "",
+        "email": "demo@dokuntag.com"
+      },
       "visibility": {
         "showName": true,
         "showPhone": true,
@@ -122,13 +134,19 @@
       "distinctiveFeature": "",
       "petName": "Ev Anahtarı",
       "note": "Anahtar bulunduysa lütfen konum bilgisi paylaşmadan sahibine ulaşın.",
-      "alerts": ["Acil bana ulaşın", "Önemli anahtar"],
+      "alerts": [
+        "Acil bana ulaşın",
+        "Önemli anahtar"
+      ],
       "allowDirectCall": true,
       "allowDirectWhatsapp": true,
       "status": "active",
       "createdAt": "2026-04-24T15:51:03.132206Z",
       "updatedAt": "2026-04-24T15:51:03.132206Z",
-      "recovery": { "phone": "", "email": "demo@dokuntag.com" },
+      "recovery": {
+        "phone": "",
+        "email": "demo@dokuntag.com"
+      },
       "visibility": {
         "showName": true,
         "showPhone": true,
@@ -176,13 +194,19 @@
       "distinctiveFeature": "",
       "petName": "Sırt Çantası",
       "note": "İçinde kişisel eşyalar olabilir. Lütfen teslim için iletişime geçin.",
-      "alerts": ["İçinde önemli eşya var", "Ödül verilecektir"],
+      "alerts": [
+        "İçinde önemli eşya var",
+        "Ödül verilecektir"
+      ],
       "allowDirectCall": true,
       "allowDirectWhatsapp": true,
       "status": "active",
       "createdAt": "2026-04-24T15:51:03.132206Z",
       "updatedAt": "2026-04-24T15:51:03.132206Z",
-      "recovery": { "phone": "", "email": "demo@dokuntag.com" },
+      "recovery": {
+        "phone": "",
+        "email": "demo@dokuntag.com"
+      },
       "visibility": {
         "showName": true,
         "showPhone": true,
@@ -215,6 +239,120 @@
       "showAddressDetail": false,
       "showPetName": true,
       "showNote": true
+    },
+    {
+      "publicCode": "72CBHJ",
+      "manageToken": "6bb7920b-2c2e-4aac-8f31-0904f49a28ff",
+      "productType": "item",
+      "productSubtype": "",
+      "name": "72CBHJ",
+      "ownerName": "",
+      "phone": "",
+      "email": "",
+      "city": "",
+      "addressDetail": "",
+      "distinctiveFeature": "",
+      "petName": "72CBHJ",
+      "note": "",
+      "alerts": [],
+      "allowDirectCall": false,
+      "allowDirectWhatsapp": false,
+      "status": "production_hold",
+      "createdAt": "2026-05-02T09:52:07.482Z",
+      "updatedAt": "2026-05-02T09:52:07.482Z",
+      "recovery": {
+        "phone": "",
+        "email": ""
+      },
+      "visibility": {
+        "showName": true,
+        "showPhone": false,
+        "showEmail": false,
+        "showCity": false,
+        "showAddressDetail": false,
+        "showPetName": true,
+        "showNote": false
+      },
+      "profile": {
+        "name": "72CBHJ",
+        "ownerName": "",
+        "phone": "",
+        "email": "",
+        "city": "",
+        "addressDetail": "",
+        "distinctiveFeature": "",
+        "petName": "72CBHJ",
+        "note": "",
+        "tagName": "72CBHJ"
+      },
+      "contactOptions": {
+        "allowDirectCall": false,
+        "allowDirectWhatsapp": false
+      },
+      "showName": true,
+      "showPhone": false,
+      "showEmail": false,
+      "showCity": false,
+      "showAddressDetail": false,
+      "showPetName": true,
+      "showNote": false
+    },
+    {
+      "publicCode": "BZPLMA",
+      "manageToken": "693c3ceb-1584-43e2-8cdd-2fc0901b679b",
+      "productType": "item",
+      "productSubtype": "",
+      "name": "BZPLMA",
+      "ownerName": "",
+      "phone": "",
+      "email": "",
+      "city": "",
+      "addressDetail": "",
+      "distinctiveFeature": "",
+      "petName": "BZPLMA",
+      "note": "",
+      "alerts": [],
+      "allowDirectCall": false,
+      "allowDirectWhatsapp": false,
+      "status": "void",
+      "createdAt": "2026-05-02T11:18:25.120Z",
+      "updatedAt": "2026-05-02T11:19:19.986Z",
+      "recovery": {
+        "phone": "",
+        "email": ""
+      },
+      "visibility": {
+        "showName": true,
+        "showPhone": false,
+        "showEmail": false,
+        "showCity": false,
+        "showAddressDetail": false,
+        "showPetName": true,
+        "showNote": false
+      },
+      "profile": {
+        "name": "BZPLMA",
+        "ownerName": "",
+        "phone": "",
+        "email": "",
+        "city": "",
+        "addressDetail": "",
+        "distinctiveFeature": "",
+        "petName": "BZPLMA",
+        "note": "",
+        "tagName": "BZPLMA"
+      },
+      "contactOptions": {
+        "allowDirectCall": false,
+        "allowDirectWhatsapp": false
+      },
+      "showName": true,
+      "showPhone": false,
+      "showEmail": false,
+      "showCity": false,
+      "showAddressDetail": false,
+      "showPetName": true,
+      "showNote": false
     }
   ]
 }

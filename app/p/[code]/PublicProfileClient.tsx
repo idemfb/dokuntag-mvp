@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-type TagStatus = "unclaimed" | "active" | "inactive";
+type TagStatus = "production_hold" | "unclaimed" | "active" | "inactive" | "void";
 
 type PublicProfileClientProps = {
   code: string;
@@ -49,7 +49,17 @@ export default function PublicProfileClient({
         }
 
         if (!cancelled) {
-          setTagStatus(data.data.status === "inactive" ? "inactive" : "active");
+          const incoming = data.data.status;
+
+if (
+  incoming === "production_hold" ||
+  incoming === "void" ||
+  incoming === "inactive"
+) {
+  setTagStatus("inactive");
+} else {
+  setTagStatus("active");
+}
         }
       } catch {
         if (!cancelled) {
@@ -80,7 +90,7 @@ export default function PublicProfileClient({
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
 
-    if (tagStatus === "inactive") {
+    if (tagStatus !== "active") {
       setError("Bu ürün şu an aktif değil. İletişim geçici olarak kapatılmıştır.");
       setSuccess("");
       return;
@@ -141,7 +151,7 @@ export default function PublicProfileClient({
     );
   }
 
-  if (tagStatus === "inactive") {
+  if (tagStatus !== "active") {
     return (
       <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
         Bu ürün şu an aktif değil. İletişim formu geçici olarak kapatılmıştır.
