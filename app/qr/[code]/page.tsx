@@ -485,7 +485,57 @@ function handleFrontArtworkUpload(file: File | undefined) {
     qrOffsetY: 0
   }));
 }
+function applyPreset(type: "pet" | "key" | "person") {
+  const presets: Record<typeof type, Partial<DesignState>> = {
+    pet: {
+      size: "3cm",
+      shape: "round",
+      qrScale: 78,
+      codeScale: 95,
+      codeGap: 70,
+      qrOffsetX: 0,
+      qrOffsetY: 2,
+      foregroundColor: "#111111",
+      codeColor: "#111111",
+      colorMode: "both",
+      showGuide: true,
+      outputMode: "both"
+    },
+    key: {
+      size: "3cm",
+      shape: "round",
+      qrScale: 82,
+      codeScale: 90,
+      codeGap: 55,
+      qrOffsetX: 0,
+      qrOffsetY: 0,
+      foregroundColor: "#111111",
+      codeColor: "#111111",
+      colorMode: "both",
+      showGuide: true,
+      outputMode: "both"
+    },
+    person: {
+      size: "3cm",
+      shape: "round",
+      qrScale: 86,
+      codeScale: 105,
+      codeGap: 60,
+      qrOffsetX: 0,
+      qrOffsetY: -2,
+      foregroundColor: "#111111",
+      codeColor: "#111111",
+      colorMode: "both",
+      showGuide: true,
+      outputMode: "both"
+    }
+  };
 
+  setDesign((prev) => ({
+    ...prev,
+    ...presets[type]
+  }));
+}
 function snapQr(position: "center" | "top" | "bottom" | "left" | "right") {
   setDesign((prev) => {
     const qrRatio = (prev.qrScale || 76) / 100;
@@ -645,6 +695,31 @@ function snapQr(position: "center" | "top" | "bottom" | "left" | "right") {
                         ? "Ön yüz"
                         : "Ön + QR"}
                     </h2>
+                    <div className="mt-4 grid gap-2 sm:grid-cols-3">
+                    <button
+                      type="button"
+                      onClick={() => applyPreset("pet")}
+                      className="rounded-2xl border border-neutral-300 bg-white px-3 py-2 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-50"
+                    >
+                      🐾 Evcil preset
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => applyPreset("key")}
+                      className="rounded-2xl border border-neutral-300 bg-white px-3 py-2 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-50"
+                    >
+                      🔑 Anahtar preset
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => applyPreset("person")}
+                      className="rounded-2xl border border-neutral-300 bg-white px-3 py-2 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-50"
+                    >
+                      👤 Kişi preset
+                    </button>
+                  </div>
                   </div>
 
                   <button

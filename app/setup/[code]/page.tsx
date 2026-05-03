@@ -629,8 +629,9 @@ if (invalidCode) {
               placeholder="Kısa not veya ayırt edici özellik gibi bilgileri girebilirsiniz. (isteğe bağlı)"
               className="min-h-[72px] w-full rounded-2xl border border-neutral-300 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
             />
-
+              
             <section className="rounded-[1.35rem] border border-neutral-200 bg-neutral-50 px-3 py-3">
+              
               <p className="text-sm font-medium text-neutral-900">
                 Hesap kurtarma
               </p>
