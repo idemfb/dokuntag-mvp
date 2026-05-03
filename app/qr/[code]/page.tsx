@@ -121,13 +121,13 @@ function getShapeClip(shape: ShapeOption) {
 }
 
 function previewSize(size: SizeOption) {
-  if (size === "1cm") return { width: 150, height: 150 };
-  if (size === "2cm") return { width: 190, height: 190 };
-  if (size === "2.5cm") return { width: 220, height: 220 };
-  if (size === "4cm") return { width: 300, height: 300 };
-  if (size === "5cm") return { width: 340, height: 340 };
-  if (size === "6cm") return { width: 380, height: 380 };
-  return { width: 260, height: 260 };
+  if (size === "1cm") return { width: 140, height: 140 };
+  if (size === "2cm") return { width: 170, height: 170 };
+  if (size === "2.5cm") return { width: 200, height: 200 };
+  if (size === "4cm") return { width: 260, height: 260 };
+  if (size === "5cm") return { width: 280, height: 280 };
+  if (size === "6cm") return { width: 300, height: 300 };
+  return { width: 240, height: 240 };
 }
 
 function normalizeOutputMode(value: string | null): OutputMode {
@@ -487,21 +487,30 @@ function handleFrontArtworkUpload(file: File | undefined) {
 }
 
 function snapQr(position: "center" | "top" | "bottom" | "left" | "right") {
-  const presets = {
-    center: { x: 0, y: 0 },
-    top: { x: 0, y: -28 },
-    bottom: { x: 0, y: 28 },
-    left: { x: -28, y: 0 },
-    right: { x: 28, y: 0 }
-  };
+  setDesign((prev) => {
+    const qrRatio = (prev.qrScale || 76) / 100;
+    const codeRatio = (prev.codeScale || 100) / 100;
 
-  const next = presets[position];
+    const groupHeight = qrRatio + 0.25 * codeRatio;
+    const groupWidth = qrRatio;
 
-  setDesign((prev) => ({
-    ...prev,
-    qrOffsetX: next.x,
-    qrOffsetY: next.y
-  }));
+    const maxY = Math.max(0, (1 - groupHeight) / 2) * 100;
+    const maxX = Math.max(0, (1 - groupWidth) / 2) * 100;
+
+    const preset = {
+      center: { x: 0, y: 0 },
+      top: { x: 0, y: -maxY },
+      bottom: { x: 0, y: maxY },
+      left: { x: -maxX, y: 0 },
+      right: { x: maxX, y: 0 }
+    }[position];
+
+    return {
+      ...prev,
+      qrOffsetX: preset.x,
+      qrOffsetY: preset.y
+    };
+  });
 }
 
  function centerArtwork() {
@@ -607,7 +616,7 @@ function snapQr(position: "center" | "top" | "bottom" | "left" | "right") {
   ) : null;
 
   return (
-    <main className="min-h-screen bg-neutral-50 px-4 py-6 text-neutral-900">
+    <main className="min-h-screen bg-neutral-50 px-3 py-4 pb-28 text-neutral-900 sm:px-4 sm:py-6">
       <div className="mx-auto max-w-7xl space-y-5">
         <section className="overflow-hidden rounded-[2rem] border border-neutral-200 bg-white shadow-sm">
           <div className="border-b border-neutral-200 bg-gradient-to-br from-white via-neutral-50 to-neutral-100/80 px-5 py-5">
@@ -621,9 +630,9 @@ function snapQr(position: "center" | "top" | "bottom" | "left" | "right") {
             </p>
           </div>
 
-          <div className="grid gap-5 p-5 xl:grid-cols-[minmax(420px,520px)_1fr]">
-            <aside className="space-y-4 xl:sticky xl:top-5 xl:self-start mt-4 xl:mt-8">
-              <section className="rounded-[2rem] border border-neutral-200 bg-gradient-to-b from-white to-neutral-100 p-6 shadow-md">
+          <div className="grid gap-4 p-3 sm:p-5 xl:grid-cols-[minmax(420px,520px)_1fr]">
+            <aside className="space-y-3 xl:sticky xl:top-5 xl:self-start xl:mt-8">
+              <section className="rounded-[1.6rem] border border-neutral-200 bg-gradient-to-b from-white to-neutral-100 p-4 shadow-md sm:rounded-[2rem] sm:p-6">
                 <div className="flex items-center justify-between gap-3">
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-[0.16em] text-neutral-400">
@@ -647,7 +656,7 @@ function snapQr(position: "center" | "top" | "bottom" | "left" | "right") {
                   </button>
                 </div>
 
-                <div className="mt-6 flex justify-center overflow-auto rounded-3xl bg-white p-6 shadow-inner">
+                <div className="mt-4 flex justify-center overflow-auto rounded-3xl bg-white p-3 shadow-inner sm:mt-6 sm:p-6">
                   <div
                     className="relative overflow-hidden bg-white shadow-sm"
                     style={{
@@ -809,10 +818,10 @@ function snapQr(position: "center" | "top" | "bottom" | "left" | "right") {
                 </button>
               </div>     
               ) : null}  
-              <section className="flex flex-wrap gap-2 rounded-[1.75rem] border border-neutral-200 bg-white p-4 shadow-sm">
+              <section className="fixed inset-x-3 bottom-3 z-50 grid grid-cols-1 gap-2 rounded-[1.5rem] border border-neutral-200 bg-white/95 p-3 shadow-2xl backdrop-blur sm:static sm:flex sm:flex-wrap sm:shadow-sm sm:backdrop-blur-0">
                 <a
                   href={qrDownloadUrl}
-                  className="rounded-2xl bg-black px-4 py-3 text-sm font-semibold text-white transition hover:bg-neutral-800"
+                  className="rounded-2xl bg-black px-4 py-3 text-center text-sm font-semibold text-white transition hover:bg-neutral-800"
                 >
                   SVG indir
                 </a>
@@ -820,7 +829,7 @@ function snapQr(position: "center" | "top" | "bottom" | "left" | "right") {
                 <button
                   type="button"
                   onClick={openPrintView}
-                  className="rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm font-semibold transition hover:bg-neutral-50"
+                  className="rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-center text-sm font-semibold transition hover:bg-neutral-50"
                 >
                   Baskı görünümünü aç
                 </button>
@@ -828,7 +837,7 @@ function snapQr(position: "center" | "top" | "bottom" | "left" | "right") {
                 <button
                   type="button"
                   onClick={copyLink}
-                  className="rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm font-semibold transition hover:bg-neutral-50"
+                  className="rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-center text-sm font-semibold transition hover:bg-neutral-50"
                 >
                   {copied ? "Kopyalandı" : "Tasarım linkini kopyala"}
                 </button>
