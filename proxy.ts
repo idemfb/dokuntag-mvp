@@ -7,9 +7,12 @@ function getAdminAccessKey() {
 }
 
 function isProtectedPath(pathname: string) {
-  return pathname === "/admin" ||
+  return (
+    pathname === "/admin" ||
     pathname.startsWith("/admin/") ||
-    pathname.startsWith("/api/admin/");
+    pathname.startsWith("/api/admin/") ||
+    pathname.startsWith("/qr/")
+  );
 }
 
 function isLoginPath(pathname: string) {
@@ -44,5 +47,5 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin/:path*", "/api/admin/:path*"]
+  matcher: ["/admin/:path*", "/api/admin/:path*", "/qr/:path*"]
 };

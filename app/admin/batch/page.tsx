@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 type BatchItem = {
   code: string;
@@ -49,8 +49,24 @@ type DesignState = {
   badgeOffsetX: number;
   badgeOffsetY: number;
   lockTextAdjustments?: boolean;
+  foregroundColor: string;
+  guideColor: string;
+  showGuide: boolean;
+  colorMode: "both" | "qr" | "code";
 };
-
+type TemplateArtworkState = {
+  imageUrl: string;
+  fileName: string;
+  fit: "cover" | "contain";
+  scale: number;
+  x: number;
+  y: number;
+  caption: string;
+  captionColor: string;
+  captionScale: number;
+};
+const TEMPLATE_STORAGE_KEY = "dokuntag_template_artwork";
+const LEGACY_TEMPLATE_STORAGE_KEY = "dokuntag_front_artwork";
 function getMainSiteUrl() {
   const value =
     process.env.NEXT_PUBLIC_MAIN_SITE_URL?.trim() ||
@@ -116,7 +132,11 @@ function getDefaultDesign(): DesignState {
     badgeScale: 140,
     badgeOffsetX: 130,
     badgeOffsetY: 100,
-    lockTextAdjustments: false
+    lockTextAdjustments: false,
+    foregroundColor: "#111111",
+    guideColor: "#ef4444",
+    showGuide: false,
+    colorMode: "both"
   };
 }
 
@@ -129,7 +149,36 @@ function tryGetSavedDesign(): DesignState {
     return getDefaultDesign();
   }
 }
+function getDefaultTemplateArtwork(): TemplateArtworkState {
+  return {
+    imageUrl: "",
+    fileName: "",
+    fit: "cover",
+    scale: 100,
+    x: 0,
+    y: 0,
+    caption: "",
+    captionColor: "#111111",
+    captionScale: 100
+  };
+}
 
+function tryGetSavedTemplateArtwork(): TemplateArtworkState {
+  try {
+    const raw =
+      window.localStorage.getItem(TEMPLATE_STORAGE_KEY) ||
+      window.localStorage.getItem(LEGACY_TEMPLATE_STORAGE_KEY);
+
+    if (!raw) return getDefaultTemplateArtwork();
+
+    return {
+      ...getDefaultTemplateArtwork(),
+      ...(JSON.parse(raw) as Partial<TemplateArtworkState>)
+    };
+  } catch {
+    return getDefaultTemplateArtwork();
+  }
+}
 export default function AdminBatchPage() {
   const mainSiteUrl = getMainSiteUrl();
 
@@ -152,9 +201,49 @@ export default function AdminBatchPage() {
   const [pdfCustomHeight, setPdfCustomHeight] = useState("297");
   const [design, setDesign] = useState<DesignState>(() => tryGetSavedDesign());
 
+  const [templateArtwork, setTemplateArtwork] = useState<TemplateArtworkState>(() =>
+  tryGetSavedTemplateArtwork()
+);
+ useEffect(() => {
+  setDesign(tryGetSavedDesign());
+  setTemplateArtwork(tryGetSavedTemplateArtwork());
+
+  function handleFocus() {
+    setDesign(tryGetSavedDesign());
+    setTemplateArtwork(tryGetSavedTemplateArtwork());
+  }
+
+  function handleStorage(event: StorageEvent) {
+    if (event.key === "dokuntag_qr_design") {
+      setDesign(tryGetSavedDesign());
+    }
+
+    if (
+      event.key === "dokuntag_template_artwork" ||
+      event.key === "dokuntag_front_artwork"
+    ) {
+      setTemplateArtwork(tryGetSavedTemplateArtwork());
+    }
+  }
+
+  window.addEventListener("focus", handleFocus);
+  window.addEventListener("storage", handleStorage);
+
+  return () => {
+    window.removeEventListener("focus", handleFocus);
+    window.removeEventListener("storage", handleStorage);
+  };
+}, []);
   function updateDesign<K extends keyof DesignState>(key: K, value: DesignState[K]) {
     setDesign((prev) => {
       const next = { ...prev, [key]: value };
+      if (key === "foregroundColor" && prev.colorMode === "both") {
+  next.codeColor = value as string;
+}
+
+if (key === "codeColor" && prev.colorMode === "both") {
+  next.foregroundColor = value as string;
+}
       try {
         window.localStorage.setItem("dokuntag_qr_design", JSON.stringify(next));
       } catch {}
@@ -414,13 +503,14 @@ export default function AdminBatchPage() {
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          zipName: `dokuntag-batch-${items.length}`,
-          design,
-          items: items.map((item) => ({
-            code: item.code,
-            label: item.label
-          }))
-        })
+        zipName: `dokuntag-batch-${items.length}`,
+        design,
+        templateArtwork,
+        items: items.map((item) => ({
+          code: item.code,
+          label: item.label
+        }))
+      })
       });
 
       if (!res.ok) {
@@ -457,7 +547,7 @@ export default function AdminBatchPage() {
       window.sessionStorage.setItem(storageKey, JSON.stringify(items));
       window.localStorage.setItem("dokuntag_batch_items", JSON.stringify(items));
       window.localStorage.setItem("dokuntag_qr_design", JSON.stringify(design));
-
+      window.localStorage.setItem(TEMPLATE_STORAGE_KEY, JSON.stringify(templateArtwork));
       window.open(
         `/admin/batch/print?storageKey=${encodeURIComponent(storageKey)}`,
         "_blank",
@@ -483,12 +573,13 @@ export default function AdminBatchPage() {
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          items: items.map((item) => ({
-            code: item.code,
-            label: item.label
-          })),
-          design,
-          options: {
+        items: items.map((item) => ({
+          code: item.code,
+          label: item.label
+        })),
+        design,
+        templateArtwork,
+        options: {
             pageSize: pdfPageSize,
             orientation: pdfOrientation,
             gapMm: Number(pdfGapMm) || 4,

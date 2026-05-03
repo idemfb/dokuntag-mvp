@@ -14,6 +14,7 @@ type DesignInput = {
   shape?: ShapeOption;
   qrScale?: number;
   codeScale?: number;
+  qrOffsetX?: number;
   qrOffsetY?: number;
   codeGap?: number;
   foregroundColor?: string;
@@ -51,7 +52,7 @@ function normalizeColor(value: unknown, fallback: string) {
   return /^#[0-9a-fA-F]{6}$/.test(text) ? text : fallback;
 }
 
-function parsePercent(value: unknown, fallback: number, min: number, max: number) {
+function parseNumber(value: unknown, fallback: number, min: number, max: number) {
   const parsed = Number(value);
   if (!Number.isFinite(parsed)) return fallback;
   return clamp(parsed, min, max);
@@ -63,11 +64,25 @@ function getBaseUrl(request: NextRequest) {
     process.env.NEXT_PUBLIC_SITE_URL?.trim() ||
     "";
 
-  if (envBaseUrl) {
-    return envBaseUrl.replace(/\/+$/, "");
-  }
+  if (envBaseUrl) return envBaseUrl.replace(/\/+$/, "");
 
   return request.nextUrl.origin.replace(/\/+$/, "");
+}
+
+function getSizeValue(size: DesignInput["size"]) {
+  if (
+    size === "1cm" ||
+    size === "2cm" ||
+    size === "2.5cm" ||
+    size === "3cm" ||
+    size === "4cm" ||
+    size === "5cm" ||
+    size === "6cm"
+  ) {
+    return size;
+  }
+
+  return "3cm";
 }
 
 function getShapeMarkup(shape: ShapeOption) {
@@ -97,14 +112,44 @@ function getShapeMarkup(shape: ShapeOption) {
   };
 }
 
+function getSafeArea(shape: ShapeOption) {
+  if (shape === "drop") {
+    return {
+      left: 26,
+      right: 26,
+      top: 40,
+      bottom: 34
+    };
+  }
+
+  if (shape === "square") {
+    return {
+      left: 18,
+      right: 18,
+      top: 24,
+      bottom: 24
+    };
+  }
+
+  return {
+    left: 24,
+    right: 24,
+    top: 32,
+    bottom: 32
+  };
+}
+
 async function buildSvg(targetUrl: string, code: string, design: DesignInput) {
   const shape = normalizeShape(design.shape);
+  const size = getSizeValue(design.size);
   const foregroundColor = normalizeColor(design.foregroundColor, "#111111");
-  const codeColor = normalizeColor(design.codeColor, "#111111");
-  const qrScale = parsePercent(design.qrScale, 76, 45, 92);
-  const codeScale = parsePercent(design.codeScale, 100, 60, 180);
-  const qrOffsetY = parsePercent(design.qrOffsetY, 100, 70, 130);
-  const codeGapPercent = parsePercent(design.codeGap, 100, 60, 180);
+  const codeColor = normalizeColor(design.codeColor, foregroundColor);
+
+  const qrScale = parseNumber(design.qrScale, 76, 35, 95);
+  const codeScale = parseNumber(design.codeScale, 100, 50, 180);
+  const qrOffsetX = parseNumber(design.qrOffsetX, 0, -45, 45);
+  const qrOffsetY = parseNumber(design.qrOffsetY, 0, -45, 45);
+  const codeGapPercent = parseNumber(design.codeGap, 100, 20, 180);
   const showGuide = design.showGuide === true;
 
   const qrSvg = await QRCode.toString(targetUrl, {
@@ -127,18 +172,53 @@ async function buildSvg(targetUrl: string, code: string, design: DesignInput) {
   const qrViewBox = match[1];
   const qrInner = match[2];
   const shapeMarkup = getShapeMarkup(shape);
+  const safe = getSafeArea(shape);
 
-  const qrSize = clamp(196 * (qrScale / 76), 116, 218);
-  const qrX = (256 - qrSize) / 2;
-  const baseQrY = shape === "drop" ? 58 : 50;
-  const qrY = clamp(baseQrY * (qrOffsetY / 100), 28, 92);
+  const canvasWidth = 256;
+  const canvasHeight = 320;
+
+  const safeX = safe.left;
+  const safeY = safe.top;
+  const safeWidth = canvasWidth - safe.left - safe.right;
+  const safeHeight = canvasHeight - safe.top - safe.bottom;
 
   const codeFontSize = clamp(12 * (codeScale / 100), 7, 22);
-  const codeGap = clamp(12 * (codeGapPercent / 100), 6, 26);
-  const codeY = clamp(qrY + qrSize + codeGap + codeFontSize * 0.35, qrY + qrSize + 10, 306);
+  const codeGap = clamp(10 * (codeGapPercent / 100), 2, 24);
+
+  const maxQrBySafeHeight = safeHeight - codeGap - codeFontSize * 1.5;
+  const maxQrBySafeWidth = safeWidth;
+  const maxQrSize = Math.max(80, Math.min(maxQrBySafeWidth, maxQrBySafeHeight));
+
+  const preferredQrSize = 196 * (qrScale / 76);
+  const qrSize = clamp(preferredQrSize, 70, maxQrSize);
+
+  const groupHeight = qrSize + codeGap + codeFontSize * 1.5;
+  const groupWidth = qrSize;
+
+  const baseGroupX = safeX + (safeWidth - groupWidth) / 2;
+  const baseGroupY = safeY + (safeHeight - groupHeight) / 2;
+
+  const maxOffsetX = Math.max(0, (safeWidth - groupWidth) / 2);
+  const maxOffsetY = Math.max(0, (safeHeight - groupHeight) / 2);
+
+  const offsetX = clamp(
+    safeWidth * (qrOffsetX / 100),
+    -maxOffsetX,
+    maxOffsetX
+  );
+
+  const offsetY = clamp(
+    safeHeight * (qrOffsetY / 100),
+    -maxOffsetY,
+    maxOffsetY
+  );
+
+  const qrX = baseGroupX + offsetX;
+  const qrY = baseGroupY + offsetY;
+  const codeY = qrY + qrSize + codeGap + codeFontSize;
 
   return `
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 320" width="3cm" height="3cm" role="img" aria-label="Dokuntag QR ${escapeXml(code)}">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 320" width="${size}" height="${size}" role="img" aria-label="Dokuntag QR ${escapeXml(code)}">
   <defs>
     <clipPath id="dokuntagShapeClip">${shapeMarkup.clip}</clipPath>
   </defs>
@@ -146,7 +226,7 @@ async function buildSvg(targetUrl: string, code: string, design: DesignInput) {
   <g clip-path="url(#dokuntagShapeClip)">
     <svg viewBox="${escapeXml(qrViewBox)}" x="${qrX}" y="${qrY}" width="${qrSize}" height="${qrSize}">${qrInner}</svg>
     <text
-      x="128"
+      x="${qrX + qrSize / 2}"
       y="${codeY}"
       text-anchor="middle"
       font-family="Arial, Helvetica, sans-serif"

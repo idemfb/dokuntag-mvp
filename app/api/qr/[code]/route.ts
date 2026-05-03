@@ -13,11 +13,13 @@ type Layout = {
   shape: ShapeOption;
   qrScale: number;
   codeScale: number;
+  qrOffsetX: number;
   qrOffsetY: number;
   codeGap: number;
   foregroundColor: string;
   codeColor: string;
   showGuide: boolean;
+  transparent: boolean;
 };
 
 const SIZE_VALUES: Record<SizeOption, { width: string; height: string }> = {
@@ -84,22 +86,26 @@ function normalizeBoolean(value: string | null, fallback: boolean) {
   return fallback;
 }
 
-function parsePercent(value: string | null, fallback: number, min: number, max: number) {
+function parseNumber(value: string | null, fallback: number, min: number, max: number) {
   const parsed = Number(value);
   if (!Number.isFinite(parsed)) return fallback;
   return clamp(parsed, min, max);
 }
 
 function readLayout(searchParams: URLSearchParams): Layout {
+  const foregroundColor = normalizeColor(searchParams.get("foregroundColor"), "#111111");
+
   return {
     size: normalizeSize(searchParams.get("size")),
+    transparent: normalizeBoolean(searchParams.get("transparent"), false),
     shape: normalizeShape(searchParams.get("shape")),
-    qrScale: parsePercent(searchParams.get("qrScale"), 76, 45, 92),
-    codeScale: parsePercent(searchParams.get("codeScale"), 100, 60, 180),
-    qrOffsetY: parsePercent(searchParams.get("qrOffsetY"), 100, 70, 130),
-    codeGap: parsePercent(searchParams.get("codeGap"), 100, 60, 180),
-    foregroundColor: normalizeColor(searchParams.get("foregroundColor"), "#111111"),
-    codeColor: normalizeColor(searchParams.get("codeColor"), "#111111"),
+    qrScale: parseNumber(searchParams.get("qrScale"), 76, 35, 95),
+    codeScale: parseNumber(searchParams.get("codeScale"), 100, 50, 180),
+    qrOffsetX: parseNumber(searchParams.get("qrOffsetX"), 0, -45, 45),
+    qrOffsetY: parseNumber(searchParams.get("qrOffsetY"), 0, -45, 45),
+    codeGap: parseNumber(searchParams.get("codeGap"), 100, 20, 180),
+    foregroundColor,
+    codeColor: normalizeColor(searchParams.get("codeColor"), foregroundColor),
     showGuide: normalizeBoolean(searchParams.get("showGuide"), false)
   };
 }
@@ -131,6 +137,33 @@ function getShapeMarkup(shape: ShapeOption) {
   };
 }
 
+function getSafeArea(shape: ShapeOption) {
+  if (shape === "drop") {
+    return {
+      left: 26,
+      right: 26,
+      top: 40,
+      bottom: 34
+    };
+  }
+
+  if (shape === "square") {
+    return {
+      left: 18,
+      right: 18,
+      top: 24,
+      bottom: 24
+    };
+  }
+
+  return {
+    left: 24,
+    right: 24,
+    top: 32,
+    bottom: 32
+  };
+}
+
 async function buildSvg(code: string, layout: Layout) {
   const baseUrl =
     process.env.NEXT_PUBLIC_BASE_URL?.trim() ||
@@ -146,7 +179,7 @@ async function buildSvg(code: string, layout: Layout) {
     errorCorrectionLevel: "M",
     color: {
       dark: layout.foregroundColor,
-      light: "#ffffff"
+      light: layout.transparent ? "#00000000" : "#ffffff"
     }
   });
 
@@ -160,26 +193,61 @@ async function buildSvg(code: string, layout: Layout) {
   const qrInner = match[2];
   const size = SIZE_VALUES[layout.size];
   const shape = getShapeMarkup(layout.shape);
+  const safe = getSafeArea(layout.shape);
 
-  const qrSize = clamp(196 * (layout.qrScale / 76), 116, 218);
-  const qrX = (256 - qrSize) / 2;
-  const baseQrY = layout.shape === "drop" ? 58 : 50;
-  const qrY = clamp(baseQrY * (layout.qrOffsetY / 100), 28, 92);
+  const canvasWidth = 256;
+  const canvasHeight = 320;
+
+  const safeX = safe.left;
+  const safeY = safe.top;
+  const safeWidth = canvasWidth - safe.left - safe.right;
+  const safeHeight = canvasHeight - safe.top - safe.bottom;
 
   const codeFontSize = clamp(12 * (layout.codeScale / 100), 7, 22);
-  const codeGap = clamp(12 * (layout.codeGap / 100), 6, 26);
-  const codeY = clamp(qrY + qrSize + codeGap + codeFontSize * 0.35, qrY + qrSize + 10, 306);
+  const codeGap = clamp(10 * (layout.codeGap / 100), 2, 24);
+
+  const maxQrBySafeHeight = safeHeight - codeGap - codeFontSize * 1.5;
+  const maxQrBySafeWidth = safeWidth;
+  const maxQrSize = Math.max(80, Math.min(maxQrBySafeWidth, maxQrBySafeHeight));
+
+  const preferredQrSize = 196 * (layout.qrScale / 76);
+  const qrSize = clamp(preferredQrSize, 70, maxQrSize);
+
+  const groupHeight = qrSize + codeGap + codeFontSize * 1.5;
+  const groupWidth = qrSize;
+
+  const baseGroupX = safeX + (safeWidth - groupWidth) / 2;
+  const baseGroupY = safeY + (safeHeight - groupHeight) / 2;
+
+  const maxOffsetX = Math.max(0, (safeWidth - groupWidth) / 2);
+  const maxOffsetY = Math.max(0, (safeHeight - groupHeight) / 2);
+
+  const offsetX = clamp(
+    safeWidth * (layout.qrOffsetX / 100),
+    -maxOffsetX,
+    maxOffsetX
+  );
+
+  const offsetY = clamp(
+    safeHeight * (layout.qrOffsetY / 100),
+    -maxOffsetY,
+    maxOffsetY
+  );
+
+  const qrX = baseGroupX + offsetX;
+  const qrY = baseGroupY + offsetY;
+  const codeY = qrY + qrSize + codeGap + codeFontSize;
 
   return `
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 320" width="${size.width}" height="${size.height}" role="img" aria-label="Dokuntag QR ${escapeXml(code)}">
   <defs>
     <clipPath id="dokuntagShapeClip">${shape.clip}</clipPath>
   </defs>
-  ${shape.background}
+  ${layout.transparent ? "" : shape.background}
   <g clip-path="url(#dokuntagShapeClip)">
     <svg viewBox="${escapeXml(qrViewBox)}" x="${qrX}" y="${qrY}" width="${qrSize}" height="${qrSize}">${qrInner}</svg>
     <text
-      x="128"
+      x="${qrX + qrSize / 2}"
       y="${codeY}"
       text-anchor="middle"
       font-family="Arial, Helvetica, sans-serif"

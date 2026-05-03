@@ -4,9 +4,12 @@ import { useEffect, useMemo, useState } from "react";
 
 type PrintPageSize = "A4" | "A3" | "custom";
 type Orientation = "portrait" | "landscape";
-type PrintSideMode = "qr";
+type PrintSideMode = "qr" | "front" | "both" | "separate";
 type ShapeOption = "round" | "square" | "drop";
-type DesignType = "standard" | "tag" | "card" | "vehicle" | "business";
+
+const TEMPLATE_STORAGE_KEY = "dokuntag_template_artwork";
+const FRONT_ARTWORK_STORAGE_KEY = "dokuntag_front_artwork_v2";
+const LEGACY_TEMPLATE_STORAGE_KEY = "dokuntag_front_artwork";
 
 type BatchItem = {
   code: string;
@@ -21,11 +24,26 @@ type DesignState = {
   qrScale: number;
   codeScale?: number;
   codeGap: number;
+  qrOffsetX?: number;
   qrOffsetY: number;
   foregroundColor: string;
   guideColor: string;
   showGuide: boolean;
-  outputMode?: "qr";
+  outputMode?: "qr" | "front" | "both";
+  codeColor?: string;
+  colorMode?: "both" | "qr" | "code";
+};
+
+type ArtworkState = {
+  imageUrl: string;
+  fileName: string;
+  fit: "cover" | "contain";
+  scale: number;
+  x: number;
+  y: number;
+  caption: string;
+  captionColor: string;
+  captionScale: number;
 };
 
 type PageDims = {
@@ -33,21 +51,60 @@ type PageDims = {
   height: number;
 };
 
+type PrintEntry = {
+  item: BatchItem;
+  side: "qr" | "front";
+};
+
 function getBaseUrl() {
   const value =
     process.env.NEXT_PUBLIC_BASE_URL?.trim() ||
     process.env.NEXT_PUBLIC_SITE_URL?.trim() ||
     "http://localhost:3000";
+
   return value.replace(/\/+$/, "");
 }
 
 function tryParseJson<T>(value: string | null): T | null {
   if (!value) return null;
+
   try {
     return JSON.parse(value) as T;
   } catch {
     return null;
   }
+}
+
+function getDefaultArtwork(): ArtworkState {
+  return {
+    imageUrl: "",
+    fileName: "",
+    fit: "cover",
+    scale: 100,
+    x: 0,
+    y: 0,
+    caption: "",
+    captionColor: "#111111",
+    captionScale: 100
+  };
+}
+
+function readSavedArtwork(storageKey: string, legacyKey?: string): ArtworkState {
+  const current = tryParseJson<Partial<ArtworkState>>(
+    window.localStorage.getItem(storageKey)
+  );
+
+  if (current) return { ...getDefaultArtwork(), ...current };
+
+  if (legacyKey) {
+    const legacy = tryParseJson<Partial<ArtworkState>>(
+      window.localStorage.getItem(legacyKey)
+    );
+
+    if (legacy) return { ...getDefaultArtwork(), ...legacy };
+  }
+
+  return getDefaultArtwork();
 }
 
 function getRawPageSize(
@@ -70,51 +127,73 @@ function getPageSize(
   const portraitWidth = Math.min(raw.width, raw.height);
   const portraitHeight = Math.max(raw.width, raw.height);
 
-  if (orientation === "portrait") {
-    return { width: portraitWidth, height: portraitHeight };
-  }
-
-  return { width: portraitHeight, height: portraitWidth };
+  return orientation === "portrait"
+    ? { width: portraitWidth, height: portraitHeight }
+    : { width: portraitHeight, height: portraitWidth };
 }
 
 function buildDesignQuery(design: DesignState) {
   const params = new URLSearchParams();
+
   Object.entries(design).forEach(([key, value]) => {
     if (typeof value !== "undefined") {
       params.set(key, String(value));
     }
   });
+
   return params.toString();
 }
 
 function chunkItems<T>(items: T[], chunkSize: number) {
   if (chunkSize <= 0) return [items];
+
   const chunks: T[][] = [];
+
   for (let i = 0; i < items.length; i += chunkSize) {
     chunks.push(items.slice(i, i + chunkSize));
   }
+
   return chunks;
 }
 
 function padPage<T>(items: T[], size: number): Array<T | null> {
   const next: Array<T | null> = [...items];
+
   while (next.length < size) {
     next.push(null);
   }
+
   return next;
 }
 
+function normalizePrintMode(value: string | null | undefined): PrintSideMode {
+  if (value === "qr") return "qr";
+  if (value === "front" || value === "template") return "front";
+  if (value === "both") return "both";
+  if (value === "separate") return "separate";
+  return "qr";
+}
 
-type PrintEntry = {
-  item: BatchItem;
-  side: "qr" | "front";
-};
+function buildPrintEntries(items: BatchItem[], sideMode: PrintSideMode): PrintEntry[] {
+  if (sideMode === "front") {
+    return items.map((item) => ({ item, side: "front" }));
+  }
 
-function buildPrintEntries(items: BatchItem[], _sideMode: PrintSideMode): PrintEntry[] {
-  return items.map((item) => ({
-    item,
-    side: "qr"
-  }));
+  if (sideMode === "both") {
+    return items.flatMap((item) => [
+      { item, side: "front" as const },
+      { item, side: "qr" as const }
+    ]);
+  }
+
+  if (sideMode === "separate") {
+    return [
+      ...items.map((item) => ({ item, side: "front" as const })),
+      ...items.map((item) => ({ item, side: "qr" as const }))
+    ];
+  }
+
+  return items.map((item) => ({ item, side: "qr" }));
 }
 
 function getItemSizeMm(design: DesignState | null) {
@@ -134,15 +213,54 @@ function getPageSizeLabel(
   customWidth: number,
   customHeight: number
 ) {
-  if (pageSize === "custom") {
-    return `${customWidth} × ${customHeight} mm`;
-  }
+  if (pageSize === "custom") return `${customWidth} × ${customHeight} mm`;
   return `${pageSize} ${orientation === "portrait" ? "Dikey" : "Yatay"}`;
+}
+
+function getPrintModeLabel(mode: PrintSideMode) {
+  if (mode === "front") return "Sadece ön yüz";
+  if (mode === "both") return "Ön + QR yan yana";
+  if (mode === "separate") return "Önler sonra QR’lar";
+  return "Sadece QR yüzü";
+}
+
+function ArtworkLayer({
+  artwork,
+  label
+}: {
+  artwork: ArtworkState;
+  label: string;
+}) {
+  if (!artwork.imageUrl) {
+    return (
+      <div className="flex h-full w-full flex-col items-center justify-center rounded-[24%] border border-dashed border-neutral-300 bg-neutral-50 px-2 text-center text-[8px] leading-tight text-neutral-500">
+        <span>{label}</span>
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={artwork.imageUrl}
+      alt={artwork.fileName || label}
+      className="absolute left-1/2 top-1/2 h-full w-full"
+      style={{
+        objectFit: artwork.fit,
+        transform: `translate(-50%, -50%) translate(${artwork.x}px, ${artwork.y}px) scale(${artwork.scale / 100})`
+      }}
+    />
+  );
 }
 
 export default function BatchPrintPage() {
   const [items, setItems] = useState<BatchItem[]>([]);
   const [design, setDesign] = useState<DesignState | null>(null);
+  const [templateArtwork, setTemplateArtwork] = useState<ArtworkState>(
+    getDefaultArtwork()
+  );
+  const [frontArtwork, setFrontArtwork] = useState<ArtworkState>(
+    getDefaultArtwork()
+  );
   const [pageSize, setPageSize] = useState<PrintPageSize>("A3");
   const [orientation, setOrientation] = useState<Orientation>("landscape");
   const [gapMm, setGapMm] = useState(4);
@@ -161,8 +279,6 @@ export default function BatchPrintPage() {
     const storageKey = params.get("storageKey");
     const outputMode = params.get("outputMode");
 
-    setPrintSideMode("qr");
-
     let loadedItems: BatchItem[] = [];
     let loadedDesign: DesignState | null = null;
 
@@ -170,17 +286,33 @@ export default function BatchPrintPage() {
     if (Array.isArray(directItems)) {
       loadedItems = directItems;
     }
+    if (storageKey) {
+  const payload = tryParseJson<{
+    items?: BatchItem[];
+    design?: DesignState;
+    templateArtwork?: ArtworkState;
+    frontArtwork?: ArtworkState;
+  }>(window.sessionStorage.getItem(`${storageKey}:payload`));
 
+  if (payload) {
+    if (Array.isArray(payload.items)) loadedItems = payload.items;
+    if (payload.design) loadedDesign = payload.design;
+    if (payload.templateArtwork) setTemplateArtwork({ ...getDefaultArtwork(), ...payload.templateArtwork });
+    if (payload.frontArtwork) setFrontArtwork({ ...getDefaultArtwork(), ...payload.frontArtwork });
+  }
+}
     if (!loadedItems.length && storageKey) {
       const fromSession = tryParseJson<BatchItem[]>(
         window.sessionStorage.getItem(storageKey)
       );
+
       if (Array.isArray(fromSession)) {
         loadedItems = fromSession;
       } else {
         const fromLocal = tryParseJson<BatchItem[]>(
           window.localStorage.getItem(storageKey)
         );
+
         if (Array.isArray(fromLocal)) {
           loadedItems = fromLocal;
         }
@@ -191,6 +323,7 @@ export default function BatchPrintPage() {
       const fallbackItems = tryParseJson<BatchItem[]>(
         window.localStorage.getItem("dokuntag_batch_items")
       );
+
       if (Array.isArray(fallbackItems)) {
         loadedItems = fallbackItems;
       }
@@ -205,18 +338,33 @@ export default function BatchPrintPage() {
       const savedDesign = tryParseJson<DesignState>(
         window.localStorage.getItem("dokuntag_qr_design")
       );
+
       if (savedDesign) {
         loadedDesign = savedDesign;
       }
     }
 
+    setPrintSideMode(
+      outputMode
+        ? normalizePrintMode(outputMode)
+        : normalizePrintMode(loadedDesign?.outputMode)
+    );
+
     setItems(loadedItems);
     setDesign(loadedDesign);
+    setTemplateArtwork((prev) =>
+  prev.imageUrl ? prev : readSavedArtwork(TEMPLATE_STORAGE_KEY, LEGACY_TEMPLATE_STORAGE_KEY)
+);
+
+setFrontArtwork((prev) =>
+  prev.imageUrl ? prev : readSavedArtwork(FRONT_ARTWORK_STORAGE_KEY)
+);
   }, []);
 
   const baseUrl = getBaseUrl();
   const designQuery = useMemo(() => (design ? buildDesignQuery(design) : ""), [design]);
   const itemSizeMm = useMemo(() => getItemSizeMm(design), [design]);
+
   const pageDims = useMemo(
     () => getPageSize(pageSize, orientation, customWidth, customHeight),
     [pageSize, orientation, customWidth, customHeight]
@@ -257,14 +405,17 @@ export default function BatchPrintPage() {
     () => buildPrintEntries(items, printSideMode),
     [items, printSideMode]
   );
+
   const previewItems = useMemo(
     () => printEntries.slice(0, previewLimit),
     [printEntries, previewLimit]
   );
+
   const previewPagesRaw = useMemo(
     () => chunkItems(previewItems, layout.perPage),
     [previewItems, layout.perPage]
   );
+
   const previewPages = useMemo(
     () => previewPagesRaw.map((page) => padPage(page, layout.perPage)),
     [previewPagesRaw, layout.perPage]
@@ -327,6 +478,7 @@ export default function BatchPrintPage() {
       body: JSON.stringify({
         items,
         design,
+        templateArtwork,
         zipName: "dokuntag-batch"
       })
     });
@@ -360,6 +512,8 @@ export default function BatchPrintPage() {
         body: JSON.stringify({
           items,
           design,
+          templateArtwork,
+          frontArtwork,
           options: {
             pageSize,
             orientation,
@@ -393,7 +547,7 @@ export default function BatchPrintPage() {
   };
 
   const openPrintForAll = () => {
-    setPreviewLimit(items.length);
+    setPreviewLimit(printEntries.length);
     window.setTimeout(() => window.print(), 350);
   };
 
@@ -405,14 +559,32 @@ export default function BatchPrintPage() {
         <section className="rounded-[2rem] border border-neutral-200 bg-white px-6 py-6 shadow-sm print:hidden">
           <div className="flex flex-wrap gap-3">
             <div className="min-w-[220px]">
-              <p className="text-xs uppercase tracking-[0.18em] text-neutral-400">Baskı üretimi</p>
-              <h1 className="mt-2 text-3xl font-semibold tracking-tight">Toplu baskı görünümü</h1>
+              <p className="text-xs uppercase tracking-[0.18em] text-neutral-400">
+                Baskı üretimi
+              </p>
+              <h1 className="mt-2 text-3xl font-semibold tracking-tight">
+                Toplu baskı görünümü
+              </h1>
               <p className="mt-2 text-sm leading-6 text-neutral-600">
-                Sade üretim standardı: sadece QR ve altında ürün kodu basılır.
+                Ön yüz ve QR yüzü üretim çıktısını aynı sayfada kontrol edebilirsin.
               </p>
             </div>
 
-            <div className="ml-auto grid gap-3 sm:grid-cols-2 xl:grid-cols-7">
+            <div className="ml-auto grid gap-3 sm:grid-cols-2 xl:grid-cols-8">
+              <label className="rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3">
+                <span className="text-xs font-medium text-neutral-600">Baskı modu</span>
+                <select
+                  value={printSideMode}
+                  onChange={(e) => setPrintSideMode(e.target.value as PrintSideMode)}
+                  className="mt-2 w-full rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm"
+                >
+                  <option value="qr">Sadece QR</option>
+                  <option value="front">Sadece ön</option>
+                  <option value="both">Ön + QR yan yana</option>
+                  <option value="separate">Önler sonra QR’lar</option>
+                </select>
+              </label>
+
               <label className="rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3">
                 <span className="text-xs font-medium text-neutral-600">Sayfa</span>
                 <select
@@ -439,7 +611,7 @@ export default function BatchPrintPage() {
               </label>
 
               <label className="rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3">
-                <span className="text-xs font-medium text-neutral-600">QR aralığı (mm)</span>
+                <span className="text-xs font-medium text-neutral-600">Aralık (mm)</span>
                 <input
                   type="number"
                   value={gapMm}
@@ -449,7 +621,7 @@ export default function BatchPrintPage() {
               </label>
 
               <label className="rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3">
-                <span className="text-xs font-medium text-neutral-600">Kenar boşluğu (mm)</span>
+                <span className="text-xs font-medium text-neutral-600">Kenar (mm)</span>
                 <input
                   type="number"
                   value={marginMm}
@@ -461,7 +633,7 @@ export default function BatchPrintPage() {
               {pageSize === "custom" ? (
                 <>
                   <label className="rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3">
-                    <span className="text-xs font-medium text-neutral-600">Özel genişlik (mm)</span>
+                    <span className="text-xs font-medium text-neutral-600">Genişlik</span>
                     <input
                       type="number"
                       value={customWidth}
@@ -471,7 +643,7 @@ export default function BatchPrintPage() {
                   </label>
 
                   <label className="rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3">
-                    <span className="text-xs font-medium text-neutral-600">Özel yükseklik (mm)</span>
+                    <span className="text-xs font-medium text-neutral-600">Yükseklik</span>
                     <input
                       type="number"
                       value={customHeight}
@@ -481,15 +653,17 @@ export default function BatchPrintPage() {
                   </label>
                 </>
               ) : null}
-              
+
               <label className="rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3">
-                <span className="text-xs font-medium text-neutral-600">Önizleme adedi</span>
+                <span className="text-xs font-medium text-neutral-600">Önizleme</span>
                 <input
                   type="number"
                   min={1}
                   max={Math.max(printEntries.length, 1)}
                   value={previewLimit}
-                  onChange={(e) => setPreviewLimit(Math.max(1, Number(e.target.value) || 1))}
+                  onChange={(e) =>
+                    setPreviewLimit(Math.max(1, Number(e.target.value) || 1))
+                  }
                   className="mt-2 w-full rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm"
                 />
               </label>
@@ -506,13 +680,11 @@ export default function BatchPrintPage() {
           </div>
 
           <div className="mt-4 flex flex-wrap items-center gap-3 rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-4 text-sm">
+            <span>Mod: <strong>{getPrintModeLabel(printSideMode)}</strong></span>
             <span>Sayfa: <strong>{getPageSizeLabel(pageSize, orientation, customWidth, customHeight)}</strong></span>
             <span>Kolon: <strong>{layout.columns}</strong></span>
             <span>Satır: <strong>{layout.rows}</strong></span>
             <span>Sayfa başına: <strong>{layout.perPage}</strong></span>
-            <span>Grid genişliği: <strong>{layout.gridWidth} mm</strong></span>
-            <span>Grid yüksekliği: <strong>{layout.gridHeight} mm</strong></span>
-            <span>Yüz modu: <strong>QR</strong></span>
             <span>Toplam yüz: <strong>{printEntries.length}</strong></span>
             <span>Toplam baskı sayfası: <strong>{totalPages}</strong></span>
             <span>Önizleme sayfası: <strong>{previewPageCount}</strong></span>
@@ -585,17 +757,17 @@ export default function BatchPrintPage() {
                         alignContent: "center"
                       }}
                     >
-                      {pageItems.map((item, cellIndex) => {
-                        if (!item) {
+                      {pageItems.map((entry, cellIndex) => {
+                        if (!entry) {
                           return <div key={`empty-${pageIndex}-${cellIndex}`} />;
                         }
 
-                        const effectiveCode = item.item.code || "";
-                        const imageUrl = `${baseUrl}/api/qr/${effectiveCode}?${designQuery}`;
+                        const effectiveCode = entry.item.code || "";
+                        const imageUrl = `${baseUrl}/api/qr/${effectiveCode}?${designQuery}&transparent=true`;
 
                         return (
                           <div
-                            key={`${effectiveCode}-${item.side}-${cellIndex}`}
+                            key={`${effectiveCode}-${entry.side}-${pageIndex}-${cellIndex}`}
                             className="relative flex items-center justify-center"
                             style={{
                               width: `${layout.cellSize}mm`,
@@ -622,15 +794,24 @@ export default function BatchPrintPage() {
                                 height: `${itemSizeMm}mm`
                               }}
                             >
-                              {item.side === "qr" ? (
-                                <img src={imageUrl} alt={effectiveCode} className="block h-full w-full" />
+                              {entry.side === "front" ? (
+                                <ArtworkLayer
+                                  artwork={frontArtwork}
+                                  label={`Ön yüz alanı ${effectiveCode}`}
+                                />
                               ) : (
-                                <div className="flex h-full w-full flex-col items-center justify-center rounded-[24%] border border-dashed border-neutral-300 bg-neutral-50 px-2 text-center text-[8px] leading-tight text-neutral-500">
-                                  <span>Ön yüz yerleşim alanı</span>
-                                  <span>{effectiveCode}</span>
-                                </div>
+                                <>
+                                  <ArtworkLayer
+                                    artwork={templateArtwork}
+                                    label={`QR yüzü şablonu ${effectiveCode}`}
+                                  />
+                                  <img
+                                    src={imageUrl}
+                                    alt={effectiveCode}
+                                    className="relative z-10 block h-full w-full"
+                                  />
+                                </>
                               )}
-
                             </div>
                           </div>
                         );
