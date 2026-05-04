@@ -309,61 +309,102 @@ function drawQrGroup(args: {
 }) {
   const { page, qrImage, font, code, x, y, size, design } = args;
 
-  const qrScale = parsePercent(design.qrScale, 76, 35, 95);
-  const codeScale = parsePercent(design.codeScale, 100, 50, 180);
-  const qrOffsetX = parsePercent(design.qrOffsetX, 0, -45, 45);
-  const qrOffsetY = parsePercent(design.qrOffsetY, 0, -45, 45);
-  const codeGapPercent = parsePercent(design.codeGap, 100, 20, 180);
+const qrScale = parsePercent(design.qrScale, 76, 35, 95);
+const codeScale = parsePercent(design.codeScale, 100, 50, 180);
+const qrOffsetX = parsePercent(design.qrOffsetX, 0, -45, 45);
+const qrOffsetY = parsePercent(design.qrOffsetY, 0, -45, 45);
+const codeGapPercent = parsePercent(design.codeGap, 100, 20, 180);
 
-  const foregroundColor = parseColorHex(design.foregroundColor, "#111111");
-  const codeColor = hexToRgb(parseColorHex(design.codeColor || foregroundColor, "#111111"));
+const foregroundColor = parseColorHex(design.foregroundColor, "#111111");
+const codeColor = hexToRgb(parseColorHex(design.codeColor || foregroundColor, "#111111"));
 
-  const safePadding = size * 0.13;
-  const safeX = x + safePadding;
-  const safeY = y + safePadding;
-  const safeSize = size - safePadding * 2;
+const canvasWidth = 256;
+const canvasHeight = 320;
 
-  const preferredCodeSize = clamp(size * 0.055 * (codeScale / 100), 4, size * 0.13);
-  const codeSize = fitFontSize(code, preferredCodeSize, safeSize * 0.78);
-  const codeGap = clamp(size * 0.035 * (codeGapPercent / 100), size * 0.006, size * 0.075);
+const scale = size / canvasHeight;
+const contentWidth = canvasWidth * scale;
+const contentHeight = canvasHeight * scale;
 
-  const maxQrSize = safeSize - codeGap - codeSize * 1.45;
-  const preferredQrSize = size * (qrScale / 100);
-  const qrSize = clamp(preferredQrSize, size * 0.35, maxQrSize);
+const contentX = x + (size - contentWidth) / 2;
+const contentY = y + (size - contentHeight) / 2;
 
-  const groupHeight = qrSize + codeGap + codeSize * 1.45;
-  const groupWidth = qrSize;
+const safe = {
+  left: 24,
+  right: 24,
+  top: 32,
+  bottom: 32
+};
 
-  const baseGroupX = safeX + (safeSize - groupWidth) / 2;
-  const baseGroupY = safeY + (safeSize - groupHeight) / 2;
+const safeX = safe.left;
+const safeY = safe.top;
+const safeWidth = canvasWidth - safe.left - safe.right;
+const safeHeight = canvasHeight - safe.top - safe.bottom;
 
-  const maxOffsetX = Math.max(0, (safeSize - groupWidth) / 2);
-  const maxOffsetY = Math.max(0, (safeSize - groupHeight) / 2);
+const codeFontSizePx = clamp(12 * (codeScale / 100), 7, 22);
+const codeGapPx = clamp(10 * (codeGapPercent / 100), 2, 24);
 
-  const offsetX = clamp(safeSize * (qrOffsetX / 100), -maxOffsetX, maxOffsetX);
-  const offsetY = clamp(safeSize * (qrOffsetY / 100), -maxOffsetY, maxOffsetY);
+const maxQrBySafeHeight = safeHeight - codeGapPx - codeFontSizePx * 1.5;
+const maxQrBySafeWidth = safeWidth;
+const maxQrSizePx = Math.max(80, Math.min(maxQrBySafeWidth, maxQrBySafeHeight));
 
-  const qrX = baseGroupX + offsetX;
-  const qrY = baseGroupY + offsetY;
-  const codeWidth = font.widthOfTextAtSize(code, codeSize);
-  const codeY = qrY - codeGap - codeSize;
+const preferredQrSizePx = 196 * (qrScale / 76);
+const qrSizePx = clamp(preferredQrSizePx, 70, maxQrSizePx);
 
-  page.drawImage(qrImage, {
-    x: qrX,
-    y: qrY,
-    width: qrSize,
-    height: qrSize
-  });
+const groupHeightPx = qrSizePx + codeGapPx + codeFontSizePx * 1.5;
+const groupWidthPx = qrSizePx;
 
-  page.drawText(code, {
-    x: qrX + (qrSize - codeWidth) / 2,
-    y: codeY,
-    size: codeSize,
-    font,
-    color: codeColor
-  });
+const baseGroupXPx = safeX + (safeWidth - groupWidthPx) / 2;
+const baseGroupYPx = safeY + (safeHeight - groupHeightPx) / 2;
+
+const maxOffsetXPx = Math.max(0, (safeWidth - groupWidthPx) / 2);
+const maxOffsetYPx = Math.max(0, (safeHeight - groupHeightPx) / 2);
+
+const offsetXPx = clamp(
+  safeWidth * (qrOffsetX / 100),
+  -maxOffsetXPx,
+  maxOffsetXPx
+);
+
+const offsetYPx = clamp(
+  safeHeight * (qrOffsetY / 100),
+  -maxOffsetYPx,
+  maxOffsetYPx
+);
+
+const qrXPx = baseGroupXPx + offsetXPx;
+const qrYPx = baseGroupYPx + offsetYPx;
+const codeYPx = qrYPx + qrSizePx + codeGapPx + codeFontSizePx;
+
+const qrSize = qrSizePx * scale;
+const qrX = contentX + qrXPx * scale;
+
+/**
+ * SVG/HTML koordinatı yukarıdan aşağıdır.
+ * PDF koordinatı aşağıdan yukarıdır.
+ * Bu yüzden Y dönüşümü: contentY + contentHeight - yPx - height
+ */
+const qrY = contentY + contentHeight - qrYPx * scale - qrSize;
+
+const codeSize = codeFontSizePx * scale;
+const codeWidth = font.widthOfTextAtSize(code, codeSize);
+const codeX = contentX + (qrXPx + qrSizePx / 2) * scale - codeWidth / 2;
+const codeY = contentY + contentHeight - codeYPx * scale;
+
+page.drawImage(qrImage, {
+  x: qrX,
+  y: qrY,
+  width: qrSize,
+  height: qrSize
+});
+
+page.drawText(code, {
+  x: codeX,
+  y: codeY,
+  size: codeSize,
+  font,
+  color: codeColor
+});
 }
-
 function drawCell(args: {
   page: any;
   side: "front" | "qr";

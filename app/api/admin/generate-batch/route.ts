@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateUniqueCode } from "@/lib/code";
+import { readDBAsync, writeDBAsync } from "@/lib/db";
 import { findTagByCodeAsync, updateTagStatusByCodeAsync, upsertTagAsync } from "@/lib/tags";
 
 type BatchItem = {
@@ -102,7 +103,93 @@ async function createProductionHoldTag(code: string) {
     }
   });
 }
+function buildTestCode(index: number) {
+  return `TEST${String(index).padStart(3, "0")}`;
+}
 
+function isTestCode(code: string) {
+  return /^TEST\d{3}$/.test(code);
+}
+
+function createBlankTestProduct(code: string) {
+  const now = new Date().toISOString();
+
+  return {
+    publicCode: code,
+    manageToken: crypto.randomUUID(),
+    productType: "item",
+    productSubtype: "",
+    name: code,
+    ownerName: "",
+    phone: "",
+    email: "",
+    city: "",
+    addressDetail: "",
+    distinctiveFeature: "",
+    petName: code,
+    note: "",
+    alerts: [],
+    allowDirectCall: false,
+    allowDirectWhatsapp: false,
+    status: "production_hold",
+    isTest: true,
+    createdAt: now,
+    updatedAt: now,
+    recovery: {
+      phone: "",
+      email: ""
+    },
+    visibility: {
+      showName: true,
+      showPhone: false,
+      showEmail: false,
+      showCity: false,
+      showAddressDetail: false,
+      showPetName: true,
+      showNote: false
+    },
+    profile: {
+      name: code,
+      ownerName: "",
+      phone: "",
+      email: "",
+      city: "",
+      addressDetail: "",
+      distinctiveFeature: "",
+      petName: code,
+      note: "",
+      tagName: code
+    },
+    contactOptions: {
+      allowDirectCall: false,
+      allowDirectWhatsapp: false
+    },
+    showName: true,
+    showPhone: false,
+    showEmail: false,
+    showCity: false,
+    showAddressDetail: false,
+    showPetName: true,
+    showNote: false
+  };
+}
+
+async function upsertTestPool(count: number) {
+  const db = await readDBAsync();
+  const products = Array.isArray(db?.products) ? db.products : [];
+  const nextProducts = products.filter((item: any) => !item?.isTest);
+
+  const testProducts = Array.from({ length: count }, (_, index) =>
+    createBlankTestProduct(buildTestCode(index + 1))
+  );
+
+  await writeDBAsync({
+    ...(db && typeof db === "object" ? db : {}),
+    products: [...nextProducts, ...testProducts]
+  });
+
+  return testProducts;
+}
 export async function POST(request: NextRequest) {
   try {
     const body = (await request.json()) as {
@@ -110,6 +197,7 @@ export async function POST(request: NextRequest) {
       labelTemplate?: string;
       design?: DesignState;
       customCode?: string;
+      action?: string;
     };
 
     const customCode = normalizeSpecialCode(body?.customCode);
@@ -124,58 +212,67 @@ export async function POST(request: NextRequest) {
     const items: BatchItem[] = [];
 
     const action = getString((body as { action?: string })?.action);
-    const actionCode = normalizeSpecialCode((body as { code?: string })?.code);
+const actionCode = normalizeSpecialCode((body as { code?: string })?.code);
 
-    if (action === "release" || action === "void") {
-      if (!actionCode) {
-        return NextResponse.json({ error: "Kod zorunludur." }, { status: 400 });
-      }
+if (action === "release" || action === "void") {
+  if (!actionCode) {
+    return NextResponse.json({ error: "Kod zorunludur." }, { status: 400 });
+  }
 
-      const nextStatus = action === "release" ? "unclaimed" : "void";
-      const updated = await updateTagStatusByCodeAsync({
-        code: actionCode,
-        status: nextStatus
-      });
+  const existing = await findTagByCodeAsync(actionCode);
 
-      if (!updated) {
-        return NextResponse.json({ error: "Kod bulunamadı." }, { status: 404 });
-      }
+  if (existing?.isTest && action === "release") {
+    return NextResponse.json(
+      {
+        error:
+          "Test kodları satışa/kuruluma açılamaz. Sadece sıfırlanabilir veya iptal edilebilir."
+      },
+      { status: 400 }
+    );
+  }
 
-      return NextResponse.json({
-        success: true,
-        code: updated.code,
-        status: updated.status
-      });
-    }
+  const nextStatus = action === "release" ? "unclaimed" : "void";
 
-    if (customCode) {
-      if (customCode.length < 3 || customCode.length > 10) {
-        return NextResponse.json(
-          { error: "Özel kod 3-10 karakter arası olmalı ve sadece A-Z / 0-9 içermelidir." },
-          { status: 400 }
-        );
-      }
+  const updated = await updateTagStatusByCodeAsync({
+    code: actionCode,
+    status: nextStatus
+  });
 
-      const existing = await findTagByCodeAsync(customCode);
-      if (existing) {
-        return NextResponse.json(
-          { error: "Bu özel kod zaten kullanılıyor. Farklı bir kod seçin." },
-          { status: 409 }
-        );
-      }
+  if (!updated) {
+    return NextResponse.json({ error: "Kod bulunamadı." }, { status: 404 });
+  }
 
-      await createProductionHoldTag(customCode);
-      items.push(
-        buildItem({
-          baseUrl,
-          code: customCode,
-          label: labelTemplate ? getSafeLabelTemplate(labelTemplate) : customCode,
-          designQuery
-        })
-      );
+  return NextResponse.json({
+    success: true,
+    code: updated.code,
+    status: updated.status
+  });
+}
 
-      return NextResponse.json({ success: true, count: items.length, items });
-    }
+if (action === "create-test-pool" || action === "reset-test-pool") {
+  const testCount =
+    typeof body?.count === "number" && Number.isFinite(body.count)
+      ? Math.floor(body.count)
+      : 200;
+
+  const safeCount = Math.min(Math.max(testCount, 1), 200);
+  const testProducts = await upsertTestPool(safeCount);
+
+  const testItems = testProducts.map((item: any, index: number) =>
+    buildItem({
+      baseUrl,
+      code: item.publicCode,
+      label: `Test-${String(index + 1).padStart(3, "0")}`,
+      designQuery
+    })
+  );
+
+  return NextResponse.json({
+    success: true,
+    count: testItems.length,
+    items: testItems
+  });
+}
 
     if (!count || count < 1) {
       return NextResponse.json(

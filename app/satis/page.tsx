@@ -2,11 +2,16 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { FormEvent, useState } from "react";
+import { FormEvent, useRef, useState } from "react";
 
 export default function SalesPage() {
+  const formRef = useRef<HTMLElement | null>(null);
   const [sent, setSent] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  function scrollToForm() {
+    formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -44,20 +49,18 @@ export default function SalesPage() {
 
   return (
     <main className="min-h-screen bg-[#f7f3ea] px-5 py-14 text-neutral-950 sm:px-8 sm:py-20">
-      {/* HERO */}
       <section className="mx-auto max-w-5xl text-center">
         <p className="text-sm font-semibold uppercase tracking-[0.24em] text-neutral-500">
           Dokuntag® İlk Üretim
         </p>
 
         <h1 className="mt-4 text-4xl font-semibold tracking-tight sm:text-6xl">
-          Kaybolmadan önce hazır olsun.
+          Kaybolanı doğru kişiye ulaştırmanın en kolay yolu.
         </h1>
 
         <p className="mx-auto mt-5 max-w-2xl text-lg leading-8 text-neutral-600">
-          Dokuntag®, NFC ve QR ile çalışan güvenli kayıp buluşturma sistemidir.
-          Demo üretim hazırlanıyor. İlk üretimden haberdar olmak için talep
-          bırakabilirsiniz.
+          Kaybolan bir anahtar, bir eşya ya da bir dost… Doğru kişiye
+          ulaşabilmesi için tek bir dokunuş yeterli.
         </p>
 
         <div className="mt-6 flex flex-wrap justify-center gap-2">
@@ -71,9 +74,27 @@ export default function SalesPage() {
             Yıllık ücret yok
           </span>
         </div>
+
+        <div className="mt-8 flex flex-wrap justify-center gap-3">
+          <button
+            type="button"
+            onClick={scrollToForm}
+            className="rounded-xl bg-neutral-950 px-6 py-4 text-sm font-semibold text-white transition hover:bg-neutral-800"
+          >
+            İlk üretim için bilgi al
+          </button>
+
+          <a
+            href="https://wa.me/905515551553?text=Merhaba,%20Dokuntag%20ilk%20%C3%BCretim%20hakk%C4%B1nda%20bilgi%20almak%20istiyorum."
+            target="_blank"
+            rel="noreferrer"
+            className="rounded-xl border border-neutral-300 bg-white px-6 py-4 text-sm font-semibold transition hover:bg-neutral-50"
+          >
+            WhatsApp ile hızlı bilgi al
+          </a>
+        </div>
       </section>
 
-      {/* GÖRSEL */}
       <section className="mx-auto mt-12 max-w-4xl overflow-hidden rounded-[2rem] border border-neutral-200 bg-white shadow-sm">
         <Image
           src="/images/hero-new.jpg"
@@ -85,7 +106,6 @@ export default function SalesPage() {
         />
       </section>
 
-      {/* ÜRÜN ALGISI */}
       <section className="mx-auto mt-10 grid max-w-4xl gap-3 sm:grid-cols-3">
         <div className="rounded-[1.5rem] border border-neutral-200 bg-white p-5 shadow-sm">
           <p className="text-2xl">🐾</p>
@@ -106,7 +126,7 @@ export default function SalesPage() {
 
         <div className="rounded-[1.5rem] border border-neutral-200 bg-white p-5 shadow-sm">
           <p className="text-2xl">👤</p>
-          <h3 className="mt-3 font-semibold">Kişisel kullanım</h3>
+          <h3 className="mt-3 font-semibold">Birey</h3>
           <p className="mt-2 text-sm leading-6 text-neutral-600">
             Yakınınıza ulaşılması gereken durumlarda hızlı iletişim köprüsü
             kurar.
@@ -114,7 +134,6 @@ export default function SalesPage() {
         </div>
       </section>
 
-      {/* NASIL ÇALIŞIR */}
       <section className="mx-auto mt-12 max-w-4xl rounded-[2rem] border border-neutral-200 bg-white p-6 shadow-sm sm:p-8">
         <p className="text-sm font-semibold uppercase tracking-[0.22em] text-neutral-500">
           Nasıl çalışır?
@@ -144,10 +163,9 @@ export default function SalesPage() {
         </div>
       </section>
 
-      {/* GÜVEN */}
       <section className="mx-auto mt-10 max-w-4xl rounded-[2rem] border border-neutral-200 bg-neutral-950 p-6 text-white shadow-sm sm:p-8">
         <h2 className="text-2xl font-semibold tracking-tight">
-          Adres bilgisi istemez.
+          Adres paylaşmadan iletişim kurulur.
         </h2>
 
         <p className="mt-3 max-w-2xl text-sm leading-6 text-neutral-300">
@@ -155,6 +173,10 @@ export default function SalesPage() {
           güvenlik için şehir ve adres bilgisi paylaşmadan iletişim kurulması
           hedeflenir.
         </p>
+        <p className="mt-4 text-sm leading-6 text-neutral-400">
+        Dokuntag® bir takip cihazı değildir ve konum takibi yapmaz.
+        Amacı, bulan kişinin sizinle hızlı ve güvenli şekilde iletişim kurmasını sağlamaktır.
+      </p>
 
         <div className="mt-6 grid gap-3 text-sm sm:grid-cols-3">
           <div className="rounded-2xl border border-white/10 bg-white/10 p-4">
@@ -169,15 +191,17 @@ export default function SalesPage() {
         </div>
       </section>
 
-      {/* FORM */}
-      <section className="mx-auto mt-12 max-w-xl rounded-[2rem] border border-neutral-200 bg-white p-6 shadow-sm">
+      <section
+        ref={formRef}
+        className="mx-auto mt-12 max-w-xl scroll-mt-8 rounded-[2rem] border border-neutral-200 bg-white p-6 shadow-sm"
+      >
         <h3 className="text-center text-xl font-semibold">
           İlk üretim için bilgi alın
         </h3>
 
         <p className="mt-2 text-center text-sm leading-6 text-neutral-600">
-          Üretim başladığında size haber verelim. Bu form sipariş değil, öncelikli
-          bilgi talebidir.
+          Üretim başladığında size haber verelim. Bu form sipariş değil,
+          öncelikli bilgi talebidir.
         </p>
 
         <form onSubmit={handleSubmit} className="mt-6 space-y-3">
@@ -189,7 +213,7 @@ export default function SalesPage() {
 
           <input
             name="name"
-            placeholder="Adınız"
+            placeholder="Ad Soyad"
             className="w-full rounded-xl border border-neutral-300 px-4 py-3 text-sm outline-none focus:border-neutral-900"
           />
 
@@ -203,7 +227,7 @@ export default function SalesPage() {
 
           <input
             name="phone"
-            placeholder="Telefon"
+            placeholder="Telefon (isteğe bağlı)"
             className="w-full rounded-xl border border-neutral-300 px-4 py-3 text-sm outline-none focus:border-neutral-900"
           />
 
@@ -219,7 +243,7 @@ export default function SalesPage() {
             disabled={loading}
             className="w-full rounded-xl bg-neutral-950 px-4 py-3 text-sm font-semibold text-white transition hover:bg-neutral-800 disabled:opacity-60"
           >
-            {loading ? "Gönderiliyor..." : "Talep bırak"}
+            {loading ? "Gönderiliyor..." : "İlk üretim için bilgi al"}
           </button>
 
           <a
@@ -231,10 +255,8 @@ export default function SalesPage() {
             WhatsApp ile yaz
           </a>
         </form>
-
       </section>
 
-      {/* ALT CTA */}
       <section className="mt-16 text-center">
         <Link
           href="/"

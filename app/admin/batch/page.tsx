@@ -192,6 +192,13 @@ export default function AdminBatchPage() {
   const [pdfLoading, setPdfLoading] = useState(false);
   const [error, setError] = useState("");
   const [items, setItems] = useState<BatchItem[]>([]);
+  const [productionBatchName, setProductionBatchName] = useState("");
+  const [productionBatches, setProductionBatches] = useState<any[]>([]);
+  const [productionSaving, setProductionSaving] = useState(false);
+  const [productionLoading, setProductionLoading] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<"all" | BatchItem["status"] | "test">("all");
+  const [sortBy, setSortBy] = useState<"code" | "status" | "label">("code");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   const [pdfPageSize, setPdfPageSize] = useState<PdfPageSize>("A3");
   const [pdfOrientation, setPdfOrientation] = useState<PdfOrientation>("landscape");
   const [pdfGapMm, setPdfGapMm] = useState("4");
@@ -207,10 +214,13 @@ export default function AdminBatchPage() {
  useEffect(() => {
   setDesign(tryGetSavedDesign());
   setTemplateArtwork(tryGetSavedTemplateArtwork());
+  fetchProductionBatches();
 
   function handleFocus() {
     setDesign(tryGetSavedDesign());
     setTemplateArtwork(tryGetSavedTemplateArtwork());
+
+    fetchProductionBatches();
   }
 
   function handleStorage(event: StorageEvent) {
@@ -254,7 +264,52 @@ if (key === "codeColor" && prev.colorMode === "both") {
   const printText = useMemo(() => buildPrintText(items), [items]);
   const opsText = useMemo(() => buildOpsText(items), [items]);
   const fullText = useMemo(() => buildFullText(items), [items]);
+  const statusCounts = useMemo(() => {
+  return items.reduce(
+    (acc, item) => {
+      const status = item.status || "production_hold";
+      acc.total += 1;
+      acc[status] += 1;
 
+      if (isTestItem(item)) {
+        acc.test += 1;
+      }
+
+      return acc;
+    },
+    {
+      total: 0,
+      production_hold: 0,
+      unclaimed: 0,
+      active: 0,
+      inactive: 0,
+      void: 0,
+      test: 0
+    }
+  );
+}, [items]);
+
+const visibleItems = useMemo(() => {
+  const filtered = items.filter((item) => {
+    if (statusFilter === "all") return true;
+    if (statusFilter === "test") return isTestItem(item);
+    return (item.status || "production_hold") === statusFilter;
+  });
+
+  const sorted = [...filtered].sort((a, b) => {
+    const aValue =
+      sortBy === "status" ? getStatusLabel(a.status) : sortBy === "label" ? a.label : a.code;
+
+    const bValue =
+      sortBy === "status" ? getStatusLabel(b.status) : sortBy === "label" ? b.label : b.code;
+
+    return sortDirection === "asc"
+      ? aValue.localeCompare(bValue, "tr")
+      : bValue.localeCompare(aValue, "tr");
+  });
+
+  return sorted;
+}, [items, statusFilter, sortBy, sortDirection]);
 
   function normalizeAdminCode(value: string) {
   return value
@@ -320,7 +375,39 @@ if (key === "codeColor" && prev.colorMode === "both") {
     if (status === "void") return "İptal";
     return "Kontrol bekliyor";
   }
+  function isTestItem(item: BatchItem) {
+  return item.code.startsWith("TEST");
+}
 
+function getStatusBadgeClass(status?: BatchItem["status"]) {
+  if (status === "unclaimed") {
+    return "border-emerald-200 bg-emerald-50 text-emerald-700";
+  }
+
+  if (status === "active") {
+    return "border-green-300 bg-green-100 text-green-800";
+  }
+
+  if (status === "inactive") {
+    return "border-neutral-300 bg-neutral-100 text-neutral-600";
+  }
+
+  if (status === "void") {
+    return "border-red-200 bg-red-50 text-red-700";
+  }
+
+  return "border-amber-200 bg-amber-50 text-amber-800";
+}
+
+function toggleSort(nextSortBy: "code" | "status" | "label") {
+  if (sortBy === nextSortBy) {
+    setSortDirection((prev) => (prev === "asc" ? "desc" : "asc"));
+    return;
+  }
+
+  setSortBy(nextSortBy);
+  setSortDirection("asc");
+}
   async function updateItemStatus(code: string, action: "release" | "void") {
     const message = action === "release"
       ? `${code} kodu kontrol edildi ve kurulum/satışa açılacak. Onaylıyor musunuz?`
@@ -359,7 +446,69 @@ if (key === "codeColor" && prev.colorMode === "both") {
       setLoading(false);
     }
   }
+  async function fetchProductionBatches() {
+  try {
+    setProductionLoading(true);
 
+    const res = await fetch("/api/admin/production-batches", {
+      cache: "no-store"
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data?.error || "Üretim listesi alınamadı.");
+    }
+
+    setProductionBatches(Array.isArray(data.batches) ? data.batches : []);
+  } catch {
+    setProductionBatches([]);
+  } finally {
+    setProductionLoading(false);
+  }
+}
+
+async function sendCurrentListToProduction() {
+  if (!items.length) {
+    setError("Üretime gönderilecek liste boş.");
+    return;
+  }
+
+  const confirmed = window.confirm(
+    `${items.length} ürün üretime gönderilen listeye kaydedilecek. Aynı kodlar tekrar üretime gönderilemez. Onaylıyor musunuz?`
+  );
+
+  if (!confirmed) return;
+
+  try {
+    setProductionSaving(true);
+    setError("");
+
+    const res = await fetch("/api/admin/production-batches", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        name: productionBatchName || `${labelTemplate} - ${items.length} adet`,
+        items
+      })
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data?.error || "Üretim listesi kaydedilemedi.");
+    }
+
+    setProductionBatchName("");
+    await fetchProductionBatches();
+  } catch (err) {
+    setError(err instanceof Error ? err.message : "Üretim listesi kaydedilemedi.");
+  } finally {
+    setProductionSaving(false);
+  }
+}
   async function handleGenerateCustomCode() {
     try {
       setLoading(true);
@@ -402,7 +551,48 @@ if (key === "codeColor" && prev.colorMode === "both") {
       setLoading(false);
     }
   }
+  async function handleResetTestPool() {
+  const confirmed = window.confirm(
+    "TEST001–TEST200 test kodları sıfırlanacak. Test kayıtları temizlenir ve tekrar üretim kontrol durumuna alınır. Onaylıyor musunuz?"
+  );
 
+  if (!confirmed) return;
+
+  try {
+    setLoading(true);
+    setError("");
+
+    const res = await fetch("/api/admin/generate-batch", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        action: "reset-test-pool",
+        count: 200,
+        labelTemplate: "Test",
+        design
+      })
+    });
+
+    const data = (await res.json()) as {
+      error?: string;
+      items?: BatchItem[];
+    };
+
+    if (!res.ok) {
+      throw new Error(data?.error || "Test kodları sıfırlanamadı.");
+    }
+
+    const nextItems = Array.isArray(data.items) ? data.items : [];
+    setItems(nextItems);
+
+  } catch (err) {
+    setError(err instanceof Error ? err.message : "Test kodları sıfırlanamadı.");
+  } finally {
+    setLoading(false);
+  }
+}
   async function handleGenerate(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
 
@@ -566,7 +756,7 @@ if (key === "codeColor" && prev.colorMode === "both") {
     try {
       setPdfLoading(true);
       setError("");
-
+   
       const res = await fetch("/api/admin/download-batch-pdf", {
         method: "POST",
         headers: {
@@ -742,9 +932,29 @@ if (key === "codeColor" && prev.colorMode === "both") {
                 >
                   {printLoading ? "Açılıyor..." : "Baskı görünümünü aç"}
                 </button>
+                <button
+                  type="button"
+                  onClick={sendCurrentListToProduction}
+                  disabled={!items.length || productionSaving}
+                  className="rounded-2xl border border-blue-300 bg-blue-50 px-5 py-3 text-sm font-semibold text-blue-800 transition hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {productionSaving ? "Kaydediliyor..." : "Üretime gönderilen listeye ekle"}
+                </button>
               </div>
             </form>
-
+              <div className="mt-4 max-w-xl">
+                <label className="block">
+                  <span className="mb-2 block text-sm font-medium text-neutral-700">
+                    Üretim liste adı
+                  </span>
+                  <input
+                    value={productionBatchName}
+                    onChange={(e) => setProductionBatchName(e.target.value)}
+                    className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-neutral-500"
+                    placeholder="Örn. Damla V2 ilk üretim - 100 adet"
+                  />
+                </label>
+              </div>
             <div className="mt-5 grid gap-3 rounded-[1.5rem] border border-neutral-200 bg-neutral-50 p-4 md:grid-cols-2">
               <div>
                 <p className="text-sm font-semibold text-neutral-900">Mevcut QR kodu tekrar hazırla</p>
@@ -787,6 +997,14 @@ if (key === "codeColor" && prev.colorMode === "both") {
                     className="rounded-2xl border border-neutral-900 bg-neutral-900 px-4 py-3 text-sm font-medium text-white transition hover:bg-neutral-800 disabled:opacity-60"
                   >
                     Özel üret
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleResetTestPool}
+                    disabled={loading}
+                    className="rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm font-semibold transition hover:bg-neutral-50 disabled:opacity-60"
+                  >
+                    Test havuzunu sıfırla
                   </button>
                 </div>
               </div>
@@ -946,11 +1164,179 @@ if (key === "codeColor" && prev.colorMode === "both") {
             </div>
           </div>
         </section>
+           <section className="overflow-hidden rounded-[2rem] border border-neutral-200 bg-white shadow-sm">
+  <div className="flex flex-wrap items-center justify-between gap-3 border-b border-neutral-200 px-6 py-5">
+    <div>
+      <h2 className="text-lg font-semibold">Üretime gönderilen listeler</h2>
+      <p className="mt-1 text-sm text-neutral-600">
+        Baskıya gönderdiğin batch’ler burada kalıcı olarak görünür.
+      </p>
+    </div>
 
+    <button
+      type="button"
+      onClick={fetchProductionBatches}
+      className="rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm font-semibold transition hover:bg-neutral-50"
+    >
+      Yenile
+    </button>
+  </div>
+
+  <div className="px-6 py-5">
+    {productionLoading ? (
+      <p className="text-sm text-neutral-500">Yükleniyor...</p>
+    ) : productionBatches.length ? (
+      <div className="space-y-3">
+        {productionBatches.map((batch) => {
+          const summary = batch.summary || {};
+          const total = Number(summary.total || 0);
+          const ready = Number(summary.unclaimed || 0);
+          const voidCount = Number(summary.void || 0);
+          const waiting = Number(summary.production_hold || 0);
+          const percent = total ? Math.round(((ready + voidCount) / total) * 100) : 0;
+
+          return (
+            <div key={batch.id} className="rounded-2xl border border-neutral-200 bg-neutral-50 p-4">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <p className="text-sm font-semibold text-neutral-950">{batch.name}</p>
+                  <p className="mt-1 text-xs text-neutral-500">{batch.id}</p>
+                </div>
+
+                <span className="rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
+                  Üretimde
+                </span>
+              </div>
+
+              <div className="mt-4 grid gap-2 text-xs sm:grid-cols-4">
+                <div className="rounded-xl bg-white p-3">Toplam: <strong>{total}</strong></div>
+                <div className="rounded-xl bg-white p-3">Bekleyen: <strong>{waiting}</strong></div>
+                <div className="rounded-xl bg-white p-3">Hazır: <strong>{ready}</strong></div>
+                <div className="rounded-xl bg-white p-3">Hatalı: <strong>{voidCount}</strong></div>
+              </div>
+
+              <div className="mt-4 h-2 overflow-hidden rounded-full bg-white">
+                <div
+                  className="h-full rounded-full bg-neutral-950"
+                  style={{ width: `${percent}%` }}
+                />
+              </div>
+
+              <p className="mt-2 text-xs text-neutral-500">
+                Tamamlanma: %{percent}
+              </p>
+              <details className="mt-3 rounded-xl border border-neutral-200 bg-white p-3">
+  <summary className="cursor-pointer text-xs font-semibold text-neutral-700">
+    Kod listesini göster
+  </summary>
+
+  <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+    {(batch.items || []).map((item: any) => (
+      <div
+        key={item.code}
+        className="flex items-center justify-between gap-2 rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2 text-xs"
+      >
+        <span className="font-semibold text-neutral-900">{item.code}</span>
+        <span className={`rounded-full border px-2 py-0.5 font-semibold ${getStatusBadgeClass(item.status)}`}>
+          {getStatusLabel(item.status)}
+        </span>
+      </div>
+    ))}
+  </div>
+</details>
+            </div>
+          );
+        })}
+      </div>
+    ) : (
+      <p className="rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-4 text-sm text-neutral-500">
+        Henüz üretime gönderilmiş kalıcı liste yok.
+      </p>
+    )}
+  </div>
+</section>   
         {items.length ? (
-          <>
-            <section className="overflow-hidden rounded-[2rem] border border-neutral-200 bg-white shadow-sm">
-              <div className="border-b border-neutral-200 px-6 py-5">
+  <>
+    <section className="rounded-[2rem] border border-neutral-200 bg-white p-5 shadow-sm">
+  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
+    <div className="rounded-2xl border border-neutral-200 bg-neutral-50 p-4">
+      <p className="text-xs text-neutral-500">Toplam</p>
+      <p className="mt-1 text-2xl font-semibold">{statusCounts.total}</p>
+    </div>
+
+    <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-amber-800">
+      <p className="text-xs">Kontrol bekliyor</p>
+      <p className="mt-1 text-2xl font-semibold">{statusCounts.production_hold}</p>
+    </div>
+
+    <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-700">
+      <p className="text-xs">Satışa açık</p>
+      <p className="mt-1 text-2xl font-semibold">{statusCounts.unclaimed}</p>
+    </div>
+
+    <div className="rounded-2xl border border-green-300 bg-green-100 p-4 text-green-800">
+      <p className="text-xs">Aktif</p>
+      <p className="mt-1 text-2xl font-semibold">{statusCounts.active}</p>
+    </div>
+
+    <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-red-700">
+      <p className="text-xs">İptal / hatalı</p>
+      <p className="mt-1 text-2xl font-semibold">{statusCounts.void}</p>
+    </div>
+
+    <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4 text-blue-800">
+      <p className="text-xs">Test kodu</p>
+      <p className="mt-1 text-2xl font-semibold">{statusCounts.test}</p>
+    </div>
+  </div>
+
+  <div className="mt-4 grid gap-3 md:grid-cols-3">
+    <label className="block">
+      <span className="mb-2 block text-xs font-medium text-neutral-500">Filtre</span>
+      <select
+        value={statusFilter}
+        onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)}
+        className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm"
+      >
+        <option value="all">Tümü</option>
+        <option value="production_hold">Kontrol bekliyor</option>
+        <option value="unclaimed">Satışa açık</option>
+        <option value="active">Aktif</option>
+        <option value="inactive">Pasif</option>
+        <option value="void">İptal / hatalı</option>
+        <option value="test">Test kodları</option>
+      </select>
+    </label>
+
+    <label className="block">
+      <span className="mb-2 block text-xs font-medium text-neutral-500">Sıralama</span>
+      <select
+        value={sortBy}
+        onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
+        className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm"
+      >
+        <option value="code">Koda göre</option>
+        <option value="status">Duruma göre</option>
+        <option value="label">Etikete göre</option>
+      </select>
+    </label>
+
+    <label className="block">
+      <span className="mb-2 block text-xs font-medium text-neutral-500">Yön</span>
+      <select
+        value={sortDirection}
+        onChange={(e) => setSortDirection(e.target.value as typeof sortDirection)}
+        className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm"
+      >
+        <option value="asc">Artan</option>
+        <option value="desc">Azalan</option>
+      </select>
+    </label>
+  </div>
+</section>
+
+      <section className="overflow-hidden rounded-[2rem] border border-neutral-200 bg-white shadow-sm">
+        <div className="border-b border-neutral-200 px-6 py-5">
                 <h2 className="text-lg font-semibold">Üretilen kodlar</h2>
                 <p className="mt-1 text-sm text-neutral-600">
                   Toplam {items.length} adet kod üretildi. Yeni üretimler önce kontrol bekliyor durumundadır.
@@ -961,9 +1347,21 @@ if (key === "codeColor" && prev.colorMode === "both") {
                 <table className="min-w-full text-sm">
                   <thead className="bg-neutral-50 text-left text-neutral-600">
                     <tr>
-                      <th className="px-4 py-3 font-medium">Kod</th>
-                      <th className="px-4 py-3 font-medium">Durum</th>
-                      <th className="px-4 py-3 font-medium">Yazı</th>
+                      <th className="px-4 py-3 font-medium">
+                        <button type="button" onClick={() => toggleSort("code")} className="font-medium hover:underline">
+                          Kod
+                        </button>
+                      </th>
+                      <th className="px-4 py-3 font-medium">
+                        <button type="button" onClick={() => toggleSort("status")} className="font-medium hover:underline">
+                          Durum
+                        </button>
+                      </th>
+                      <th className="px-4 py-3 font-medium">
+                        <button type="button" onClick={() => toggleSort("label")} className="font-medium hover:underline">
+                          Yazı
+                        </button>
+                      </th>
                       <th className="px-4 py-3 font-medium">Kurulum</th>
                       <th className="px-4 py-3 font-medium">QR sayfası</th>
                       <th className="px-4 py-3 font-medium">QR indir</th>
@@ -971,10 +1369,16 @@ if (key === "codeColor" && prev.colorMode === "both") {
                     </tr>
                   </thead>
                   <tbody>
-                    {items.map((item) => (
+                    {visibleItems.map((item) => (
                       <tr key={item.code} className="border-t border-neutral-200">
                         <td className="px-4 py-3 font-semibold text-neutral-900">{item.code}</td>
-                        <td className="px-4 py-3 text-neutral-700">{getStatusLabel(item.status)}</td>
+                        <td className="px-4 py-3">
+                        <span
+                          className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${getStatusBadgeClass(item.status)}`}
+                        >
+                          {getStatusLabel(item.status)}
+                        </span>
+                      </td>
                         <td className="px-4 py-3 text-neutral-700">{item.label}</td>
                         <td className="px-4 py-3">
                           <a href={item.setupLink} target="_blank" rel="noreferrer" className="break-all text-neutral-700 underline underline-offset-4">Aç</a>
@@ -987,8 +1391,20 @@ if (key === "codeColor" && prev.colorMode === "both") {
                         </td>
                         <td className="px-4 py-3">
                           <div className="flex flex-wrap gap-2">
-                            <button type="button" onClick={() => updateItemStatus(item.code, "release")} disabled={item.status === "unclaimed" || item.status === "active" || item.status === "void" || loading} className="rounded-xl border border-emerald-300 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700 disabled:cursor-not-allowed disabled:opacity-50">Kontrol edildi</button>
-                            <button type="button" onClick={() => updateItemStatus(item.code, "void")} disabled={item.status === "void" || item.status === "active" || loading} className="rounded-xl border border-red-300 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700 disabled:cursor-not-allowed disabled:opacity-50">Hatalı / iptal</button>
+{!isTestItem(item) ? (
+  <button
+    type="button"
+    onClick={() => updateItemStatus(item.code, "release")}
+    disabled={item.status === "unclaimed" || item.status === "active" || item.status === "void" || loading}
+    className="rounded-xl border border-emerald-300 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
+  >
+    Kontrol edildi
+  </button>
+) : (
+  <span className="rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700">
+    Test kodu
+  </span>
+)}                            <button type="button" onClick={() => updateItemStatus(item.code, "void")} disabled={item.status === "void" || item.status === "active" || loading} className="rounded-xl border border-red-300 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700 disabled:cursor-not-allowed disabled:opacity-50">Hatalı / iptal</button>
                           </div>
                         </td>
                       </tr>

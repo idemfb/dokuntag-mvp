@@ -195,7 +195,29 @@ export async function PUT(req: NextRequest, context: RouteContext) {
         { status: 409 }
       );
     }
+    if (existing.status === "production_hold") {
+  return NextResponse.json(
+    {
+      ok: false,
+      locked: true,
+      error:
+        "Bu ürün henüz kullanıma açılmadı. Kurulum yapılamaz."
+    },
+    { status: 403 }
+  );
+}
 
+if (existing.status === "void") {
+  return NextResponse.json(
+    {
+      ok: false,
+      locked: true,
+      error:
+        "Bu ürün kodu iptal edilmiştir."
+    },
+    { status: 410 }
+  );
+}
     const body = (await req.json()) as SetupBody;
 
     const productType = normalizeProductType(body.productType);

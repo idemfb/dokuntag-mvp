@@ -45,8 +45,17 @@ export type TagRecord = {
   allowDirectCall?: boolean;
   allowDirectWhatsapp?: boolean;
   status?: TagStatus;
+  isTest?: boolean;
   createdAt?: string;
   updatedAt?: string;
+  packed?: boolean;
+  shipmentStatus?: "ready" | "packed" | "shipped";
+  customerName?: string;
+  customerPhone?: string;
+  customerAddress?: string;
+  orderNo?: string;
+  packedAt?: string;
+  shippedAt?: string;
   recovery?: {
     phone?: string;
     email?: string;
@@ -96,8 +105,17 @@ export type TagView = {
   oldCode?: string;
   manageToken: string;
   status: TagStatus;
+  isTest?: boolean;
   productType: ProductType;
   productSubtype?: string;
+  packed: boolean;
+  shipmentStatus?: "ready" | "packed" | "shipped";
+  customerName?: string;
+  customerPhone?: string;
+  customerAddress?: string;
+  orderNo?: string;
+  packedAt?: string;
+  shippedAt?: string;
   profile: {
     name: string;
     ownerName?: string;
@@ -170,6 +188,7 @@ type UpsertTagInput = {
   recoveryPhone?: string;
   recoveryEmail?: string;
   status?: TagStatus;
+  isTest?: boolean;
   visibility?: {
     showName?: boolean;
     showPhone?: boolean;
@@ -509,8 +528,17 @@ function mapProductToTagView(product: TagRecord): TagView {
     oldCode: product.oldCode,
     manageToken: product.manageToken,
     status: resolveStatus(product),
+    isTest: Boolean(product.isTest),
     productType: product.productType || "item",
     productSubtype: product.productSubtype || "",
+    packed: Boolean(product.packed),
+    shipmentStatus: product.shipmentStatus || "ready",
+    customerName: product.customerName || "",
+    customerPhone: product.customerPhone || "",
+    customerAddress: product.customerAddress || "",
+    orderNo: product.orderNo || "",
+    packedAt: product.packedAt || "",
+    shippedAt: product.shippedAt || "",
     profile: {
       name: getProfileName(product),
       ownerName: getOwnerName(product),
@@ -2545,4 +2573,88 @@ export function runFullCleanup() {
     count: nextProducts.length
   };
 }
+export async function updatePackedByCodeAsync({
+  code,
+  packed
+}: {
+  code: string;
+  packed: boolean;
+}): Promise<TagView | null> {
+  const normalizedCode = normalizeCode(code);
+  if (!normalizedCode) return null;
 
+  const products = await cleanupTransientStatesAsync();
+
+  const index = products.findIndex((item) => {
+    return (
+      normalizeCode(item.publicCode || (item as { code?: string }).code || "") ===
+        normalizedCode || normalizeCode(item.oldCode || "") === normalizedCode
+    );
+  });
+
+  if (index === -1) {
+    return null;
+  }
+
+  products[index] = {
+    ...products[index],
+    packed,
+    updatedAt: new Date().toISOString()
+  };
+
+  await saveProductsAsync(products);
+
+  return mapProductToTagView(products[index]);
+}
+export async function updateShipmentByCodeAsync({
+  code,
+  packed,
+  shipmentStatus,
+  customerName,
+  customerPhone,
+  customerAddress,
+  orderNo
+}: {
+  code: string;
+  packed: boolean;
+  shipmentStatus: "ready" | "packed" | "shipped";
+  customerName?: string;
+  customerPhone?: string;
+  customerAddress?: string;
+  orderNo?: string;
+}): Promise<TagView | null> {
+  const normalizedCode = normalizeCode(code);
+  if (!normalizedCode) return null;
+
+  const products = await cleanupTransientStatesAsync();
+
+  const index = products.findIndex((item) => {
+    return (
+      normalizeCode(item.publicCode || (item as { code?: string }).code || "") ===
+        normalizedCode || normalizeCode(item.oldCode || "") === normalizedCode
+    );
+  });
+
+  if (index === -1) return null;
+
+  const now = new Date().toISOString();
+
+  products[index] = {
+    ...products[index],
+    packed,
+    shipmentStatus,
+    customerName: customerName ?? products[index].customerName ?? "",
+    customerPhone: customerPhone ?? products[index].customerPhone ?? "",
+    customerAddress: customerAddress ?? products[index].customerAddress ?? "",
+    orderNo: orderNo ?? products[index].orderNo ?? "",
+    packedAt:
+      shipmentStatus === "packed" || shipmentStatus === "shipped"
+        ? products[index].packedAt || now
+        : "",
+    shippedAt: shipmentStatus === "shipped" ? now : products[index].shippedAt || "",
+    updatedAt: now
+  };
+
+  await saveProductsAsync(products);
+  return mapProductToTagView(products[index]);
+}
