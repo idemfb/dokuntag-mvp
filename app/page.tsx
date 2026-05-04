@@ -154,15 +154,18 @@ export default function HomePage() {
       </p>
 
       <h1 className="max-w-3xl text-5xl font-semibold tracking-tight text-neutral-950 sm:text-6xl lg:text-7xl">
-        Kaybolduğunda, sana ulaşırlar.
+        Kaybolanı doğru kişiye ulaştırmanın en kolay yolu.
       </h1>
 
       <p className="mt-6 max-w-2xl text-lg leading-8 text-neutral-600 sm:text-xl">
-        Bulan kişi etiketi okutur veya dokundurur. Saniyeler içinde size ulaşır; uygulama indirmez, karmaşa yaşamaz.
+        Anahtar, evcil hayvan ve eşyalar için güvenli iletişim sistemi.
+        Bulan kişi etiketi okutur ve saniyeler içinde size ulaşır.
       </p>
 
       <p className="mt-4 text-sm text-neutral-500">
-        Bir kere alırsın · Yıllık ücret yok · Uygulama gerekmez
+        • NFC veya QR ile çalışır  
+        • Uygulama gerekmez  
+        • Yıllık ücret yok
       </p>
 
       <div className="mt-10 flex flex-col gap-3 sm:flex-row">
@@ -218,11 +221,15 @@ export default function HomePage() {
       <h2 className="mt-4 text-4xl font-semibold tracking-tight sm:text-5xl">
         Çünkü kaybolduğunda sana ulaşacak bir yol gerekir.
       </h2>
+           
       <p className="mt-5 text-lg leading-8 text-neutral-600">
         Yakınınızı, evcil hayvanınızı veya eşyalarınızı bulan kişi iyi niyetli olabilir. Ama size ulaşacak bir yol yoksa geri dönmesi zordur.
       </p>
+      <p className="mt-4 text-sm text-neutral-400">
+      Dokuntag® bir takip cihazı değildir ve konum takibi yapmaz.
+    </p>
     </div>
-
+    
     <div className="mt-10 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
       {[
         {
@@ -304,7 +311,7 @@ export default function HomePage() {
       <p className="text-xs font-semibold uppercase tracking-[0.25em] text-neutral-500">
         Nasıl çalışır?
       </p>
-
+       
       <h2 className="mt-3 text-2xl font-semibold tracking-tight text-neutral-900 sm:text-4xl">
         Bulunduğunda, saniyeler içinde size ulaşılır.
       </h2>
