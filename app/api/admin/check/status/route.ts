@@ -12,6 +12,8 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
     const code = normalizeCode(body.code);
+    const qrCode = normalizeCode(body.qrCode);
+    const nfcCode = normalizeCode(body.nfcCode);
     const action = body.action;
 
     if (!code || !action) {
@@ -23,17 +25,35 @@ export async function POST(req: Request) {
     if (!tag) {
       return NextResponse.json({ error: "Kod bulunamadı" }, { status: 404 });
     }
+
     if (tag.status !== "production_hold") {
-  return NextResponse.json(
-    { error: "Sadece üretim kontrol bekleyen ürünlerde işlem yapılabilir." },
-    { status: 400 }
-  );
-}
+      return NextResponse.json(
+        { error: "Sadece üretim kontrol bekleyen ürünlerde işlem yapılabilir." },
+        { status: 400 }
+      );
+    }
+
     if (tag.isTest && action === "release") {
       return NextResponse.json(
         { error: "Test kodları aktif edilemez" },
         { status: 400 }
       );
+    }
+
+    if (action === "release") {
+      if (!qrCode || !nfcCode) {
+        return NextResponse.json(
+          { error: "Satışa açmak için QR ve NFC kontrolü zorunludur." },
+          { status: 400 }
+        );
+      }
+
+      if (qrCode !== code || nfcCode !== code || qrCode !== nfcCode) {
+        return NextResponse.json(
+          { error: "QR ve NFC aynı ürün kodunu göstermelidir." },
+          { status: 400 }
+        );
+      }
     }
 
     const nextStatus =
@@ -54,7 +74,6 @@ export async function POST(req: Request) {
       success: true,
       status: updated?.status
     });
-
   } catch {
     return NextResponse.json({ error: "Sunucu hatası" }, { status: 500 });
   }
