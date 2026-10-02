@@ -1,5 +1,5 @@
 "use client";
-
+import AdminPageHeader from "./components/AdminPageHeader";
 import { useEffect, useRef, useState } from "react";
 
 type Stats = {
@@ -144,41 +144,34 @@ export default function AdminPage() {
   return (
     <main className="min-h-screen bg-neutral-50 px-4 py-8 text-neutral-900">
       <div className="mx-auto max-w-6xl space-y-6">
-        <section className="rounded-[2rem] border border-neutral-200 bg-white p-6 shadow-sm">
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div>
-              <p className="text-xs uppercase tracking-[0.2em] text-neutral-400">
-                Dokuntag
-              </p>
-              <h1 className="mt-2 text-3xl font-semibold tracking-tight">
-                Admin Panel
-              </h1>
-              <p className="mt-2 text-sm text-neutral-600">
-                Üretim, kontrol ve ürün durumlarını tek yerden takip edin.
-              </p>
-            </div>
-                        <a
-              href="/admin/orders"
-              className="rounded-2xl border border-neutral-300 bg-white px-5 py-4 text-center text-sm font-semibold transition hover:bg-neutral-50"
-            >
-              Siparişe kod bağla
-            </a>
-            <button
-              type="button"
-              onClick={() => fetchStats(true)}
-              className="rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm font-semibold transition hover:bg-neutral-50"
-            >
-              {manualLoading ? "Yenileniyor..." : "Yenile"}
-            </button>
+        <AdminPageHeader
+  title="Admin Panel"
+  description="Üretim, kontrol ve ürün durumlarını tek yerden takip edin."
+  actions={
+    <>
+      <a
+        href="/admin/orders"
+        className="rounded-2xl border border-neutral-300 bg-white px-5 py-4 text-center text-sm font-semibold text-neutral-800 transition hover:bg-neutral-50"
+      >
+        Siparişe kod bağla
+      </a>
 
-          </div>
+      <button
+        type="button"
+        onClick={() => fetchStats(true)}
+        className="rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm font-semibold text-neutral-800 transition hover:bg-neutral-50"
+      >
+        {manualLoading ? "Yenileniyor..." : "Yenile"}
+      </button>
+    </>
+  }
+/>
 
-          {error ? (
-            <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-              {error}
-            </div>
-          ) : null}
-        </section>
+{error ? (
+  <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+    {error}
+  </div>
+) : null}
 
         <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {cards.map((card) => (
@@ -193,7 +186,7 @@ export default function AdminPage() {
           ))}
         </section>
 
-        <section className="grid gap-3 sm:grid-cols-2">
+        <section className="grid gap-3 sm:grid-cols-4">
           <a
             href="/admin/batch"
             className="rounded-2xl bg-black px-5 py-4 text-center text-sm font-semibold text-white transition hover:bg-neutral-800"
@@ -207,6 +200,19 @@ export default function AdminPage() {
           >
             Ürün kontrol ekranına git
           </a>
+          
+          <a
+  href="/admin/system"
+  className="rounded-2xl border border-neutral-300 bg-white px-5 py-4 text-center text-sm font-semibold transition hover:bg-neutral-50"
+>
+  Sistem Durumu
+</a>
+<a
+  href="/admin/backup"
+  className="rounded-2xl border border-neutral-300 bg-white px-5 py-4 text-center text-sm font-semibold transition hover:bg-neutral-50"
+>
+  Backup Merkezi
+</a>
         </section>
       </div>
     </main>

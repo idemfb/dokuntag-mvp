@@ -18,6 +18,7 @@ export type NotifyLogItem = {
   senderName?: string;
   senderPhone?: string;
   senderEmail?: string;
+  approximateLocation?: string;
   preferredContactMethods?: NotifyContactMethod[];
   message?: string;
 };
@@ -405,6 +406,7 @@ export async function addNotifyLog(input: {
   senderEmail?: string;
   preferredContactMethods?: string[];
   message?: string;
+  approximateLocation?: string;
 }) {
   const items = cleanupExpiredLogs(await readNotifyLog());
 
@@ -422,6 +424,8 @@ export async function addNotifyLog(input: {
     senderPhone: input.senderPhone || "",
     senderEmail: input.senderEmail || "",
     preferredContactMethods: normalizeMethods(input.preferredContactMethods),
+    approximateLocation: input.approximateLocation || "",
+
     message: input.message || ""
   });
 

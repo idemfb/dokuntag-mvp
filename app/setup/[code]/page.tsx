@@ -110,7 +110,7 @@ function getPrimaryPlaceholder(type: ProductType) {
 
 function getOwnerPlaceholder(type: ProductType) {
   if (type === "person") return "Yakını";
-  return "Sahibi";
+  return "Profil Sahibi";
 }
 
 function getSubtypePlaceholder(type: ProductType) {
@@ -516,6 +516,7 @@ if (invalidCode) {
         </section>
 
         <form
+        
           noValidate
           onSubmit={handleSubmit}
           className="rounded-[1.5rem] border border-neutral-200 bg-white px-4 py-3.5 shadow-sm"
@@ -574,6 +575,46 @@ if (invalidCode) {
                 className="min-w-0 rounded-2xl border border-neutral-300 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
               />
             </div>
+                            <section className="rounded-[1.35rem] border border-neutral-200 bg-neutral-50 px-3 py-3">
+              
+              <p className="text-sm font-medium text-neutral-900">
+                Hesap kurtarma
+              </p>
+              <p className="mt-0.5 text-xs leading-5 text-neutral-500">
+                E-posta kimseye gösterilmez. Yönetim erişimi ve bildirimler için
+                kullanılır.
+              </p>
+
+              <div className="mt-2 grid grid-cols-2 gap-1.5">
+                <input
+                  type="email"
+                  value={form.recoveryEmail}
+                  onChange={(e) =>
+                    update("recoveryEmail", normalizeEmail(e.target.value))
+                  }
+                  placeholder="Kurtarma e-postası"
+                  className={`min-w-0 rounded-2xl border bg-white px-3 py-2.5 text-sm outline-none transition focus:ring-2 ${
+                    recoveryEmailError
+                      ? "border-red-300 focus:border-red-400 focus:ring-red-100"
+                      : "border-neutral-300 focus:border-neutral-500 focus:ring-neutral-200"
+                  }`}
+                />
+
+                <input
+                  type="email"
+                  value={recoveryEmailConfirm}
+                  onChange={(e) =>
+                    setRecoveryEmailConfirm(normalizeEmail(e.target.value))
+                  }
+                  placeholder="E-postayı tekrar yazın"
+                  className={`min-w-0 rounded-2xl border bg-white px-3 py-2.5 text-sm outline-none transition focus:ring-2 ${
+                    recoveryEmailError
+                      ? "border-red-300 focus:border-red-400 focus:ring-red-100"
+                      : "border-neutral-300 focus:border-neutral-500 focus:ring-neutral-200"
+                  }`}
+                />
+              </div>
+            </section>
 
             <section className="rounded-[1.35rem] border border-neutral-200 bg-neutral-50 px-3 py-3">
               <p className="text-sm font-medium text-neutral-900">
@@ -630,47 +671,6 @@ if (invalidCode) {
               className="min-h-[72px] w-full rounded-2xl border border-neutral-300 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
             />
               
-            <section className="rounded-[1.35rem] border border-neutral-200 bg-neutral-50 px-3 py-3">
-              
-              <p className="text-sm font-medium text-neutral-900">
-                Hesap kurtarma
-              </p>
-              <p className="mt-0.5 text-xs leading-5 text-neutral-500">
-                E-posta kimseye gösterilmez. Yönetim erişimi ve bildirimler için
-                kullanılır.
-              </p>
-
-              <div className="mt-2 grid grid-cols-2 gap-1.5">
-                <input
-                  type="email"
-                  value={form.recoveryEmail}
-                  onChange={(e) =>
-                    update("recoveryEmail", normalizeEmail(e.target.value))
-                  }
-                  placeholder="Kurtarma e-postası"
-                  className={`min-w-0 rounded-2xl border bg-white px-3 py-2.5 text-sm outline-none transition focus:ring-2 ${
-                    recoveryEmailError
-                      ? "border-red-300 focus:border-red-400 focus:ring-red-100"
-                      : "border-neutral-300 focus:border-neutral-500 focus:ring-neutral-200"
-                  }`}
-                />
-
-                <input
-                  type="email"
-                  value={recoveryEmailConfirm}
-                  onChange={(e) =>
-                    setRecoveryEmailConfirm(normalizeEmail(e.target.value))
-                  }
-                  placeholder="E-postayı tekrar yazın"
-                  className={`min-w-0 rounded-2xl border bg-white px-3 py-2.5 text-sm outline-none transition focus:ring-2 ${
-                    recoveryEmailError
-                      ? "border-red-300 focus:border-red-400 focus:ring-red-100"
-                      : "border-neutral-300 focus:border-neutral-500 focus:ring-neutral-200"
-                  }`}
-                />
-              </div>
-            </section>
-
             <button
               disabled={saving}
               className="w-full rounded-2xl bg-neutral-900 px-4 py-3 text-sm font-medium text-white transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-60"

@@ -52,7 +52,7 @@ function buildWhatsAppLink(phone: string, senderName: string, tagCode: string) {
   if (!normalized) return "";
 
   const safeSenderName = senderName.trim() || "merhaba";
-  const text = `Merhaba ${safeSenderName}, Dokuntag ${tagCode} mesajınız için size ulaşıyorum.`;
+  const text = `Merhaba ${safeSenderName}, Dokuntag® ${tagCode} mesajınız için size ulaşıyorum.`;
   return `https://wa.me/${normalized}?text=${encodeURIComponent(text)}`;
 }
 
@@ -79,6 +79,78 @@ function button(href: string, label: string) {
     >
       ${label}
     </a>
+  `;
+}
+
+function mailBrandHeader() {
+  return `
+    <div style="margin-bottom:20px;">
+      <div
+        style="
+          display:inline-flex;
+          align-items:center;
+          gap:10px;
+        "
+      >
+        <div
+          style="
+            width:14px;
+            height:14px;
+            border-radius:999px;
+            background:linear-gradient(135deg,#111,#666);
+          "
+        ></div>
+
+        <div>
+          <div
+            style="
+              font-size:18px;
+              font-weight:700;
+              color:#111;
+              letter-spacing:-0.02em;
+            "
+          >
+            Dokuntag®
+          </div>
+
+          <div
+            style="
+              margin-top:2px;
+              font-size:12px;
+              color:#666;
+            "
+          >
+            Güvenle iletişim kurabilmeniz için gönderildi.
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function mailBrandFooter() {
+  return `
+    <div
+      style="
+        margin-top:18px;
+        padding:12px;
+        border:1px solid #ececec;
+        border-radius:8px;
+        background:#fff;
+      "
+    >
+      <p
+        style="
+          margin:0;
+          font-size:12px;
+          line-height:1.6;
+          color:#666;
+        "
+      >
+        Dokuntag® canlı takip veya konum takibi yapmaz.
+        Bu e-posta güvenle iletişim kurabilmeniz için gönderildi.
+      </p>
+    </div>
   `;
 }
 
@@ -109,18 +181,18 @@ function buildSmartSubject(input: {
   const tagCode = input.tagCode.trim();
 
   if (itemName) {
-    return `Dokuntag mesajı - ${itemName}`;
+    return `Dokuntag® mesajı - ${itemName}`;
   }
 
   if (tagName) {
-    return `Dokuntag mesajı - ${tagName}`;
+    return `Dokuntag® mesajı - ${tagName}`;
   }
 
   if (tagCode) {
-    return `Dokuntag mesajı - ${tagCode}`;
+    return `Dokuntag® mesajı - ${tagCode}`;
   }
 
-  return "Dokuntag mesajı";
+  return "Dokuntag® mesajı";
 }
 
 type SendOwnerNotificationInput = {
@@ -136,6 +208,7 @@ type SendOwnerNotificationInput = {
   allowDirectCall?: boolean;
   allowDirectWhatsapp?: boolean;
   message: string;
+  approximateLocation?: string;
   showOwnerName?: boolean;
   showSecondaryTitle?: boolean;
 };
@@ -159,7 +232,8 @@ export async function sendOwnerNotification(input: SendOwnerNotificationInput) {
     input.preferredContactMethods.length > 0
       ? input.preferredContactMethods.map(getContactMethodLabel).join(", ")
       : "-";
-
+     const approximateLocationText =
+  input.approximateLocation?.trim() || "";
   const canShowCallButton =
     Boolean(input.allowDirectCall) &&
     input.preferredContactMethods.includes("phone") &&
@@ -212,7 +286,8 @@ export async function sendOwnerNotification(input: SendOwnerNotificationInput) {
 
   const html = `
     <div style="font-family:Arial,sans-serif; line-height:1.6; color:#111;">
-      <h2>Dokuntag profiliniz için yeni bir mesaj var</h2>
+      ${mailBrandHeader()}
+      <h2>Dokuntag® profiliniz için yeni bir mesaj var</h2>
 
       <div style="margin-top:14px; padding:12px; border:1px solid #e5e5e5; border-radius:8px; background:#fafafa;">
         <p style="margin:0 0 8px 0;"><strong>Profil bilgileri</strong></p>
@@ -223,7 +298,7 @@ export async function sendOwnerNotification(input: SendOwnerNotificationInput) {
 
       <p><strong>Gönderen:</strong> ${escapeHtml(input.senderName || "-")}</p>
       <p><strong>Tercih edilen iletişim yolu:</strong> ${escapeHtml(preferredMethodsText)}</p>
-
+      <p><strong>Yaklaşık konum:</strong> ${escapeHtml(approximateLocationText || "-")}</p>
       ${
         actionButtons.length > 0
           ? `
@@ -251,16 +326,14 @@ export async function sendOwnerNotification(input: SendOwnerNotificationInput) {
         ${escapeHtml(input.message || "-")}
       </div>
 
-      <div style="margin-top:18px; padding:12px; border:1px solid #ececec; border-radius:8px; background:#fff;">
-        <p style="margin:0; font-size:12px; color:#666;">
-          Bu mesaj Dokuntag profiliniz üzerinden iletildi.
-        </p>
-      </div>
+
+          ${mailBrandFooter()}
+          
     </div>
   `;
 
   const text = [
-    "Dokuntag profiliniz için yeni bir mesaj var.",
+    "Dokuntag® profiliniz için yeni bir mesaj var.",
     "",
     input.tagCode ? `Etiket kodu: ${input.tagCode}` : "",
     input.itemName ? `Ana isim: ${input.itemName}` : "",
@@ -273,6 +346,7 @@ export async function sendOwnerNotification(input: SendOwnerNotificationInput) {
     "",
     `Gönderen: ${input.senderName || "-"}`,
     `Tercih edilen iletişim yolu: ${preferredMethodsText}`,
+    `Yaklaşık konum: ${approximateLocationText || "-"}`,
     showPhone && input.senderPhone ? `Telefon: ${input.senderPhone}` : "",
     showEmail && input.senderEmail ? `E-posta: ${input.senderEmail}` : "",
     whatsappLink ? `WhatsApp: ${whatsappLink}` : "",
@@ -314,8 +388,8 @@ export async function sendTransferMessagesArchiveEmail(input: {
 
   const resend = getResendClient();
 
-  const safeProductName = input.productName.trim() || input.tagCode.trim() || "Dokuntag ürünü";
-  const subject = `Dokuntag mesaj arşivi - ${safeProductName}`;
+  const safeProductName = input.productName.trim() || input.tagCode.trim() || "Dokuntag® ürünü";
+  const subject = `Dokuntag® mesaj arşivi - ${safeProductName}`;
 
   const logBlocksHtml =
     input.logs.length > 0
@@ -333,7 +407,8 @@ export async function sendTransferMessagesArchiveEmail(input: {
                 ${infoRow("Gönderen", log.senderName || "-")}
                 ${infoRow("Telefon", log.senderPhone || "-")}
                 ${infoRow("E-posta", log.senderEmail || "-")}
-                ${infoRow("Tercih edilen iletişim", preferred)}
+                ${infoRow("Tercih edilen iletişim", preferred)} 
+                ${infoRow("Yaklaşık konum", log.approximateLocation || "-")}
                 <div style="margin-top:8px; white-space:pre-wrap; border:1px solid #ddd; border-radius:8px; padding:10px; background:#fff;">
                   ${escapeHtml(log.message || "-")}
                 </div>
@@ -345,7 +420,8 @@ export async function sendTransferMessagesArchiveEmail(input: {
 
   const html = `
     <div style="font-family:Arial,sans-serif; line-height:1.6; color:#111;">
-      <h2>Dokuntag mesaj arşivi</h2>
+    ${mailBrandHeader()}
+      <h2>Dokuntag® mesaj arşivi</h2>
       <p>Bu e-posta, ürün devri öncesi mesaj geçmişinizi saklayabilmeniz için gönderildi.</p>
 
       <div style="margin-top:14px; padding:12px; border:1px solid #e5e5e5; border-radius:8px; background:#fafafa;">
@@ -360,14 +436,14 @@ export async function sendTransferMessagesArchiveEmail(input: {
 
       <div style="margin-top:18px; padding:12px; border:1px solid #ececec; border-radius:8px; background:#fff;">
         <p style="margin:0; font-size:12px; color:#666;">
-          Not: Ürün devri tamamlandıktan sonra bu ürünün eski mesajları sistemden silinebilir.
+          Not: Ürün devri tamamlandıktan sonra bu ürüne ait eski mesajlar sistemden silinebilir.
         </p>
       </div>
     </div>
   `;
 
   const textLines = [
-    "Dokuntag mesaj arşivi",
+    "Dokuntag® mesaj arşivi",
     "",
     "Bu e-posta, ürün devri öncesi mesaj geçmişinizi saklayabilmeniz için gönderildi.",
     "",
@@ -433,8 +509,8 @@ export async function sendRecoveryMagicLinkEmail(input: {
 
   const subject =
     input.entryType === "recover"
-      ? "Dokuntag yönetim bağlantısı doğrulama linki"
-      : "Dokuntag ürünlerim giriş linki";
+      ? "Dokuntag® yönetim bağlantısı doğrulama linki"
+      : "Dokuntag® ürünlerim giriş linki";
 
   const expiresText = new Date(input.expiresAt).toLocaleString("tr-TR", {
   timeZone: "Europe/Istanbul"
@@ -442,8 +518,8 @@ export async function sendRecoveryMagicLinkEmail(input: {
 
   const title =
     input.entryType === "recover"
-      ? "Dokuntag kurtarma doğrulama bağlantınız"
-      : "Dokuntag giriş bağlantınız";
+      ? "Dokuntag® kurtarma doğrulama bağlantınız"
+      : "Dokuntag® giriş bağlantınız";
 
   const intro =
     input.entryType === "recover"
@@ -452,7 +528,7 @@ export async function sendRecoveryMagicLinkEmail(input: {
 
 const itemCountText =
   input.entryType === "my" && typeof input.itemCount === "number"
-    ? `${input.itemCount} ürün bu güvenli bağlantıyla görüntülenebilir.`
+    ? `Bu güvenli bağlantıyla ${input.itemCount} ürün görüntülenebilir.`
     : "";
     const itemPreviewText =
   input.entryType === "my" && input.itemPreview?.length
@@ -460,6 +536,7 @@ const itemCountText =
     : "";
   const html = `
     <div style="font-family:Arial,sans-serif; line-height:1.6; color:#111;">
+      ${mailBrandHeader()}
       <h2>${escapeHtml(title)}</h2>
 
       <p>${escapeHtml(intro)}</p>
@@ -518,4 +595,179 @@ itemPreviewText ? `Ürünler: ${itemPreviewText}` : "",
   }
 
   console.log("RESEND_RECOVERY_MAGIC_LINK_SUCCESS", result);
+}
+export async function sendScanSummaryEmail(input: {
+  to: string;
+  tagCode: string;
+  productName: string;
+  totalCount: number;
+  lastSeenAt: string;
+  recent: Array<{
+    id: string;
+    createdAt: string;
+  }>;
+}) {
+  const from = getEnv("EMAIL_FROM");
+
+  if (!from) {
+    throw new Error("EMAIL_FROM eksik");
+  }
+
+  const resend = getResendClient();
+  const safeProductName = input.productName.trim() || input.tagCode;
+  const subject = `Dokuntag® görüntülenme özeti - ${safeProductName}`;
+
+  const recentHtml =
+    input.recent.length > 0
+      ? input.recent
+          .map((item, index) => {
+            return `
+              <p style="margin:6px 0;">
+                <strong>#${index + 1}</strong> — ${escapeHtml(
+                  new Date(item.createdAt).toLocaleString("tr-TR", {
+                    timeZone: "Europe/Istanbul"
+                  })
+                )}
+              </p>
+            `;
+          })
+          .join("")
+      : `<p>Henüz görüntülenme kaydı bulunmuyor.</p>`;
+
+  const html = `
+    <div style="font-family:Arial,sans-serif; line-height:1.6; color:#111;">
+      ${mailBrandHeader()}
+      <h2>Dokuntag® görüntülenme özeti</h2>
+
+      <p>
+        Bu e-posta, profil sayfanızın son görüntülenme özetini içerir.
+      </p>
+
+      <div style="margin-top:14px; padding:12px; border:1px solid #e5e5e5; border-radius:8px; background:#fafafa;">
+        ${infoRow("Ürün", safeProductName)}
+        ${infoRow("Etiket kodu", input.tagCode)}
+        ${infoRow("Toplam görüntülenme", String(input.totalCount))}
+        ${infoRow(
+          "Son görüntülenme",
+          input.lastSeenAt
+            ? new Date(input.lastSeenAt).toLocaleString("tr-TR", {
+                timeZone: "Europe/Istanbul"
+              })
+            : "-"
+        )}
+      </div>
+
+      <div style="margin-top:18px;">
+        <p style="margin:0 0 8px 0;"><strong>Son 10 hareket</strong></p>
+        ${recentHtml}
+      </div>
+
+      ${mailBrandFooter()}
+    </div>
+  `;
+
+  const text = [
+    "Dokuntag® görüntülenme özeti",
+    "",
+    `Ürün: ${safeProductName}`,
+    `Etiket kodu: ${input.tagCode}`,
+    `Toplam görüntülenme: ${input.totalCount}`,
+    `Son görüntülenme: ${
+      input.lastSeenAt
+        ? new Date(input.lastSeenAt).toLocaleString("tr-TR", {
+            timeZone: "Europe/Istanbul"
+          })
+        : "-"
+    }`,
+    "",
+    "Son 10 hareket:",
+    ...(input.recent.length > 0
+      ? input.recent.map((item, index) => {
+          return `#${index + 1} - ${new Date(item.createdAt).toLocaleString(
+            "tr-TR",
+            {
+              timeZone: "Europe/Istanbul"
+            }
+          )}`;
+        })
+      : ["Henüz görüntülenme kaydı bulunmuyor."]),
+    "",
+    "Bu özellik canlı takip veya konum takibi yapmaz."
+  ].join("\n");
+
+  const result = await resend.emails.send({
+    from,
+    to: input.to,
+    subject,
+    html,
+    text
+  });
+
+  if ("error" in result && result.error) {
+    console.error("RESEND_SCAN_SUMMARY_SEND_ERROR", result.error);
+    throw new Error("Görüntülenme özeti e-postası gönderilemedi.");
+  }
+}
+export async function sendScanViewNotificationEmail(input: {
+  to: string;
+  tagCode: string;
+  productName: string;
+  viewedAt: string;
+}) {
+  const from = getEnv("EMAIL_FROM");
+
+  if (!from) {
+    throw new Error("EMAIL_FROM eksik");
+  }
+
+  const resend = getResendClient();
+  const safeProductName = input.productName.trim() || input.tagCode;
+
+  const viewedAtText = new Date(input.viewedAt).toLocaleString("tr-TR", {
+    timeZone: "Europe/Istanbul"
+  });
+
+  const subject = `Dokuntag® görüntülenme bildirimi - ${safeProductName}`;
+
+  const html = `
+    <div style="font-family:Arial,sans-serif; line-height:1.6; color:#111;">
+      ${mailBrandHeader()}
+      <h2>Dokuntag® profil sayfanız görüntülendi</h2>
+
+      <p>
+        Birisi Dokuntag® profil sayfanızı görüntüledi.
+      </p>
+
+      <div style="margin-top:14px; padding:12px; border:1px solid #e5e5e5; border-radius:8px; background:#fafafa;">
+        ${infoRow("Ürün", safeProductName)}
+        ${infoRow("Etiket kodu", input.tagCode)}
+        ${infoRow("Görüntülenme zamanı", viewedAtText)}
+      </div>
+
+          ${mailBrandFooter()}
+    </div>
+  `;
+
+  const text = [
+    "Dokuntag® profil sayfanız görüntülendi.",
+    "",
+    `Ürün: ${safeProductName}`,
+    `Etiket kodu: ${input.tagCode}`,
+    `Görüntülenme zamanı: ${viewedAtText}`,
+    "",
+    "Bu özellik canlı takip veya konum takibi yapmaz. Bildirimler sınırlı gönderilir."
+  ].join("\n");
+
+  const result = await resend.emails.send({
+    from,
+    to: input.to,
+    subject,
+    html,
+    text
+  });
+
+  if ("error" in result && result.error) {
+    console.error("RESEND_SCAN_VIEW_NOTIFICATION_ERROR", result.error);
+    throw new Error("Görüntülenme bildirimi gönderilemedi.");
+  }
 }

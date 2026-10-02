@@ -1,6 +1,20 @@
+import { addAbuseLog } from "@/lib/security/abuseLog";
 import { NextResponse } from "next/server";
 import { findTagByCodeAsync, readTagsAsync } from "@/lib/tags";
 import { isMailConfigured, sendOwnerNotification } from "@/lib/mailer";
+import {
+  isMaintenanceMode,
+  isNotifyDisabled
+} from "@/lib/productionFlags";
+import {
+  containsBlockedContent
+} from "@/lib/security/messageFilter";
+import {
+  checkRateLimit
+} from "@/lib/security/rateLimit";
+import {
+  normalizeApproxLocation
+} from "@/lib/security/location";
 import {
   addNotifyLog,
   checkNotifyCooldown,
@@ -87,15 +101,41 @@ function shouldShowSecondaryTitle(itemName: string, tagName: string) {
 
 export async function POST(request: Request) {
   try {
+    if (isMaintenanceMode()) {
+  return NextResponse.json(
+    {
+      error:
+        "Sistem kısa süreli bakım modunda. Lütfen daha sonra tekrar deneyin."
+    },
+    { status: 503 }
+  );
+}
+    if (isNotifyDisabled()) {
+      return NextResponse.json(
+        {
+          error:
+            "Mesaj iletimi geçici olarak duraklatıldı. Lütfen daha sonra tekrar deneyin."
+        },
+        { status: 503 }
+      );
+    }
+
     const body = await request.json();
 
     const code = normalizeCode(body.code);
     const senderName = getString(body.senderName);
     const senderPhone = normalizePhone(body.senderPhone);
     const senderEmail = normalizeEmail(body.senderEmail);
-    const message = normalizeMessage(body.message).slice(0, 1000);
+    const rawMessage = normalizeMessage(body.message);
+    const message = rawMessage.slice(0, 500);
+    const approximateLocation =
+  normalizeApproxLocation(
+    body.approximateLocation
+  );
     const website = getString(body.website);
     const preferredContactMethods = normalizeMethods(body.preferredContactMethods);
+    const clientIp =
+  getClientIp(request);
 
     if (["DKNTG", "DEMO01", "DEMO02", "DEMO03"].includes(code)) {
   return NextResponse.json({
@@ -106,7 +146,26 @@ export async function POST(request: Request) {
     if (website) {
       return NextResponse.json({ success: true });
     }
+   const rateLimitPassed =
+  checkRateLimit(`notify:${clientIp}:${code}`);
 
+if (!rateLimitPassed) {
+  addAbuseLog({
+    reason: "rate_limit",
+    code,
+    ip: clientIp,
+    senderName,
+    message
+  });
+
+  return NextResponse.json(
+    {
+      error:
+        "Çok fazla mesaj gönderildi. Lütfen daha sonra tekrar deneyin."
+    },
+    { status: 429 }
+  );
+}
     if (!code) {
       return NextResponse.json({ error: "Kod zorunludur." }, { status: 400 });
     }
@@ -137,44 +196,79 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!senderName) {
-      return NextResponse.json({ error: "Ad zorunludur." }, { status: 400 });
-    }
+    if (
+  senderName &&
+  (senderName.length < 2 ||
+    senderName.length > 60)
+) {
+  return NextResponse.json(
+    {
+      error:
+        "Ad bilgisi geçersiz."
+    },
+    { status: 400 }
+  );
+}
 
-    if (senderName.length < 2 || senderName.length > 60) {
-      return NextResponse.json(
-        { error: "Ad 2 ile 60 karakter arasında olmalı." },
-        { status: 400 }
-      );
-    }
+   if (
+  containsBlockedContent(message) ||
+  containsBlockedContent(senderName)
+) {
+  addAbuseLog({
+    reason: "blocked_content",
+    code,
+    ip: clientIp,
+    senderName,
+    message
+  });
 
-    if (!preferredContactMethods.length) {
-      return NextResponse.json(
-        { error: "En az 1 iletişim yöntemi seçin." },
-        { status: 400 }
-      );
-    }
+  return NextResponse.json(
+    {
+      error:
+        "Mesajınız güvenlik kuralları nedeniyle gönderilemedi. Lütfen daha uygun bir dil kullanın."
+    },
+    { status: 400 }
+  );
+}
 
-    const needsPhone =
-      preferredContactMethods.includes("phone") ||
-      preferredContactMethods.includes("whatsapp");
+    if (
+  preferredContactMethods.length > 0
+) {
+  const needsPhone =
+    preferredContactMethods.includes(
+      "phone"
+    ) ||
+    preferredContactMethods.includes(
+      "whatsapp"
+    );
 
-    const needsEmail = preferredContactMethods.includes("email");
+  const needsEmail =
+    preferredContactMethods.includes(
+      "email"
+    );
 
-    if (needsPhone && !senderPhone) {
-      return NextResponse.json(
-        { error: "Telefon veya WhatsApp seçildiği için telefon zorunlu." },
-        { status: 400 }
-      );
-    }
+  if (needsPhone && !senderPhone) {
+    return NextResponse.json(
+      {
+        error:
+          "Telefon bilgisi gerekli."
+      },
+      { status: 400 }
+    );
+  }
 
-    if (needsEmail && !senderEmail) {
-      return NextResponse.json(
-        { error: "E-posta seçildiği için e-posta zorunlu." },
-        { status: 400 }
-      );
-    }
+  if (needsEmail && !senderEmail) {
+    return NextResponse.json(
+      {
+        error:
+          "E-posta bilgisi gerekli."
+      },
+      { status: 400 }
+    );
+  }
+}
 
+    
     if (senderPhone.length > 20) {
       return NextResponse.json(
         { error: "Telefon bilgisi çok uzun." },
@@ -203,9 +297,9 @@ export async function POST(request: Request) {
       );
     }
 
-    if (message.length > 1000) {
+    if (rawMessage.length > 500) {
       return NextResponse.json(
-        { error: "Mesaj çok uzun." },
+        { error: "Mesaj en fazla 500 karakter olabilir." },
         { status: 400 }
       );
     }
@@ -243,7 +337,15 @@ export async function POST(request: Request) {
     });
 
     if (!cooldownCheck.allowed) {
-      return NextResponse.json(
+  addAbuseLog({
+    reason: "cooldown",
+    code,
+    ip,
+    senderName,
+    message
+  });
+
+  return NextResponse.json(
         {
           error:
             cooldownCheck.error ||
@@ -261,6 +363,7 @@ export async function POST(request: Request) {
       senderPhone,
       senderEmail,
       preferredContactMethods,
+      approximateLocation,
       message
     });
 
@@ -280,9 +383,10 @@ export async function POST(request: Request) {
       senderName,
       senderPhone,
       senderEmail,
-      preferredContactMethods,
+      preferredContactMethods,  
       allowDirectCall: Boolean(tag.contactOptions?.allowDirectCall),
       allowDirectWhatsapp: Boolean(tag.contactOptions?.allowDirectWhatsapp),
+      approximateLocation,
       message,
       showOwnerName: showOwnerNameInEmail,
       showSecondaryTitle: shouldShowSecondaryTitle(itemName, tagName)

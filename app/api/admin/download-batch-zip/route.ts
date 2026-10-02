@@ -20,6 +20,10 @@ type DesignInput = {
   foregroundColor?: string;
   codeColor?: string;
   showGuide?: boolean;
+  hideCode?: boolean;
+  qrGlowSize?: number;
+  qrGlowOpacity?: number;
+  qrGlowColor?: string;
 };
 
 function clamp(value: number, min: number, max: number) {
@@ -151,6 +155,10 @@ async function buildSvg(targetUrl: string, code: string, design: DesignInput) {
   const qrOffsetY = parseNumber(design.qrOffsetY, 0, -45, 45);
   const codeGapPercent = parseNumber(design.codeGap, 100, 20, 180);
   const showGuide = design.showGuide === true;
+  const hideCode = design.hideCode === true;
+  const glowColor = normalizeColor(design.qrGlowColor, "#ffffff");
+  const glowOpacity = clamp(Number(design.qrGlowOpacity ?? 78), 0, 100) / 100;
+  const glowSizePercent = clamp(Number(design.qrGlowSize ?? 42), 25, 80);
 
   const qrSvg = await QRCode.toString(targetUrl, {
     type: "svg",
@@ -185,14 +193,15 @@ async function buildSvg(targetUrl: string, code: string, design: DesignInput) {
   const codeFontSize = clamp(12 * (codeScale / 100), 7, 22);
   const codeGap = clamp(10 * (codeGapPercent / 100), 2, 24);
 
-  const maxQrBySafeHeight = safeHeight - codeGap - codeFontSize * 1.5;
+  const codeBlockHeight = hideCode ? 0 : codeGap + codeFontSize * 1.5;
+  const maxQrBySafeHeight = safeHeight - codeBlockHeight;
   const maxQrBySafeWidth = safeWidth;
   const maxQrSize = Math.max(80, Math.min(maxQrBySafeWidth, maxQrBySafeHeight));
 
   const preferredQrSize = 196 * (qrScale / 76);
   const qrSize = clamp(preferredQrSize, 70, maxQrSize);
 
-  const groupHeight = qrSize + codeGap + codeFontSize * 1.5;
+  const groupHeight = qrSize + codeBlockHeight;
   const groupWidth = qrSize;
 
   const baseGroupX = safeX + (safeWidth - groupWidth) / 2;
@@ -224,8 +233,9 @@ async function buildSvg(targetUrl: string, code: string, design: DesignInput) {
   </defs>
   ${shapeMarkup.background}
   <g clip-path="url(#dokuntagShapeClip)">
+    ${glowOpacity > 0 ? `<rect x="${(canvasWidth - canvasWidth * (glowSizePercent / 100)) / 2}" y="${(canvasHeight - canvasHeight * (glowSizePercent / 100)) / 2}" width="${canvasWidth * (glowSizePercent / 100)}" height="${canvasHeight * (glowSizePercent / 100)}" rx="26" fill="${glowColor}" opacity="${glowOpacity}" />` : ""}
     <svg viewBox="${escapeXml(qrViewBox)}" x="${qrX}" y="${qrY}" width="${qrSize}" height="${qrSize}">${qrInner}</svg>
-    <text
+    ${hideCode ? "" : `<text
       x="${qrX + qrSize / 2}"
       y="${codeY}"
       text-anchor="middle"
@@ -234,7 +244,7 @@ async function buildSvg(targetUrl: string, code: string, design: DesignInput) {
       font-weight="800"
       letter-spacing="1.2"
       fill="${codeColor}"
-    >${escapeXml(code)}</text>
+    >${escapeXml(code)}</text>`}
   </g>
   ${showGuide ? shapeMarkup.guide : ""}
 </svg>`.trim();

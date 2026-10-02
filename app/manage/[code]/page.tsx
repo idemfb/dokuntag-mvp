@@ -29,7 +29,7 @@ type ProductSubtype =
 type ContactMethod = "phone" | "whatsapp" | "email";
 type MessageFilter = "all" | "unread" | "read" | "pinned" | "archived";
 type MessageSort = "newest" | "oldest" | "unread-first";
-type OpenSection = "basic" | "contact" | "recovery" | "messages" | null;
+type OpenSection = "basic" | "contact" | "recovery" | "scan" | "messages" | null;
 type TagStatus = "active" | "inactive";
 
 const PRODUCT_SUBTYPE_OPTIONS: Record<
@@ -268,6 +268,7 @@ type NotifyLogItem = {
   senderName?: string;
   senderPhone?: string;
   senderEmail?: string;
+  approximateLocation?: string;
   preferredContactMethods?: ContactMethod[];
   message?: string;
 };
@@ -275,6 +276,13 @@ type NotifyLogItem = {
 type NotifyLogsResponse = {
   items: NotifyLogItem[];
   unreadCount?: number;
+};
+
+type ScanNotificationSetting = {
+  enabled: boolean;
+  lastNotifiedAt?: string;
+  dailyCount?: number;
+  dailyCountDate?: string;
 };
 
 function getSubtypeLabel(productType: ProductType, value: ProductSubtype | "") {
@@ -303,7 +311,7 @@ function getPrimaryNameLabel(productType: ProductType) {
 
 function getOwnerNameLabel(productType: ProductType) {
   if (productType === "person") return "Yakını";
-  return "Sahibi";
+  return "Profil sahibi";
 }
 
 
@@ -413,6 +421,7 @@ function buildSearchText(log: NotifyLogItem) {
     log.senderName || "",
     log.senderPhone || "",
     log.senderEmail || "",
+    log.approximateLocation || "",
     log.message || "",
     ...(log.preferredContactMethods || []).map((method) =>
       getMethodLabel(method)
@@ -671,6 +680,7 @@ export default function ManagePage({
   const [manageLink, setManageLink] = useState("");
   const [initialSnapshot, setInitialSnapshot] = useState("");
   const [openSection, setOpenSection] = useState<OpenSection>("basic");
+  const [editingUnlocked, setEditingUnlocked] = useState(false);
 
   const [productType, setProductType] = useState<ProductType>("item");
   const [productSubtype, setProductSubtype] = useState<ProductSubtype | "">("");
@@ -712,6 +722,21 @@ export default function ManagePage({
   const [transferCancelLoading, setTransferCancelLoading] = useState(false);
 
   const [logs, setLogs] = useState<NotifyLogItem[]>([]);
+  const [scanSummary, setScanSummary] = useState<{
+  totalCount: number;
+  lastSeenAt: string;
+  recent: Array<{
+    id: string;
+    createdAt: string;
+  }>;
+} | null>(null);
+
+  const [scanLoading, setScanLoading] = useState(false);
+  const [scanResetLoading, setScanResetLoading] = useState(false);
+  const [scanEmailLoading, setScanEmailLoading] = useState(false);
+  const [scanSetting, setScanSetting] =
+  useState<ScanNotificationSetting | null>(null);
+  const [scanSettingLoading, setScanSettingLoading] = useState(false);  
   const [logsLoading, setLogsLoading] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [markingRead, setMarkingRead] = useState(false);
@@ -725,12 +750,14 @@ export default function ManagePage({
   const basicRef = useRef<HTMLElement | null>(null);
   const contactRef = useRef<HTMLElement | null>(null);
   const recoveryRef = useRef<HTMLElement | null>(null);
+  const scanRef = useRef<HTMLElement | null>(null);
   const messagesRef = useRef<HTMLElement | null>(null);
 
   function getSectionRef(section: Exclude<OpenSection, null>) {
     if (section === "basic") return basicRef;
     if (section === "contact") return contactRef;
     if (section === "recovery") return recoveryRef;
+    if (section === "scan") return scanRef;
     return messagesRef;
   }
 
@@ -794,6 +821,53 @@ useEffect(() => {
       setLogsLoading(false);
     }
   }
+
+  async function loadScanSummary(
+  currentCode: string,
+  currentToken: string
+) {
+  try {
+    setScanLoading(true);
+
+    const res = await fetch(
+      `/api/manage-scan/${currentCode}?token=${encodeURIComponent(currentToken)}`,
+      {
+        cache: "no-store"
+      }
+    );
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      return;
+    }
+
+    setScanSummary(data.data || null);
+  } catch {
+    // Sessiz kalsın
+  } finally {
+    setScanLoading(false);
+  }
+}
+async function loadScanSetting(
+  currentCode: string,
+  currentToken: string
+) {
+  try {
+    const res = await fetch(
+      `/api/manage-scan/${currentCode}/settings?token=${encodeURIComponent(currentToken)}`,
+      { cache: "no-store" }
+    );
+
+    const data = await res.json();
+
+    if (res.ok) {
+      setScanSetting(data.data || null);
+    }
+  } catch {
+    setScanSetting(null);
+  }
+}
 
   useEffect(() => {
     if (!code) return;
@@ -934,6 +1008,8 @@ useEffect(() => {
         );
 
         await loadLogs(code, token);
+        await loadScanSummary(code, token);
+        await loadScanSetting(code, token);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Bir hata oluştu.");
       } finally {
@@ -1326,7 +1402,7 @@ useEffect(() => {
       setTransferExpiresAt(nextTransferExpiresAt);
       setTransferSuccess(
         data?.message ||
-          "Devir bağlantısı oluşturuldu. Ürün güvenlik için pasif duruma alındı."
+          "Devir bağlantısı oluşturuldu. Ürün geçici olarak pasif duruma alındı."
       );
       setStatus("inactive");
       setConfirmDeactivate(false);
@@ -1440,6 +1516,109 @@ useEffect(() => {
       setTransferCancelLoading(false);
     }
   }
+  async function resetScanHistory() {
+  if (!code || !token || scanResetLoading) return;
+
+  try {
+    setScanResetLoading(true);
+
+    const res = await fetch(
+      `/api/manage-scan/${code}/clear?token=${encodeURIComponent(token)}`,
+      {
+        method: "POST"
+      }
+    );
+
+    if (!res.ok) {
+      throw new Error();
+    }
+
+    await loadScanSummary(code, token);
+
+    setSuccess(
+  "Görüntülenme geçmişi sıfırlandı. Yeni görüntülenmeler yeniden sayılacak ve bildirim limitleri yenilendi."
+);
+  } catch {
+    setError("Görüntülenme geçmişi sıfırlanamadı.");
+  } finally {
+    setScanResetLoading(false);
+  }
+}
+
+  async function sendScanSummaryToEmail() {
+  if (!code || !token || scanEmailLoading) return;
+
+  try {
+    setScanEmailLoading(true);
+    setError("");
+    setSuccess("");
+
+    const res = await fetch(
+      `/api/manage-scan/${code}/email?token=${encodeURIComponent(token)}`,
+      {
+        method: "POST"
+      }
+    );
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data?.error || "Görüntülenme özeti gönderilemedi.");
+    }
+
+    setSuccess(
+      data?.message || "Son görüntülenme özeti e-posta adresinize gönderildi."
+    );
+  } catch (err) {
+    setError(
+      err instanceof Error
+        ? err.message
+        : "Görüntülenme özeti gönderilemedi."
+    );
+  } finally {
+    setScanEmailLoading(false);
+  }
+}
+
+async function toggleScanNotification() {
+  if (!code || !token || scanSettingLoading) return;
+
+  try {
+    setScanSettingLoading(true);
+    setError("");
+    setSuccess("");
+
+    const nextEnabled = !scanSetting?.enabled;
+
+    const res = await fetch(
+      `/api/manage-scan/${code}/settings?token=${encodeURIComponent(token)}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          enabled: nextEnabled
+        })
+      }
+    );
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data?.error || "Bildirim ayarı kaydedilemedi.");
+    }
+
+    setScanSetting(data.data || null);
+    setSuccess(data?.message || "Bildirim ayarı güncellendi.");
+  } catch (err) {
+    setError(
+      err instanceof Error ? err.message : "Bildirim ayarı kaydedilemedi."
+    );
+  } finally {
+    setScanSettingLoading(false);
+  }
+}
 
   async function markAllAsRead() {
     if (!code || !token || markingRead || unreadCount === 0) return;
@@ -1648,9 +1827,15 @@ useEffect(() => {
   }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
+  e.preventDefault();
 
-    try {
+  if (!editingUnlocked) {
+    setError("Değişiklik yapmak için önce düzenlemeyi açın.");
+    setSuccess("");
+    return;
+  }
+
+  try {
       setSaving(true);
       setError("");
       setSuccess("");
@@ -1731,8 +1916,9 @@ if (
       setSuccess(
         submitData.message ||
           "Değişiklikler kaydedildi. Herkese açık profil otomatik olarak güncellendi."
+          
       );
-
+      setEditingUnlocked(false);
       setInitialSnapshot(
         buildFormSnapshot({
           productType,
@@ -1837,7 +2023,7 @@ if (
                   </h1>
                 </div>
               </div>
-
+              
               <div className={`mt-5 rounded-[1.5rem] border p-4 sm:p-5 ${manageTheme.wrapper}`}>
                 <div className="flex min-w-0 flex-wrap items-center gap-2">
                   <p className="min-w-0 truncate text-xl font-semibold text-neutral-900">
@@ -1880,9 +2066,7 @@ if (
                     Profili görüntüle
                   </a>
                 </div>
-                    <p className="mt-3 text-xs text-neutral-500">
-                      Değişiklikler herkese açık profilde anında görünür.
-                  </p>
+                   
                 {status === "active" && confirmDeactivate ? (
                   <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-900">
                     Pasife alındığında herkese açık profilde bilgiler ve
@@ -1907,12 +2091,19 @@ if (
                     onClick={() => openAndScrollToSection("recovery")}
                   />
                   <SectionNavButton
+                    label="Görüntülenmeler"
+                    isActive={openSection === "scan"}
+                    onClick={() => openAndScrollToSection("scan")}
+                    badge={scanSummary?.totalCount || undefined}
+                  />
+                  <SectionNavButton
                     label="Mesajlar"
                     isActive={openSection === "messages"}
                     onClick={() => openAndScrollToSection("messages")}
                     badge={unreadCount > 0 ? unreadCount : undefined}
                   />
                 </div>
+               
               </div>
             </div>
           </div>
@@ -1943,13 +2134,168 @@ if (
     <button
   type="submit"
   form="manage-form"
-  disabled={saving}
+  disabled={saving || !editingUnlocked}
   className="shrink-0 rounded-xl bg-neutral-900 px-3 py-2 text-xs font-semibold text-white transition hover:bg-neutral-800 disabled:opacity-50"
 >
-  {saving ? "Kaydediliyor..." : "Kaydet"}
+  {!editingUnlocked ? "Düzenlemeyi açın" : saving ? "Kaydediliyor..." : "Kaydet"}
 </button>
   </div>
 ) : null} 
+
+<SectionCard
+  id="scan"
+  title="Son görüntülenmeler"
+  description={
+    scanLoading
+      ? "Yükleniyor..."
+      : scanSummary?.lastSeenAt
+        ? `Son: ${new Date(scanSummary.lastSeenAt).toLocaleString("tr-TR")}`
+        : "Henüz görüntülenme yok"
+  }
+  isOpen={openSection === "scan"}
+  onToggle={toggleSection}
+  sectionRef={scanRef}
+  right={
+    <span className="rounded-full border border-neutral-200 bg-neutral-50 px-2.5 py-1 text-xs font-medium text-neutral-700">
+      {scanSummary?.totalCount || 0}
+    </span>
+  }
+>
+  <p className="text-xs leading-5 text-neutral-500">
+    Bu özellik canlı takip veya konum takibi yapmaz. Aynı cihazdan kısa süre
+    içinde yapılan tekrar görüntülenmeler tek kayıt olarak değerlendirilir.
+  </p>
+
+  <p className="mt-2 text-[11px] leading-5 text-neutral-400">
+    Görüntülenme bildirimleri varsayılan olarak kapalıdır ve sınırlı gönderilir.
+  </p>
+
+  <div className="mt-4 rounded-2xl border border-neutral-200 bg-neutral-50 p-3">
+    <div className="flex items-start justify-between gap-3">
+      <div>
+        <p className="text-sm font-semibold text-neutral-900">
+          Görüntülenme bildirimi
+        </p>
+        <p className="mt-1 text-xs leading-5 text-neutral-500">
+          Kapalıyken otomatik e-posta gönderilmez. Açarsanız yeni görüntülenmeler için en fazla saatte 1, günde 2 bildirim gönderilir.
+        </p>
+      </div>
+
+      <button
+        type="button"
+        onClick={() => void toggleScanNotification()}
+        disabled={scanSettingLoading}
+        className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-semibold transition disabled:opacity-50 ${
+          scanSetting?.enabled
+            ? "border-neutral-900 bg-neutral-900 text-white"
+            : "border-neutral-300 bg-white text-neutral-700 hover:border-neutral-400"
+        }`}
+      >
+        {scanSettingLoading
+          ? "..."
+          : scanSetting?.enabled
+            ? "Açık"
+            : "Kapalı"}
+      </button>
+    </div>
+  </div>
+
+  <div className="mt-4 grid grid-cols-2 gap-3">
+    <div className="rounded-2xl border border-neutral-200 bg-neutral-50 p-3">
+      <div className="text-xs text-neutral-500">
+        Toplam görüntülenme
+      </div>
+
+      <div className="mt-1 text-lg font-semibold text-neutral-900">
+        {scanLoading ? "..." : scanSummary?.totalCount || 0}
+      </div>
+    </div>
+
+    <div className="rounded-2xl border border-neutral-200 bg-neutral-50 p-3">
+      <div className="text-xs text-neutral-500">
+        Son görüntülenme
+      </div>
+
+      <div className="mt-1 text-sm font-medium text-neutral-900">
+        {scanLoading
+          ? "..."
+          : scanSummary?.lastSeenAt
+            ? new Date(scanSummary.lastSeenAt).toLocaleString("tr-TR")
+            : "Henüz yok"}
+      </div>
+    </div>
+  </div>
+
+  {scanSummary?.recent?.length ? (
+    <div className="mt-4">
+      <div className="mb-2 text-xs font-medium text-neutral-500">
+        Son hareketler
+      </div>
+
+      <div className="space-y-2">
+        {scanSummary.recent.slice(0, 5).map((item) => (
+          <div
+            key={item.id}
+            className="flex items-center justify-between gap-3 rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2 text-xs"
+          >
+            <span className="text-neutral-600">
+              Ürün sayfası görüntülendi
+            </span>
+
+            <span className="shrink-0 text-neutral-500">
+              {new Date(item.createdAt).toLocaleString("tr-TR")}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  ) : null}
+
+  <button
+    type="button"
+    onClick={() => void sendScanSummaryToEmail()}
+    disabled={scanEmailLoading}
+    className="mt-4 w-full rounded-2xl border border-neutral-900 bg-neutral-900 px-4 py-3 text-xs font-medium text-white transition hover:bg-neutral-800 disabled:opacity-50"
+  >
+    {scanEmailLoading
+      ? "Gönderiliyor..."
+      : "Son 10 hareketi e-posta ile gönder"}
+  </button>
+
+  <button
+    type="button"
+    onClick={() => void resetScanHistory()}
+    disabled={scanResetLoading}
+    className="mt-3 w-full rounded-2xl border border-neutral-300 px-4 py-3 text-xs font-medium text-neutral-700 transition hover:border-neutral-400 hover:bg-neutral-50 disabled:opacity-50"
+  >
+    {scanResetLoading
+      ? "Sıfırlanıyor..."
+      : "Görüntülenme geçmişini sıfırla"}
+  </button>
+</SectionCard>
+
+<div className="mb-4 rounded-[1.75rem] border border-neutral-200 bg-white p-4 shadow-sm">
+  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <div>
+      <p className="text-sm font-semibold text-neutral-900">
+        Bilgiler koruma altında. Değişiklikler herkese açık profilde anında görünür.
+
+      </p>
+      <p className="mt-1 text-xs leading-5 text-neutral-500">
+        Yanlışlıkla değişiklik yapılmasını önlemek için düzenleme alanları kapalı tutulur.
+      </p>
+    </div>
+  
+ <button
+  type="button"
+  onClick={() => setEditingUnlocked((prev) => !prev)}
+  className="rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm font-semibold text-neutral-800"
+>
+  {editingUnlocked ? "Düzenlemeyi kapat" : "Düzenlemeyi aç"}
+</button>
+  </div>
+</div>
+
         <form id="manage-form" noValidate onSubmit={handleSubmit} className="space-y-4">
           <SectionCard
             id="basic"
@@ -1963,6 +2309,7 @@ if (
               <div className="grid grid-cols-2 gap-3">
                 <Field label="Profil Türü">
                   <select
+                  disabled={!editingUnlocked}
                     value={productType}
                     onChange={(e) => setProductType(e.target.value as ProductType)}
                     className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm text-neutral-900 outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
@@ -1977,6 +2324,7 @@ if (
 
                 <Field label="Kategori" optional>
                   <select
+                    disabled={!editingUnlocked}
                     value={productSubtype}
                     onChange={(e) =>
                       setProductSubtype(e.target.value as ProductSubtype | "")
@@ -2003,6 +2351,7 @@ if (
     </label>
 
     <input
+      disabled={!editingUnlocked}
       value={petName}
       onChange={(e) => setPetName(e.target.value)}
       className="w-full rounded-2xl border border-neutral-300 bg-white px-3 py-2.5 text-sm text-neutral-900 outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
@@ -2025,6 +2374,7 @@ if (
     </label>
 
     <input
+      disabled={!editingUnlocked}
       value={ownerName}
       onChange={(e) => setOwnerName(e.target.value)}
       className="w-full rounded-2xl border border-neutral-300 bg-white px-3 py-2.5 text-sm text-neutral-900 outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
@@ -2060,6 +2410,7 @@ if (
                   </div>
 
                   <textarea
+                    disabled={!editingUnlocked}
                     value={note}
                     onChange={(e) => setNote(e.target.value)}
                     className="min-h-[84px] w-full rounded-2xl border border-neutral-300 bg-white px-3 py-2.5 text-sm text-neutral-900 outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
@@ -2116,6 +2467,7 @@ if (
 
                 <div className="grid grid-cols-[1.4fr_0.8fr_0.8fr] gap-2">
                   <input
+                    disabled={!editingUnlocked}
                     value={phone}
                     onChange={(e) => setPhone(e.target.value.replace(/[^0-9]/g, ""))}
                     inputMode="numeric"
@@ -2160,7 +2512,7 @@ if (
                     Profil önizleme
                   </p>
                   <span className="rounded-full bg-white px-3 py-1 text-[11px] font-medium text-neutral-500">
-                    Public görünüm
+                    Herkese açık görünüm
                   </span>
                 </div>
 
@@ -2224,9 +2576,9 @@ if (
     </div>
 
     <select
+      disabled={!editingUnlocked || productType === "key"}
       value={city}
       onChange={(e) => setCity(e.target.value)}
-      disabled={productType === "key"}
       className={`min-w-0 rounded-2xl border px-3 py-2.5 text-sm outline-none transition focus:ring-2 ${
         productType === "key"
           ? "cursor-not-allowed border-neutral-200 bg-neutral-100 text-neutral-400"
@@ -2280,6 +2632,7 @@ if (
                   </label>
 
                   <input
+                    disabled={!editingUnlocked}
                     type="email"
                     value={recoveryEmail}
                     onChange={(e) => setRecoveryEmail(e.target.value.trim())}
@@ -2298,6 +2651,7 @@ if (
                   </label>
 
                   <input
+                    disabled={!editingUnlocked}
                     type="email"
                     value={recoveryEmailConfirm}
                     onChange={(e) => setRecoveryEmailConfirm(e.target.value.trim())}
@@ -2444,7 +2798,7 @@ if (
 
           <SectionCard
             id="messages"
-            title="Bildirimler"
+            title="Mesajlar"
             description="Gelen mesajları buradan yönetin."
             isOpen={openSection === "messages"}
             onToggle={toggleSection}
@@ -2484,15 +2838,17 @@ if (
               </div>
 
               <div className="mb-4 grid gap-2">
-  <input
-    value={messageSearch}
-    onChange={(e) => setMessageSearch(e.target.value)}
-    className="rounded-2xl border border-neutral-300 bg-white px-3 py-2.5 text-sm text-neutral-900 outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
-    placeholder="Mesaj ara"
-  />
+              <input
+                disabled={!editingUnlocked}
+                value={messageSearch}
+                onChange={(e) => setMessageSearch(e.target.value)}
+                className="rounded-2xl border border-neutral-300 bg-white px-3 py-2.5 text-sm text-neutral-900 outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
+                placeholder="Mesaj ara"
+              />
 
       <div className="grid grid-cols-2 gap-2">
         <select
+          disabled={!editingUnlocked}
           value={messageFilter}
           onChange={(e) => setMessageFilter(e.target.value as MessageFilter)}
           className="rounded-2xl border border-neutral-300 bg-white px-3 py-2.5 text-sm text-neutral-900 outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
@@ -2505,6 +2861,7 @@ if (
         </select>
 
         <select
+          disabled={!editingUnlocked}
           value={messageSort}
           onChange={(e) => setMessageSort(e.target.value as MessageSort)}
           className="rounded-2xl border border-neutral-300 bg-white px-3 py-2.5 text-sm text-neutral-900 outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200"
@@ -2571,59 +2928,57 @@ if (
                           </span>
                         )}
                       </div>
+<div className="mt-2.5 grid gap-2 sm:grid-cols-2">
+  <div className="rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2.5">
+    <p className="text-[11px] uppercase tracking-[0.14em] text-neutral-500">
+      Gönderen
+    </p>
 
-                      <div className="mt-2.5 grid gap-2">
-                        <div className="rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2.5">
-                          <p className="text-[11px] uppercase tracking-[0.14em] text-neutral-500">
-                            Gönderen
-                          </p>
-                          <p className="mt-1 text-sm font-medium text-neutral-900">
-                            {log.senderName || "-"}
-                          </p>
-                        </div>
+    <p className="mt-1 text-sm font-medium text-neutral-900">
+      {log.senderName || "-"}
+    </p>
+  </div>
 
-                        <div className="grid grid-cols-2 gap-2">
-                          <div className="rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2.5">
-                            <p className="text-[11px] uppercase tracking-[0.14em] text-neutral-500">
-                              Telefon
-                            </p>
-                            <p className="mt-1 text-sm text-neutral-700">
-                              {maskPhone(log.senderPhone || "")}
-                            </p>
-                          </div>
+  <div className="rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2.5">
+    <p className="text-[11px] uppercase tracking-[0.14em] text-neutral-500">
+      Yaklaşık konum
+    </p>
 
-                          <div className="rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2.5">
-                            <p className="text-[11px] uppercase tracking-[0.14em] text-neutral-500">
-                              E-posta
-                            </p>
-                            <p className="mt-1 break-all text-sm text-neutral-700">
-                              {maskEmail(log.senderEmail || "")}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
+    <p className="mt-1 text-sm font-medium text-neutral-900">
+      {log.approximateLocation || "-"}
+    </p>
+  </div>
 
-                      <div className="mt-2.5 rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2.5">
-                        <p className="text-[11px] uppercase tracking-[0.14em] text-neutral-500">
-                          Mesaj
-                        </p>
-                        <p className="mt-1.5 whitespace-pre-wrap break-words text-sm leading-5 text-neutral-800">
-                          {log.message || "-"}
-                        </p>
-                      </div>
+  <div className="rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2.5">
+    <p className="text-[11px] uppercase tracking-[0.14em] text-neutral-500">
+      Telefon
+    </p>
 
-                      <div className="mt-2.5 grid grid-cols-2 gap-2">
-                        {!log.readAt && !isArchived ? (
-                          <button
-                            type="button"
-                            onClick={() => void markSingleAsRead(log.id)}
-                            disabled={isBusy}
-                            className="w-full rounded-xl border border-neutral-300 bg-white px-3 py-2.5 text-sm font-medium transition hover:border-neutral-400 hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-60"
-                          >
-                            {readingLogId === log.id ? "İşleniyor..." : "Okundu yap"}
-                          </button>
-                        ) : null}
+    <p className="mt-1 text-sm font-medium text-neutral-900">
+      {maskPhone(log.senderPhone || "")}
+    </p>
+  </div>
 
+  <div className="rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2.5">
+    <p className="text-[11px] uppercase tracking-[0.14em] text-neutral-500">
+      E-posta
+    </p>
+
+    <p className="mt-1 break-all text-sm font-medium text-neutral-900">
+      {maskEmail(log.senderEmail || "")}
+    </p>
+  </div>
+</div>
+
+<div className="mt-2.5 rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2.5">
+  <p className="text-[11px] uppercase tracking-[0.14em] text-neutral-500">
+    Mesaj
+  </p>
+
+  <p className="mt-1.5 whitespace-pre-wrap break-words text-sm leading-5 text-neutral-800">
+    {log.message || "-"}
+  </p>
+</div>
                         {!isArchived ? (
                           <button
                             type="button"
@@ -2679,7 +3034,6 @@ if (
                           </button>
                         )}
                       </div>
-                    </div>
                   );
                   })}
                 </div>
@@ -2690,7 +3044,7 @@ if (
           <div className="grid gap-3 sm:grid-cols-2">
             <button
               type="submit"
-              disabled={saving || statusSaving}
+              disabled={saving || !isDirty || !editingUnlocked}
               className="w-full rounded-2xl bg-neutral-800 px-5 py-4 text-sm font-medium text-white transition hover:bg-neutral-700 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {saving

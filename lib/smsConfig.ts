@@ -1,0 +1,8 @@
+export const SMS_COOLDOWN_MINUTES = 10;
+export const SMS_DAILY_LIMIT_PER_PRODUCT = 5;
+
+export const SMS_COOLDOWN_MS =
+  SMS_COOLDOWN_MINUTES * 60 * 1000;
+
+export const SMS_DAILY_WINDOW_MS =
+  24 * 60 * 60 * 1000;

@@ -766,7 +766,34 @@ export function findTagByManageToken(token: string): TagView | null {
 
   return product ? mapProductToTagView(product) : null;
 }
+const ASSIGNABLE_STATUSES = ["unclaimed"] as const;
 
+export function isTagAssignable(status: string) {
+  return ASSIGNABLE_STATUSES.includes(
+    status as (typeof ASSIGNABLE_STATUSES)[number]
+  );
+}
+
+export function canAssignTag(tag: {
+  status?: string;
+  publicCode?: string;
+}) {
+  const normalizedCode = String(tag.publicCode || "")
+    .trim()
+    .toUpperCase();
+
+  if (!normalizedCode) {
+    return false;
+  }
+
+  if (
+    ["DKNTG", "DEMO01", "DEMO02", "DEMO03"].includes(normalizedCode)
+  ) {
+    return false;
+  }
+
+  return isTagAssignable(String(tag.status || ""));
+}
 export function validateManageToken(codeOrToken: string, maybeToken?: string) {
   const products = cleanupTransientStates();
 

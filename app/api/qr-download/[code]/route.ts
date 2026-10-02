@@ -20,6 +20,7 @@ type Layout = {
   codeColor: string;
   showGuide: boolean;
   transparent: boolean;
+  hideCode: boolean;
 };
 
 const SIZE_VALUES: Record<SizeOption, { width: string; height: string }> = {
@@ -99,14 +100,15 @@ function readLayout(searchParams: URLSearchParams): Layout {
     size: normalizeSize(searchParams.get("size")),
     transparent: normalizeBoolean(searchParams.get("transparent"), false),
     shape: normalizeShape(searchParams.get("shape")),
-    qrScale: parseNumber(searchParams.get("qrScale"), 76, 35, 95),
+    qrScale: parseNumber(searchParams.get("qrScale"), 76, 15, 95),
     codeScale: parseNumber(searchParams.get("codeScale"), 100, 50, 180),
     qrOffsetX: parseNumber(searchParams.get("qrOffsetX"), 0, -45, 45),
     qrOffsetY: parseNumber(searchParams.get("qrOffsetY"), 0, -45, 45),
     codeGap: parseNumber(searchParams.get("codeGap"), 100, 20, 180),
     foregroundColor,
     codeColor: normalizeColor(searchParams.get("codeColor"), foregroundColor),
-    showGuide: normalizeBoolean(searchParams.get("showGuide"), false)
+    showGuide: normalizeBoolean(searchParams.get("showGuide"), false),
+    hideCode: normalizeBoolean(searchParams.get("hideCode"), false)
   };
 }
 
@@ -206,14 +208,15 @@ async function buildSvg(code: string, layout: Layout) {
   const codeFontSize = clamp(12 * (layout.codeScale / 100), 7, 22);
   const codeGap = clamp(10 * (layout.codeGap / 100), 2, 24);
 
-  const maxQrBySafeHeight = safeHeight - codeGap - codeFontSize * 1.5;
+  const codeBlockHeight = layout.hideCode ? 0 : codeGap + codeFontSize * 1.5;
+  const maxQrBySafeHeight = safeHeight - codeBlockHeight;  
   const maxQrBySafeWidth = safeWidth;
   const maxQrSize = Math.max(80, Math.min(maxQrBySafeWidth, maxQrBySafeHeight));
 
   const preferredQrSize = 196 * (layout.qrScale / 76);
   const qrSize = clamp(preferredQrSize, 70, maxQrSize);
 
-  const groupHeight = qrSize + codeGap + codeFontSize * 1.5;
+  const groupHeight = qrSize + codeBlockHeight;
   const groupWidth = qrSize;
 
   const baseGroupX = safeX + (safeWidth - groupWidth) / 2;
@@ -246,7 +249,7 @@ async function buildSvg(code: string, layout: Layout) {
   ${layout.transparent ? "" : shape.background}
   <g clip-path="url(#dokuntagShapeClip)">
     <svg viewBox="${escapeXml(qrViewBox)}" x="${qrX}" y="${qrY}" width="${qrSize}" height="${qrSize}">${qrInner}</svg>
-    <text
+    ${layout.hideCode ? "" : `<text
       x="${qrX + qrSize / 2}"
       y="${codeY}"
       text-anchor="middle"
@@ -255,7 +258,7 @@ async function buildSvg(code: string, layout: Layout) {
       font-weight="800"
       letter-spacing="1.2"
       fill="${layout.codeColor}"
-    >${escapeXml(code)}</text>
+    >${escapeXml(code)}</text>`}
   </g>
   ${layout.showGuide ? shape.guide : ""}
 </svg>`.trim();

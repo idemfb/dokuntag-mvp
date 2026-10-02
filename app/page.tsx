@@ -4,9 +4,9 @@ import Link from "next/link";
 import ScrollToTopButton from "./components/ScrollToTopButton";
 
 export const metadata: Metadata = {
-  title: "Dokuntag® | NFC ve QR ile kaybolanı sahibine ulaştırın",
+  title: "Dokuntag® ile kaybolanı doğru kişiye ulaştırın",
   description:
-    "Dokuntag®, NFC ve QR ile çalışan güvenli kayıp buluşturma sistemidir. Birey, evcil hayvan, anahtar ve eşyalar için güvenli iletişim köprüsü kurar.",
+    "Dokuntag®, NFC ve QR ile çalışan güvenle kayıp buluşturma sistemidir. Birey, evcil hayvan, anahtar ve eşyalar için güvenle iletişim köprüsü kurar.",
   keywords: [
     "Dokuntag",
     "NFC anahtarlık",
@@ -26,7 +26,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Dokuntag® | Dokun, Bul, Buluştur",
     description:
-      "NFC ve QR ile kaybolanı sahibine ulaştıran güvenli iletişim sistemi.",
+      "NFC ve QR ile kaybolanı doğru kişiye ulaştıran güvenle iletişim sistemi.",
     url: "https://dokuntag.com",
     images: [
       {
@@ -41,7 +41,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Dokuntag® | Dokun, Bul, Buluştur",
     description:
-      "NFC ve QR ile kaybolanı sahibine ulaştıran güvenli iletişim sistemi.",
+      "NFC ve QR ile kaybolanı doğru kişiye ulaştıran güvenle iletişim sistemi.",
     images: ["/images/hero-new.jpg"],
   },
 };
@@ -66,12 +66,12 @@ const socialLinks = [
 const useCases = [
   {
     title: "Birey",
-    text: "Yakınınıza ulaşılması gereken durumlarda güvenli iletişim köprüsü oluşturur.",
+    text: "Yakınınıza ulaşılması gereken durumlarda güvenle iletişim köprüsü oluşturur.",
     image: "/images/relief-phone.jpg",
   },
   {
     title: "Evcil hayvan",
-    text: "Tasmadaki Dokuntag® ile bulan kişi size güvenli şekilde ulaşabilir.",
+    text: "Tasmadaki Dokuntag® ile bulan kişi size güvenle  ulaşabilir.",
     image: "/images/pet-tag.jpg",
   },
   {
@@ -158,7 +158,7 @@ export default function HomePage() {
       </h1>
 
       <p className="mt-6 max-w-2xl text-lg leading-8 text-neutral-600 sm:text-xl">
-        Anahtar, evcil hayvan ve eşyalar için güvenli iletişim sistemi.
+        Anahtar, evcil hayvan ve eşyalar için güvenle iletişim sistemi.
         Bulan kişi etiketi okutur ve saniyeler içinde size ulaşır.
       </p>
 
@@ -234,7 +234,7 @@ export default function HomePage() {
       {[
         {
           src: "/images/child.jpg",
-          alt: "Birey güvenli iletişim",
+          alt: "Birey güvenle iletişim",
           dark: false,
           title: "Yakınınıza ulaşılması gerekirse?",
           text: "Dokuntag®, acil durumlarda doğru kişinin hızlıca bilgilendirilmesini sağlar.",
@@ -251,7 +251,7 @@ export default function HomePage() {
           alt: "Evcil hayvan tasmasında Dokuntag",
           dark: false,
           title: "Evcil hayvanın uzaklaşırsa?",
-          text: "Tasmadaki Dokuntag®, bulan kişiyle aranızda güvenli bir köprü kurar.",
+          text: "Tasmadaki Dokuntag®, bulan kişiyle aranızda güvenle bir köprü kurar.",
         },
         {
           src: "/images/bag-tag.jpg",
@@ -404,7 +404,7 @@ export default function HomePage() {
               Öncelik can, sonra değer verdiğiniz her şey.
             </h2>
             <p className="mx-auto mt-5 max-w-3xl text-lg leading-8 text-neutral-600">
-              Birey, evcil hayvan, anahtar ve eşyalar için güvenli iletişim
+              Birey, evcil hayvan, anahtar ve eşyalar için güvenle iletişim
               katmanı oluşturur.
             </p>
           </div>
@@ -590,7 +590,7 @@ export default function HomePage() {
           </h2>
 
           <p className="mx-auto mt-5 max-w-xl text-lg leading-8 text-neutral-600">
-            Dokuntag®, kaybolanla sahibi arasında güvenli ve hızlı bir bağlantı
+            Dokuntag®, kaybolanla doğru kişi arasında güvenle ve hızlı bir bağlantı
             kurar.
           </p>
 

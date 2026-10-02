@@ -17,7 +17,7 @@ function getDokuntagDemoProfile() {
     distinctiveFeature: "Örnek Dokuntag anahtarlık profili",
     petName: "Dokuntag Demo Anahtar",
     note:
-      "Bu sayfa Dokuntag’ın örnek profilidir. Dokuntag, kaybolan anahtar, çanta veya evcil hayvanın sahibine güvenli şekilde ulaşmasını sağlar.",
+      "Bu sayfa Dokuntag’ın örnek profilidir. Dokuntag, kaybolan bireyler, anahtarlar, çantalar veya evcil hayvanlar için doğru kişiye güvenle ulaşılabilmesine yardımcı olur",
 
     alerts: ["Acil bana ulaşın", "Önemli anahtar"],
 

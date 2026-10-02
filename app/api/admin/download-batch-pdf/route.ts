@@ -1,20 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import QRCode from "qrcode";
+import fontkit from "@pdf-lib/fontkit";
+import fs from "fs/promises";
+import path from "path";
 
 export const runtime = "nodejs";
 
-type BatchItem = {
-  code?: string;
-  label?: string;
-};
-
+type BatchItem = { code?: string; label?: string };
 type PrintPageSize = "A4" | "A3" | "custom";
 type Orientation = "portrait" | "landscape";
 type OutputMode = "qr" | "front" | "both" | "separate";
+type SizeOption = "1cm" | "2cm" | "2.5cm" | "3cm" | "4cm" | "5cm" | "6cm" | "custom";
+type ShapeOption = "round" | "square" | "drop" | "pebble" | "shield";
 
 type DesignInput = {
-  size?: "1cm" | "2cm" | "2.5cm" | "3cm" | "4cm" | "5cm" | "6cm";
+  size?: SizeOption;
+  customWidthCm?: number;
+  customHeightCm?: number;
+  shape?: ShapeOption;
   qrScale?: number;
   codeScale?: number;
   qrOffsetX?: number;
@@ -22,6 +26,27 @@ type DesignInput = {
   codeGap?: number;
   foregroundColor?: string;
   codeColor?: string;
+  hideCode?: boolean;
+  qrGlowSize?: number;
+  qrGlowOpacity?: number;
+  qrGlowColor?: string;
+  codeText?: string;
+    brandSide?: "off" | "front" | "qr" | "both";
+  sloganSide?: "off" | "front" | "qr" | "both";
+  nfcSide?: "off" | "front" | "qr" | "both";
+  brandColor?: string;
+  sloganColor?: string;
+  nfcColor?: string;
+  brandSize?: number;
+  sloganSize?: number;
+  nfcSize?: number;
+  brandX?: number;
+  brandY?: number;
+  sloganX?: number;
+  sloganY?: number;
+  nfcX?: number;
+  nfcY?: number;
+  nfcStyle?: "waves" | "text" | "both";
 };
 
 type ArtworkInput = {
@@ -31,9 +56,6 @@ type ArtworkInput = {
   scale?: number;
   x?: number;
   y?: number;
-  caption?: string;
-  captionColor?: string;
-  captionScale?: number;
 };
 
 type PdfOptions = {
@@ -45,15 +67,17 @@ type PdfOptions = {
   marginMm?: number;
   showCutMarks?: boolean;
   outputMode?: OutputMode;
+  itemsPerPage?: number;
   fileName?: string;
 };
 
-type PrintEntry = {
-  item: BatchItem;
-  side: "front" | "qr";
-};
+type PrintEntry = { item: BatchItem; side: "front" | "qr" };
+type EmbeddedImage = Awaited<ReturnType<PDFDocument["embedPng"]>>;
+type EmbeddedFont = Awaited<ReturnType<PDFDocument["embedFont"]>>;
 
 const MM_TO_PT = 72 / 25.4;
+const CANVAS_WIDTH = 256;
+const CANVAS_HEIGHT = 320;
 
 function mmToPt(mm: number) {
   return mm * MM_TO_PT;
@@ -69,7 +93,7 @@ function normalizeCode(value: unknown) {
     : "";
 }
 
-function parsePercent(value: unknown, fallback: number, min: number, max: number) {
+function parseNumber(value: unknown, fallback: number, min: number, max: number) {
   const parsed = Number(value);
   if (!Number.isFinite(parsed)) return fallback;
   return clamp(parsed, min, max);
@@ -81,11 +105,12 @@ function parseColorHex(value: unknown, fallback: string) {
 }
 
 function hexToRgb(hex: string) {
-  const safe = hex.replace("#", "");
-  const r = parseInt(safe.slice(0, 2), 16) / 255;
-  const g = parseInt(safe.slice(2, 4), 16) / 255;
-  const b = parseInt(safe.slice(4, 6), 16) / 255;
-  return rgb(r, g, b);
+  const safe = parseColorHex(hex, "#ffffff").replace("#", "");
+  return rgb(
+    parseInt(safe.slice(0, 2), 16) / 255,
+    parseInt(safe.slice(2, 4), 16) / 255,
+    parseInt(safe.slice(4, 6), 16) / 255
+  );
 }
 
 function getBaseUrl(request: NextRequest) {
@@ -103,7 +128,16 @@ function normalizeOutputMode(value: unknown): OutputMode {
   if (value === "front") return "front";
   if (value === "both") return "both";
   if (value === "separate") return "separate";
-  return "qr";
+  if (value === "qr") return "qr";
+  return "both";
+}
+
+function normalizeShape(value: unknown): ShapeOption {
+  if (value === "square") return "square";
+  if (value === "drop") return "drop";
+  if (value === "pebble") return "pebble";
+  if (value === "shield") return "shield";
+  return "round";
 }
 
 function getPageSize(
@@ -132,19 +166,33 @@ function getPageSize(
 }
 
 function getItemSizeMm(design: DesignInput) {
-  if (design.size === "1cm") return 10;
-  if (design.size === "2cm") return 20;
-  if (design.size === "2.5cm") return 25;
-  if (design.size === "4cm") return 40;
-  if (design.size === "5cm") return 50;
-  if (design.size === "6cm") return 60;
-  return 30;
+  if (design.size === "custom") {
+    return {
+      width: Math.max(10, Math.round((Number(design.customWidthCm) || 3) * 10)),
+      height: Math.max(10, Math.round((Number(design.customHeightCm) || 5.2) * 10))
+    };
+  }
+
+  if (design.size === "1cm") return { width: 10, height: 10 };
+  if (design.size === "2cm") return { width: 20, height: 20 };
+  if (design.size === "2.5cm") return { width: 25, height: 25 };
+  if (design.size === "4cm") return { width: 40, height: 40 };
+  if (design.size === "5cm") return { width: 50, height: 50 };
+  if (design.size === "6cm") return { width: 60, height: 60 };
+
+  return { width: 30, height: 30 };
+}
+
+function getSafeArea(shape: ShapeOption) {
+  if (shape === "drop") return { left: 26, right: 26, top: 40, bottom: 34 };
+  if (shape === "pebble") return { left: 28, right: 28, top: 34, bottom: 34 };
+  if (shape === "shield") return { left: 34, right: 34, top: 34, bottom: 42 };
+  if (shape === "square") return { left: 18, right: 18, top: 24, bottom: 24 };
+  return { left: 24, right: 24, top: 32, bottom: 32 };
 }
 
 function buildPrintEntries(items: BatchItem[], outputMode: OutputMode): PrintEntry[] {
-  if (outputMode === "front") {
-    return items.map((item) => ({ item, side: "front" }));
-  }
+  if (outputMode === "front") return items.map((item) => ({ item, side: "front" }));
 
   if (outputMode === "both") {
     return items.flatMap((item) => [
@@ -164,14 +212,8 @@ function buildPrintEntries(items: BatchItem[], outputMode: OutputMode): PrintEnt
 }
 
 function chunkItems<T>(items: T[], chunkSize: number) {
-  if (chunkSize <= 0) return [items];
-
   const chunks: T[][] = [];
-
-  for (let i = 0; i < items.length; i += chunkSize) {
-    chunks.push(items.slice(i, i + chunkSize));
-  }
-
+  for (let i = 0; i < items.length; i += chunkSize) chunks.push(items.slice(i, i + chunkSize));
   return chunks;
 }
 
@@ -180,7 +222,7 @@ async function buildQrPngBytes(targetUrl: string, foregroundColor: string) {
     type: "image/png",
     errorCorrectionLevel: "M",
     margin: 1,
-    width: 512,
+    width: 1024,
     color: {
       dark: foregroundColor,
       light: "#00000000"
@@ -193,9 +235,7 @@ async function buildQrPngBytes(targetUrl: string, foregroundColor: string) {
 function getImageDataFromDataUrl(dataUrl?: string) {
   if (!dataUrl || !dataUrl.startsWith("data:image/")) return null;
 
-  const match = dataUrl.match(
-    /^data:(image\/png|image\/jpeg|image\/jpg|image\/webp);base64,(.+)$/i
-  );
+  const match = dataUrl.match(/^data:(image\/png|image\/jpeg|image\/jpg);base64,(.+)$/i);
   if (!match) return null;
 
   return {
@@ -206,13 +246,9 @@ function getImageDataFromDataUrl(dataUrl?: string) {
 
 async function embedArtworkImage(pdf: PDFDocument, artwork?: ArtworkInput) {
   const imageData = getImageDataFromDataUrl(artwork?.imageUrl);
-
   if (!imageData) return null;
 
-  if (imageData.mimeType === "image/png") {
-    return pdf.embedPng(imageData.bytes);
-  }
-
+  if (imageData.mimeType === "image/png") return pdf.embedPng(imageData.bytes);
   if (imageData.mimeType === "image/jpeg" || imageData.mimeType === "image/jpg") {
     return pdf.embedJpg(imageData.bytes);
   }
@@ -220,320 +256,446 @@ async function embedArtworkImage(pdf: PDFDocument, artwork?: ArtworkInput) {
   return null;
 }
 
-function drawCutMarks(page: any, x: number, y: number, size: number) {
-  const len = mmToPt(2.5);
-  const lineWidth = 0.4;
-  const color = rgb(0.2, 0.2, 0.2);
+async function embedNfcIcon(pdf: PDFDocument) {
+  const iconPath = path.join(
+    process.cwd(),
+    "public",
+    "icons",
+    "nfc.png"
+  );
 
-  page.drawLine({ start: { x, y: y + size - len }, end: { x, y: y + size }, thickness: lineWidth, color });
-  page.drawLine({ start: { x, y: y + size }, end: { x: x + len, y: y + size }, thickness: lineWidth, color });
-
-  page.drawLine({ start: { x: x + size, y: y + size - len }, end: { x: x + size, y: y + size }, thickness: lineWidth, color });
-  page.drawLine({ start: { x: x + size - len, y: y + size }, end: { x: x + size, y: y + size }, thickness: lineWidth, color });
-
-  page.drawLine({ start: { x, y }, end: { x, y: y + len }, thickness: lineWidth, color });
-  page.drawLine({ start: { x, y }, end: { x: x + len, y }, thickness: lineWidth, color });
-
-  page.drawLine({ start: { x: x + size, y }, end: { x: x + size, y: y + len }, thickness: lineWidth, color });
-  page.drawLine({ start: { x: x + size - len, y }, end: { x: x + size, y }, thickness: lineWidth, color });
+  const bytes = await fs.readFile(iconPath);
+  return pdf.embedPng(bytes);
 }
 
-function fitFontSize(text: string, preferred: number, maxWidth: number) {
-  const estimatedWidth = preferred * Math.max(text.length, 1) * 0.62;
-  if (estimatedWidth <= maxWidth) return preferred;
-  return clamp(preferred * (maxWidth / estimatedWidth), 5, preferred);
+function drawCutMarks(page: any, x: number, y: number, width: number, height: number) {
+  const len = mmToPt(2.5);
+  const color = rgb(0.2, 0.2, 0.2);
+  const thickness = 0.35;
+
+  const points = [
+    [x, y + height, x + len, y + height],
+    [x, y + height, x, y + height - len],
+    [x + width, y + height, x + width - len, y + height],
+    [x + width, y + height, x + width, y + height - len],
+    [x, y, x + len, y],
+    [x, y, x, y + len],
+    [x + width, y, x + width - len, y],
+    [x + width, y, x + width, y + len]
+  ];
+
+  for (const [x1, y1, x2, y2] of points) {
+    page.drawLine({
+      start: { x: x1, y: y1 },
+      end: { x: x2, y: y2 },
+      thickness,
+      color
+    });
+  }
+}
+
+function drawEmptyFront(page: any, x: number, y: number, width: number, height: number) {
+  page.drawRectangle({
+    x,
+    y,
+    width,
+    height,
+    color: rgb(1, 1, 1),
+    borderColor: rgb(0.88, 0.88, 0.88),
+    borderWidth: 0.25
+  });
 }
 
 function drawArtwork(args: {
   page: any;
-  artworkImage: any | null;
+  artworkImage: EmbeddedImage | null;
   artwork?: ArtworkInput;
   x: number;
   y: number;
-  size: number;
+  width: number;
+  height: number;
 }) {
-  const { page, artworkImage, artwork, x, y, size } = args;
+  const { page, artworkImage, artwork, x, y, width, height } = args;
 
-  if (!artworkImage || !artwork?.imageUrl) return;
+  if (!artworkImage || !artwork?.imageUrl) {
+    page.drawRectangle({
+      x,
+      y,
+      width,
+      height,
+      color: rgb(1, 1, 1),
+      borderColor: rgb(0.9, 0.9, 0.9),
+      borderWidth: 0.2
+    });
+    return;
+  }
 
-  const scale = clamp(Number(artwork.scale) || 100, 50, 180) / 100;
+  const scale = clamp(Number(artwork.scale) || 100, 50, 220) / 100;
   const offsetX = mmToPt((Number(artwork.x) || 0) * 0.08);
   const offsetY = -mmToPt((Number(artwork.y) || 0) * 0.08);
   const fit = artwork.fit === "contain" ? "contain" : "cover";
+  const imageRatio = artworkImage.width / artworkImage.height;
+  const boxRatio = width / height;
 
-  const imageWidth = artworkImage.width;
-  const imageHeight = artworkImage.height;
-  const imageRatio = imageWidth / imageHeight;
-
-  let drawWidth = size;
-  let drawHeight = size;
+  let drawWidth = width;
+  let drawHeight = height;
 
   if (fit === "contain") {
-    if (imageRatio > 1) {
-      drawWidth = size;
-      drawHeight = size / imageRatio;
+    if (imageRatio > boxRatio) {
+      drawWidth = width;
+      drawHeight = width / imageRatio;
     } else {
-      drawHeight = size;
-      drawWidth = size * imageRatio;
+      drawHeight = height;
+      drawWidth = height * imageRatio;
     }
+  } else if (imageRatio > boxRatio) {
+    drawHeight = height;
+    drawWidth = height * imageRatio;
   } else {
-    if (imageRatio > 1) {
-      drawHeight = size;
-      drawWidth = size * imageRatio;
-    } else {
-      drawWidth = size;
-      drawHeight = size / imageRatio;
-    }
+    drawWidth = width;
+    drawHeight = width / imageRatio;
   }
 
   drawWidth *= scale;
   drawHeight *= scale;
 
   page.drawImage(artworkImage, {
-    x: x + (size - drawWidth) / 2 + offsetX,
-    y: y + (size - drawHeight) / 2 + offsetY,
+    x: x + (width - drawWidth) / 2 + offsetX,
+    y: y + (height - drawHeight) / 2 + offsetY,
     width: drawWidth,
     height: drawHeight
   });
 }
 
-function drawQrGroup(args: {
-  page: any;
-  qrImage: any;
-  font: any;
-  code: string;
-  x: number;
-  y: number;
-  size: number;
-  design: DesignInput;
-}) {
-  const { page, qrImage, font, code, x, y, size, design } = args;
-
-const qrScale = parsePercent(design.qrScale, 76, 35, 95);
-const codeScale = parsePercent(design.codeScale, 100, 50, 180);
-const qrOffsetX = parsePercent(design.qrOffsetX, 0, -45, 45);
-const qrOffsetY = parsePercent(design.qrOffsetY, 0, -45, 45);
-const codeGapPercent = parsePercent(design.codeGap, 100, 20, 180);
-
-const foregroundColor = parseColorHex(design.foregroundColor, "#111111");
-const codeColor = hexToRgb(parseColorHex(design.codeColor || foregroundColor, "#111111"));
-
-const canvasWidth = 256;
-const canvasHeight = 320;
-
-const scale = size / canvasHeight;
-const contentWidth = canvasWidth * scale;
-const contentHeight = canvasHeight * scale;
-
-const contentX = x + (size - contentWidth) / 2;
-const contentY = y + (size - contentHeight) / 2;
-
-const safe = {
-  left: 24,
-  right: 24,
-  top: 32,
-  bottom: 32
-};
-
-const safeX = safe.left;
-const safeY = safe.top;
-const safeWidth = canvasWidth - safe.left - safe.right;
-const safeHeight = canvasHeight - safe.top - safe.bottom;
-
-const codeFontSizePx = clamp(12 * (codeScale / 100), 7, 22);
-const codeGapPx = clamp(10 * (codeGapPercent / 100), 2, 24);
-
-const maxQrBySafeHeight = safeHeight - codeGapPx - codeFontSizePx * 1.5;
-const maxQrBySafeWidth = safeWidth;
-const maxQrSizePx = Math.max(80, Math.min(maxQrBySafeWidth, maxQrBySafeHeight));
-
-const preferredQrSizePx = 196 * (qrScale / 76);
-const qrSizePx = clamp(preferredQrSizePx, 70, maxQrSizePx);
-
-const groupHeightPx = qrSizePx + codeGapPx + codeFontSizePx * 1.5;
-const groupWidthPx = qrSizePx;
-
-const baseGroupXPx = safeX + (safeWidth - groupWidthPx) / 2;
-const baseGroupYPx = safeY + (safeHeight - groupHeightPx) / 2;
-
-const maxOffsetXPx = Math.max(0, (safeWidth - groupWidthPx) / 2);
-const maxOffsetYPx = Math.max(0, (safeHeight - groupHeightPx) / 2);
-
-const offsetXPx = clamp(
-  safeWidth * (qrOffsetX / 100),
-  -maxOffsetXPx,
-  maxOffsetXPx
-);
-
-const offsetYPx = clamp(
-  safeHeight * (qrOffsetY / 100),
-  -maxOffsetYPx,
-  maxOffsetYPx
-);
-
-const qrXPx = baseGroupXPx + offsetXPx;
-const qrYPx = baseGroupYPx + offsetYPx;
-const codeYPx = qrYPx + qrSizePx + codeGapPx + codeFontSizePx;
-
-const qrSize = qrSizePx * scale;
-const qrX = contentX + qrXPx * scale;
-
-/**
- * SVG/HTML koordinatı yukarıdan aşağıdır.
- * PDF koordinatı aşağıdan yukarıdır.
- * Bu yüzden Y dönüşümü: contentY + contentHeight - yPx - height
- */
-const qrY = contentY + contentHeight - qrYPx * scale - qrSize;
-
-const codeSize = codeFontSizePx * scale;
-const codeWidth = font.widthOfTextAtSize(code, codeSize);
-const codeX = contentX + (qrXPx + qrSizePx / 2) * scale - codeWidth / 2;
-const codeY = contentY + contentHeight - codeYPx * scale;
-
-page.drawImage(qrImage, {
-  x: qrX,
-  y: qrY,
-  width: qrSize,
-  height: qrSize
-});
-
-page.drawText(code, {
-  x: codeX,
-  y: codeY,
-  size: codeSize,
-  font,
-  color: codeColor
-});
+function shouldShowOverlay(
+  side: "off" | "front" | "qr" | "both" | undefined,
+  currentSide: "front" | "qr"
+) {
+  return side === "both" || side === currentSide;
 }
-function drawCell(args: {
+async function embedUnicodeFont(pdf: PDFDocument, weight: "regular" | "bold" = "regular"): Promise<EmbeddedFont> {
+  pdf.registerFontkit(fontkit);
+
+  const fileName = weight === "bold" ? "NotoSans-Bold.ttf" : "NotoSans-Regular.ttf";
+
+  const fontPath = path.join(
+    process.cwd(),
+    "public",
+    "fonts",
+    fileName
+  );
+
+  const fontBytes = await fs.readFile(fontPath);
+  return pdf.embedFont(fontBytes);
+}
+
+function drawOverlay(args: {
   page: any;
+  design: DesignInput;
   side: "front" | "qr";
-  qrImage: any | null;
-  templateImage: any | null;
-  frontImage: any | null;
-  font: any;
-  code: string;
   x: number;
   y: number;
-  size: number;
-  design: DesignInput;
-  templateArtwork?: ArtworkInput;
-  frontArtwork?: ArtworkInput;
+  width: number;
+  height: number;
+  font: EmbeddedFont;
+  boldFont: EmbeddedFont;
+  nfcIcon: EmbeddedImage;
 }) {
-  const {
-    page,
-    side,
-    qrImage,
-    templateImage,
-    frontImage,
-    font,
-    code,
-    x,
-    y,
-    size,
-    design,
-    templateArtwork,
-    frontArtwork
-  } = args;
 
-  if (side === "front") {
-    drawArtwork({
-      page,
-      artworkImage: frontImage,
-      artwork: frontArtwork,
-      x,
-      y,
-      size
+  const {
+  page,
+  design,
+  side,
+  x,
+  y,
+  width,
+  height,
+  font: overlayFont,
+  boldFont: overlayBoldFont,
+  nfcIcon
+} = args;
+
+  const brandVisible = shouldShowOverlay(design.brandSide, side);
+  const sloganVisible = shouldShowOverlay(design.sloganSide, side);
+  const nfcVisible = shouldShowOverlay(design.nfcSide, side);
+
+if (nfcVisible) {
+  const color = hexToRgb(parseColorHex(design.nfcColor, "#111111"));
+  const iconSize = mmToPt(4.6 * (Number(design.nfcSize ?? 100) / 100));
+  const textSize = mmToPt(2.7 * (Number(design.nfcSize ?? 100) / 100));
+
+  const nfcTextMode = design.nfcStyle === "text" || design.nfcStyle === "both";
+  const nfcWaveMode =
+    design.nfcStyle === "waves" ||
+    design.nfcStyle === "both" ||
+    !design.nfcStyle;
+
+  const text = nfcTextMode ? "NFC" : "";
+  const textWidth = text
+    ? overlayBoldFont.widthOfTextAtSize(text, textSize)
+    : 0;
+
+  const gap = mmToPt(0.1);
+
+  const totalWidth =
+    (nfcTextMode ? textWidth : 0) +
+    (nfcTextMode && nfcWaveMode ? gap : 0) +
+    (nfcWaveMode ? iconSize : 0);
+
+  const startX =
+    x +
+    width / 2 -
+    totalWidth / 2 +
+    mmToPt((Number(design.nfcX ?? 0) || 0) * 0.08);
+
+  const baseY =
+    y +
+    height -
+    mmToPt(8.5) -
+    mmToPt((Number(design.nfcY ?? 0) || 0) * 0.08);
+
+  let cursorX = startX;
+
+  if (nfcTextMode) {
+    page.drawText(text, {
+      x: cursorX,
+      y: baseY + iconSize * 0.22,
+      size: textSize,
+      font: overlayBoldFont,
+      color
     });
-    return;
+
+    cursorX += textWidth + gap;
   }
 
-  drawArtwork({
-    page,
-    artworkImage: templateImage,
-    artwork: templateArtwork,
-    x,
-    y,
-    size
+  if (nfcWaveMode) {
+    page.drawImage(nfcIcon, {
+      x: cursorX,
+      y: baseY,
+      width: iconSize,
+      height: iconSize
+    });
+  }
+}
+
+  if (brandVisible) {
+    const text = "dokuntag®";
+    const size = mmToPt(3.1 * (Number(design.brandSize ?? 100) / 100));
+    const color = hexToRgb(parseColorHex(design.brandColor, "#111111"));
+    const textWidth = overlayBoldFont.widthOfTextAtSize(text, size);
+
+    page.drawText(text, {
+      x: x + width / 2 - textWidth / 2 + mmToPt((Number(design.brandX ?? 0) || 0) * 0.08),
+      y: y + mmToPt(6.2) - mmToPt((Number(design.brandY ?? 0) || 0) * 0.08),
+      size,
+      font: overlayBoldFont,
+      color
+    });
+  }
+
+  if (sloganVisible) {
+    const text = "bul • buluştur";
+    const size = mmToPt(1.9 * (Number(design.sloganSize ?? 100) / 100));
+    const color = hexToRgb(parseColorHex(design.sloganColor, "#111111"));
+    const textWidth = overlayBoldFont.widthOfTextAtSize(text, size);
+
+    page.drawText(text, {
+      x: x + width / 2 - textWidth / 2 + mmToPt((Number(design.sloganX ?? 0) || 0) * 0.08),
+      y: y + mmToPt(3.5) - mmToPt((Number(design.sloganY ?? 0) || 0) * 0.08),
+      size,
+      font: overlayBoldFont,
+      color
+    });
+  }
+}
+
+function drawQrGroup(args: {
+  page: any;
+  qrImage: EmbeddedImage;
+  code: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  design: DesignInput;
+  font: any;
+}) {
+  const { page, qrImage, code, x, y, width, height, design, font } = args;
+
+  const shape = normalizeShape(design.shape);
+  const safe = getSafeArea(shape);
+
+  const qrScale = parseNumber(design.qrScale, 80, 15, 95);
+  const codeScale = parseNumber(design.codeScale, 100, 50, 180);
+  const codeGapPercent = parseNumber(design.codeGap, 100, 20, 180);
+  const qrOffsetXPercent = parseNumber(design.qrOffsetX, 0, -45, 45);
+  const qrOffsetYPercent = parseNumber(design.qrOffsetY, 0, -45, 45);
+
+  const safeX = safe.left;
+  const safeY = safe.top;
+  const safeWidth = CANVAS_WIDTH - safe.left - safe.right;
+  const safeHeight = CANVAS_HEIGHT - safe.top - safe.bottom;
+
+  const codeFontSizeUnit = clamp(12 * (codeScale / 100), 7, 22);
+  const codeGapUnit = clamp(10 * (codeGapPercent / 100), 2, 24);
+  const codeBlockHeightUnit = design.hideCode === true ? 0 : codeGapUnit + codeFontSizeUnit * 1.5;
+
+  const maxQrBySafeHeight = safeHeight - codeBlockHeightUnit;
+  const maxQrBySafeWidth = safeWidth;
+  const maxQrSizeUnit = Math.max(80, Math.min(maxQrBySafeWidth, maxQrBySafeHeight));
+
+  const preferredQrSizeUnit = 196 * (qrScale / 76);
+  const qrSizeUnit = clamp(preferredQrSizeUnit, 48, maxQrSizeUnit);
+
+  const groupHeightUnit = qrSizeUnit + codeBlockHeightUnit;
+  const groupWidthUnit = qrSizeUnit;
+
+  const baseGroupXUnit = safeX + (safeWidth - groupWidthUnit) / 2;
+  const baseGroupYUnit = safeY + (safeHeight - groupHeightUnit) / 2;
+
+  const maxOffsetXUnit = Math.max(0, (safeWidth - groupWidthUnit) / 2);
+  const maxOffsetYUnit = Math.max(0, (safeHeight - groupHeightUnit) / 2);
+
+  const offsetXUnit = clamp(
+    safeWidth * (qrOffsetXPercent / 100),
+    -maxOffsetXUnit,
+    maxOffsetXUnit
+  );
+
+  const offsetYUnit = clamp(
+    safeHeight * (qrOffsetYPercent / 100),
+    -maxOffsetYUnit,
+    maxOffsetYUnit
+  );
+
+  const qrXUnit = baseGroupXUnit + offsetXUnit;
+  const qrYUnit = baseGroupYUnit + offsetYUnit;
+
+  const unitToPt = Math.min(width / CANVAS_WIDTH, height / CANVAS_HEIGHT);
+  const canvasWidthPt = CANVAS_WIDTH * unitToPt;
+  const canvasHeightPt = CANVAS_HEIGHT * unitToPt;
+  const canvasX = x + (width - canvasWidthPt) / 2;
+  const canvasY = y + (height - canvasHeightPt) / 2;
+
+  const qrSizePt = qrSizeUnit * unitToPt;
+  const qrX = canvasX + qrXUnit * unitToPt;
+  const qrYTopBased = canvasY + qrYUnit * unitToPt;
+  const qrY = canvasY + canvasHeightPt - (qrYTopBased - canvasY) - qrSizePt;
+
+const glowColor = hexToRgb(
+  parseColorHex(design.qrGlowColor, "#f7f6f2")
+);
+
+const glowOpacity =
+  clamp(Number(design.qrGlowOpacity ?? 36), 0, 100) / 100;
+
+const glowRatio =
+  clamp(Number(design.qrGlowSize ?? 44), 20, 70) / 100;
+
+  if (glowOpacity > 0) {
+  page.drawRectangle({
+  x: qrX - qrSizePt * 0.10,
+  y: qrY - qrSizePt * 0.10,
+  width: qrSizePt * 1.20,
+  height: qrSizePt * 1.20,
+  color: glowColor,
+  opacity: glowOpacity
+});
+  }
+
+  page.drawImage(qrImage, {
+    x: qrX,
+    y: qrY,
+    width: qrSizePt,
+    height: qrSizePt
   });
 
-  if (qrImage) {
-    drawQrGroup({
-      page,
-      qrImage,
+const displayCode = code;
+
+  if (design.hideCode !== true && displayCode) {
+    const codeFontSizePt = codeFontSizeUnit * unitToPt;
+    const codeGapPt = codeGapUnit * unitToPt;
+    const codeWidth = font.widthOfTextAtSize(displayCode, codeFontSizePt);
+    const codeColor = hexToRgb(parseColorHex(design.codeColor, design.foregroundColor || "#111111"));
+
+    page.drawText(displayCode, {
+      x: qrX + qrSizePt / 2 - codeWidth / 2,
+      y: qrY - codeGapPt - codeFontSizePt,
+      size: codeFontSizePt,
       font,
-      code,
-      x,
-      y,
-      size,
-      design
+      color: codeColor
     });
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const body = (await request.json()) as {
-      items?: BatchItem[];
-      design?: DesignInput;
-      templateArtwork?: ArtworkInput;
-      frontArtwork?: ArtworkInput;
-      options?: PdfOptions;
-    };
+    const body = await request.json();
 
-    const items = Array.isArray(body?.items)
-      ? body.items.filter((item) => normalizeCode(item?.code))
+    const items: BatchItem[] = Array.isArray(body?.items)
+      ? body.items.filter((item: BatchItem) => normalizeCode(item?.code))
       : [];
 
     if (!items.length) {
-      return NextResponse.json({ error: "PDF için en az 1 ürün gerekir." }, { status: 400 });
+      return NextResponse.json(
+        { error: "PDF için en az 1 ürün gerekir." },
+        { status: 400 }
+      );
     }
 
-    const design = body?.design || {};
-    const templateArtwork = body?.templateArtwork || {};
-    const frontArtwork = body?.frontArtwork || {};
-    const options = body?.options || {};
+    const design: DesignInput = body?.design || {};
+    const templateArtwork: ArtworkInput = body?.templateArtwork || {};
+    const frontArtwork: ArtworkInput = body?.frontArtwork || {};
+    const options: PdfOptions = body?.options || {};
     const outputMode = normalizeOutputMode(options.outputMode);
 
-    const pageSize = options.pageSize || "A3";
-    const orientation = options.orientation || "landscape";
-    const customWidth = Number(options.customWidth) || 420;
-    const customHeight = Number(options.customHeight) || 297;
+    const { widthMm, heightMm } = getPageSize(
+      options.pageSize || "A3",
+      options.orientation || "landscape",
+      Number(options.customWidth) || 420,
+      Number(options.customHeight) || 297
+    );
+
     const gapMm = clamp(Number(options.gapMm) || 4, 0, 40);
     const marginMm = clamp(Number(options.marginMm) || 8, 0, 60);
     const showCutMarks = options.showCutMarks !== false;
-
     const entries = buildPrintEntries(items, outputMode);
+    const itemSize = getItemSizeMm(design);
 
-    const { widthMm, heightMm } = getPageSize(pageSize, orientation, customWidth, customHeight);
+    const pdf = await PDFDocument.create();
+    const font = await pdf.embedFont(StandardFonts.HelveticaBold);
+    const overlayFont = await embedUnicodeFont(pdf, "regular");
+    const overlayBoldFont = await embedUnicodeFont(pdf, "bold");
+    const templateImage = await embedArtworkImage(pdf, templateArtwork);
+    const frontImage = await embedArtworkImage(pdf, frontArtwork);
+    const nfcIcon = await embedNfcIcon(pdf);
+
     const pageWidthPt = mmToPt(widthMm);
     const pageHeightPt = mmToPt(heightMm);
-
-    const itemSizeMm = getItemSizeMm(design);
-    const itemSizePt = mmToPt(itemSizeMm);
+    const itemWidthPt = mmToPt(itemSize.width);
+    const itemHeightPt = mmToPt(itemSize.height);
+    const cellSizePt = Math.max(itemWidthPt, itemHeightPt) + (showCutMarks ? mmToPt(6) : 0);
     const gapPt = mmToPt(gapMm);
     const marginPt = mmToPt(marginMm);
-    const cutMarkReservePt = showCutMarks ? mmToPt(6) : 0;
-    const cellSizePt = itemSizePt + cutMarkReservePt;
-
     const usableWidth = Math.max(pageWidthPt - marginPt * 2, cellSizePt);
     const usableHeight = Math.max(pageHeightPt - marginPt * 2, cellSizePt);
     const columns = Math.max(1, Math.floor((usableWidth + gapPt) / (cellSizePt + gapPt)));
     const rows = Math.max(1, Math.floor((usableHeight + gapPt) / (cellSizePt + gapPt)));
-    const perPage = Math.max(1, columns * rows);
+    const autoPerPage = Math.max(1, columns * rows);
+    const requestedPerPage = Number(options.itemsPerPage);
+
+    const perPage =
+      Number.isFinite(requestedPerPage) && requestedPerPage > 0
+        ? Math.min(requestedPerPage, autoPerPage)
+        : autoPerPage;
 
     const gridWidth = columns * cellSizePt + Math.max(0, columns - 1) * gapPt;
     const gridHeight = rows * cellSizePt + Math.max(0, rows - 1) * gapPt;
     const startX = (pageWidthPt - gridWidth) / 2;
     const startY = (pageHeightPt - gridHeight) / 2;
-
-    const pdf = await PDFDocument.create();
-    const font = await pdf.embedFont(StandardFonts.HelveticaBold);
     const pages = chunkItems(entries, perPage);
     const baseUrl = getBaseUrl(request);
     const foregroundColor = parseColorHex(design.foregroundColor, "#111111");
-    const templateImage = await embedArtworkImage(pdf, templateArtwork);
-    const frontImage = await embedArtworkImage(pdf, frontArtwork);
 
     for (const pageEntries of pages) {
       const page = pdf.addPage([pageWidthPt, pageHeightPt]);
@@ -541,45 +703,88 @@ export async function POST(request: NextRequest) {
       for (let index = 0; index < pageEntries.length; index += 1) {
         const entry = pageEntries[index];
         const code = normalizeCode(entry.item.code);
+        if (!code) continue;
+
         const row = Math.floor(index / columns);
         const col = index % columns;
-
         const cellX = startX + col * (cellSizePt + gapPt);
         const cellY = pageHeightPt - startY - (row + 1) * cellSizePt - row * gapPt;
-        const itemX = cellX + cutMarkReservePt / 2;
-        const itemY = cellY + cutMarkReservePt / 2;
-
+        const itemX = cellX + (cellSizePt - itemWidthPt) / 2;
+        const itemY = cellY + (cellSizePt - itemHeightPt) / 2;
         if (showCutMarks) {
-          drawCutMarks(page, itemX, itemY, itemSizePt);
+          drawCutMarks(page, itemX, itemY, itemWidthPt, itemHeightPt);
         }
 
-        let qrImage: any | null = null;
+        if (entry.side === "front") {
+          drawArtwork({
+            page,
+            artworkImage: frontImage,
+            artwork: frontArtwork,
+            x: itemX,
+            y: itemY,
+            width: itemWidthPt,
+            height: itemHeightPt
+          });
 
-        if (entry.side === "qr") {
-          const targetUrl = `${baseUrl}/t/${code}`;
-          const qrBytes = await buildQrPngBytes(targetUrl, foregroundColor);
-          qrImage = await pdf.embedPng(qrBytes);
+          drawOverlay({
+            page,
+            design,
+            side: "front",
+            x: itemX,
+            y: itemY,
+            width: itemWidthPt,
+            height: itemHeightPt,
+            font: overlayFont,
+            boldFont: overlayBoldFont,
+            nfcIcon
+          });
+
+          continue;
         }
 
-        drawCell({
+        drawArtwork({
           page,
-          side: entry.side,
+          artworkImage: templateImage,
+          artwork: templateArtwork,
+          x: itemX,
+          y: itemY,
+          width: itemWidthPt,
+          height: itemHeightPt
+        });
+
+        drawOverlay({
+        page,
+        design,
+        side: "qr",
+        x: itemX,
+        y: itemY,
+        width: itemWidthPt,
+        height: itemHeightPt,
+        font: overlayFont,
+        boldFont: overlayBoldFont,
+        nfcIcon
+      });
+
+        const targetUrl = `${baseUrl}/t/${code}`;
+        const qrBytes = await buildQrPngBytes(targetUrl, foregroundColor);
+        const qrImage = await pdf.embedPng(qrBytes);
+
+                drawQrGroup({
+          page,
           qrImage,
-          templateImage,
-          frontImage,
-          font,
           code,
           x: itemX,
           y: itemY,
-          size: itemSizePt,
+          width: itemWidthPt,
+          height: itemHeightPt,
           design,
-          templateArtwork,
-          frontArtwork
+          font
         });
       }
     }
 
     const pdfBytes = await pdf.save();
+
     const safeFileName = String(options.fileName || `dokuntag-batch-${entries.length}`)
       .trim()
       .replace(/[^a-zA-Z0-9-_]/g, "-")
@@ -595,6 +800,9 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("DOWNLOAD_BATCH_PDF_ERROR", error);
 
-    return NextResponse.json({ error: "PDF hazırlanamadı." }, { status: 500 });
+    return NextResponse.json(
+      { error: "PDF hazırlanamadı." },
+      { status: 500 }
+    );
   }
 }

@@ -3,12 +3,17 @@
 import { useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 
-type SizeOption = "1cm" | "2cm" | "2.5cm" | "3cm" | "4cm" | "5cm" | "6cm";
-type ShapeOption = "round" | "square" | "drop";
+type SizeOption = "1cm" | "2cm" | "2.5cm" | "3cm" | "4cm" | "5cm" | "6cm" | "custom";
+type ShapeOption = "round" | "square" | "drop" | "pebble" | "shield";
 type FitMode = "cover" | "contain";
 type OutputMode = "qr" | "front" | "both";
-
+type OverlaySide = "off" | "front" | "qr" | "both";
+type NfcStyle = "waves" | "text" | "both";
+type OverlayAlign = "left" | "center" | "right";
 type DesignState = {
+  qrGlowSize: number;
+  qrGlowOpacity: number;
+  qrGlowColor: string;
   size: SizeOption;
   shape: ShapeOption;
   hasHole: boolean;
@@ -23,8 +28,34 @@ type DesignState = {
   codeColor: string;
   guideColor: string;
   showGuide: boolean;
+  brandSide: OverlaySide;
+  sloganSide: OverlaySide;
+  nfcSide: OverlaySide;
+  codeSide: OverlaySide;
+  brandColor: string;
+  sloganColor: string;
+  nfcColor: string;
+  brandSize: number;
+  sloganSize: number;
+  nfcSize: number;
+  brandX: number;
+  brandY: number;
+  sloganX: number;
+  sloganY: number;
+  nfcX: number;
+  nfcY: number;
+  nfcIconGap: number;
+  brandSloganGap: number;
+  nfcStyle: NfcStyle;
+  brandAlign: OverlayAlign;
+  sloganAlign: OverlayAlign;
+  nfcAlign: OverlayAlign;
+  brandFont: "sans" | "serif" | "mono";
+  sloganFont: "sans" | "serif" | "mono";
   outputMode: OutputMode;
   colorMode: "both" | "qr" | "code";
+  customWidthCm: number;
+  customHeightCm: number;
 };
 
 type ArtworkState = {
@@ -46,9 +77,16 @@ const DESIGN_STORAGE_KEY = "dokuntag_qr_design";
 const BATCH_ITEMS_STORAGE_KEY = "dokuntag_batch_items";
 
 const DEFAULT_DESIGN: DesignState = {
+  brandAlign: "center",
+  sloganAlign: "center",
+  nfcAlign: "center",
+  nfcIconGap: 4,
+  qrGlowSize: 42,
+  qrGlowOpacity: 78,
+  qrGlowColor: "#ffffff",
   size: "3cm",
-  shape: "round",
-  hasHole: true,
+  shape: "pebble",
+  hasHole: false,
   codeText: "",
   hideCode: false,
   qrScale: 80,
@@ -61,8 +99,31 @@ const DEFAULT_DESIGN: DesignState = {
   guideColor: "#ef4444",
   showGuide: true,
   outputMode: "both",
-  colorMode: "both"
-};
+  colorMode: "both",
+  brandSide: "off",
+  sloganSide: "off",
+  nfcSide: "off",
+  codeSide: "qr",
+  brandColor: "#111111",
+  sloganColor: "#111111",
+  nfcColor: "#111111",
+  brandSize: 100,
+  sloganSize: 100,
+  nfcSize: 100,
+  brandX: 0,
+  brandY: 0,
+  sloganX: 0,
+  sloganY: 0,
+  nfcX: 0,
+  nfcY: -6,
+  customWidthCm: 3,
+  customHeightCm: 5.2,
+  brandSloganGap: 4,
+  nfcStyle: "waves",
+  brandFont: "sans",
+  sloganFont: "sans"
+  
+  };
 
 const DEFAULT_ARTWORK: ArtworkState = {
   imageUrl: "",
@@ -83,8 +144,56 @@ const SIZE_OPTIONS: Array<{ value: SizeOption; label: string }> = [
   { value: "3cm", label: "3 cm" },
   { value: "4cm", label: "4 cm" },
   { value: "5cm", label: "5 cm" },
-  { value: "6cm", label: "6 cm" }
+  { value: "6cm", label: "6 cm" },
+  { value: "custom", label: "Özel ölçü" }
 ];
+
+function shouldShowOverlay(side: OverlaySide, currentSide: "front" | "qr") {
+  return side === "both" || side === currentSide;
+}
+
+function getFontClass(font: "sans" | "serif" | "mono") {
+  if (font === "serif") return "font-serif";
+  if (font === "mono") return "font-mono";
+  return "font-sans";
+}
+
+function NfcWaveIcon({
+  color = "currentColor",
+  size = 14
+}: {
+  color?: string;
+  size?: number;
+}) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+    >
+      <path
+        d="M6 9.5C7.5 11 7.5 13 6 14.5"
+        stroke={color}
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+      <path
+        d="M10 6.5C13 9.5 13 14.5 10 17.5"
+        stroke={color}
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+      <path
+        d="M14 3.5C19 8.5 19 15.5 14 20.5"
+        stroke={color}
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
 
 function getBaseUrl() {
   const value =
@@ -109,10 +218,25 @@ function parseColor(value: string | null, fallback: string) {
   const text = String(value || "").trim();
   return /^#[0-9a-fA-F]{6}$/.test(text) ? text : fallback;
 }
+function hexToRgba(hex: string, opacity: number) {
+  const normalized = parseColor(hex, "#ffffff");
+  const r = parseInt(normalized.slice(1, 3), 16);
+  const g = parseInt(normalized.slice(3, 5), 16);
+  const b = parseInt(normalized.slice(5, 7), 16);
 
+  return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+}
 function getShapeClip(shape: ShapeOption) {
   if (shape === "drop") {
     return "polygon(50% 2%, 78% 20%, 96% 52%, 82% 88%, 50% 100%, 18% 88%, 4% 52%, 22% 20%)";
+  }
+
+  if (shape === "pebble") {
+    return "polygon(50% 3%, 82% 16%, 98% 48%, 88% 82%, 55% 99%, 18% 90%, 2% 58%, 14% 22%)";
+  }
+
+  if (shape === "shield") {
+    return "polygon(50% 2%, 92% 18%, 86% 68%, 50% 99%, 14% 68%, 8% 18%)";
   }
 
   if (shape === "round") return "circle(50% at 50% 50%)";
@@ -120,13 +244,30 @@ function getShapeClip(shape: ShapeOption) {
   return "inset(0 round 18px)";
 }
 
-function previewSize(size: SizeOption) {
+function previewSize(
+  size: SizeOption,
+  customWidthCm = 3,
+  customHeightCm = 5.2
+) {
+  if (size === "custom") {
+    const widthCm = clamp(customWidthCm, 1, 10);
+    const heightCm = clamp(customHeightCm, 1, 15);
+
+    const pxPerCm = 60;
+
+    return {
+      width: Math.round(widthCm * pxPerCm),
+      height: Math.round(heightCm * pxPerCm)
+    };
+  }
+
   if (size === "1cm") return { width: 140, height: 140 };
   if (size === "2cm") return { width: 170, height: 170 };
   if (size === "2.5cm") return { width: 200, height: 200 };
   if (size === "4cm") return { width: 260, height: 260 };
   if (size === "5cm") return { width: 280, height: 280 };
   if (size === "6cm") return { width: 300, height: 300 };
+
   return { width: 240, height: 240 };
 }
 
@@ -145,7 +286,12 @@ function readDesignFromUrl(params: URLSearchParams): DesignState {
 
   const rawShape = params.get("shape");
   const shape: ShapeOption =
-    rawShape === "square" ? "square" : rawShape === "drop" ? "drop" : "round";
+    rawShape === "square" ||
+    rawShape === "drop" ||
+    rawShape === "pebble" ||
+    rawShape === "shield"
+      ? rawShape
+      : "round";
 
   const foregroundColor = parseColor(
     params.get("foregroundColor"),
@@ -153,34 +299,157 @@ function readDesignFromUrl(params: URLSearchParams): DesignState {
   );
 
   return {
-    ...DEFAULT_DESIGN,
-    size,
-    shape,
-    hasHole: params.get("hasHole") === "false" ? false : true,
-    codeText: String(params.get("codeText") ?? DEFAULT_DESIGN.codeText).slice(0, 20),
-    hideCode: params.get("hideCode") === "true",
-    qrScale: parseNumber(params.get("qrScale"), DEFAULT_DESIGN.qrScale, 35, 95),
-    codeScale: parseNumber(params.get("codeScale"), DEFAULT_DESIGN.codeScale, 50, 180),
-    codeGap: parseNumber(params.get("codeGap"), DEFAULT_DESIGN.codeGap, 20, 180),
-    qrOffsetX: parseNumber(params.get("qrOffsetX"), DEFAULT_DESIGN.qrOffsetX, -45, 45),
-    qrOffsetY: parseNumber(params.get("qrOffsetY"), DEFAULT_DESIGN.qrOffsetY, -45, 45),
-    foregroundColor,
-    codeColor: parseColor(params.get("codeColor"), foregroundColor),
-    guideColor: parseColor(params.get("guideColor"), DEFAULT_DESIGN.guideColor),
-    showGuide: params.get("showGuide") === "false" ? false : true,
-    colorMode:
-      params.get("colorMode") === "qr" ||
-      params.get("colorMode") === "code" ||
-      params.get("colorMode") === "both"
-        ? (params.get("colorMode") as DesignState["colorMode"])
-        : "both",
-    outputMode: normalizeOutputMode(params.get("outputMode"))
-  };
+  ...DEFAULT_DESIGN,
+  size,
+  shape,
+  hasHole: params.get("hasHole") === "false" ? false : true,
+  codeText: String(params.get("codeText") ?? DEFAULT_DESIGN.codeText).slice(0, 20),
+  hideCode: params.get("hideCode") === "true",
+  qrScale: parseNumber(params.get("qrScale"), DEFAULT_DESIGN.qrScale, 15, 95),
+  codeScale: parseNumber(params.get("codeScale"), DEFAULT_DESIGN.codeScale, 50, 180),
+  codeGap: parseNumber(params.get("codeGap"), DEFAULT_DESIGN.codeGap, 20, 180),
+  qrOffsetX: parseNumber(params.get("qrOffsetX"), DEFAULT_DESIGN.qrOffsetX, -45, 45),
+  qrOffsetY: parseNumber(params.get("qrOffsetY"), DEFAULT_DESIGN.qrOffsetY, -45, 45),
+  foregroundColor,
+  codeColor: parseColor(params.get("codeColor"), foregroundColor),
+  guideColor: parseColor(params.get("guideColor"), DEFAULT_DESIGN.guideColor),
+  showGuide: params.get("showGuide") === "false" ? false : true,
+  colorMode:
+    params.get("colorMode") === "qr" ||
+    params.get("colorMode") === "code" ||
+    params.get("colorMode") === "both"
+      ? (params.get("colorMode") as DesignState["colorMode"])
+      : "both",
+  outputMode: normalizeOutputMode(params.get("outputMode")),
+  brandSide:
+  params.get("brandSide") === "off" ||
+  params.get("brandSide") === "front" ||
+  params.get("brandSide") === "qr" ||
+  params.get("brandSide") === "both"
+    ? (params.get("brandSide") as OverlaySide)
+    : DEFAULT_DESIGN.brandSide,
+sloganSide:
+  params.get("sloganSide") === "off" ||
+  params.get("sloganSide") === "front" ||
+  params.get("sloganSide") === "qr" ||
+  params.get("sloganSide") === "both"
+    ? (params.get("sloganSide") as OverlaySide)
+    : DEFAULT_DESIGN.sloganSide,
+nfcSide:
+  params.get("nfcSide") === "off" ||
+  params.get("nfcSide") === "front" ||
+  params.get("nfcSide") === "qr" ||
+  params.get("nfcSide") === "both"
+    ? (params.get("nfcSide") as OverlaySide)
+    : DEFAULT_DESIGN.nfcSide,
+codeSide:
+  params.get("codeSide") === "off" ||
+  params.get("codeSide") === "front" ||
+  params.get("codeSide") === "qr" ||
+  params.get("codeSide") === "both"
+    ? (params.get("codeSide") as OverlaySide)
+    : DEFAULT_DESIGN.codeSide,
+    customWidthCm: parseNumber(
+  params.get("customWidthCm"),
+  DEFAULT_DESIGN.customWidthCm,
+  1,
+  10
+),
+customHeightCm: parseNumber(
+  params.get("customHeightCm"),
+  DEFAULT_DESIGN.customHeightCm,
+  1,
+  15
+),
+brandColor: parseColor(params.get("brandColor"), DEFAULT_DESIGN.brandColor),
+sloganColor: parseColor(params.get("sloganColor"), DEFAULT_DESIGN.sloganColor),
+nfcColor: parseColor(params.get("nfcColor"), DEFAULT_DESIGN.nfcColor),
+brandSize: parseNumber(params.get("brandSize"), DEFAULT_DESIGN.brandSize, 60, 300),
+sloganSize: parseNumber(params.get("sloganSize"), DEFAULT_DESIGN.sloganSize, 60, 300),
+nfcSize: parseNumber(params.get("nfcSize"), DEFAULT_DESIGN.nfcSize, 60, 300),
+brandFont:
+  params.get("brandFont") === "serif" ||
+  params.get("brandFont") === "mono"
+    ? (params.get("brandFont") as DesignState["brandFont"])
+    : DEFAULT_DESIGN.brandFont,
+sloganFont:
+  params.get("sloganFont") === "serif" ||
+  params.get("sloganFont") === "mono"
+    ? (params.get("sloganFont") as DesignState["sloganFont"])
+    : DEFAULT_DESIGN.sloganFont,
+qrGlowSize: parseNumber(
+  params.get("qrGlowSize"),
+  DEFAULT_DESIGN.qrGlowSize,
+  25,
+  70
+),
+qrGlowOpacity: parseNumber(
+  params.get("qrGlowOpacity"),
+  DEFAULT_DESIGN.qrGlowOpacity,
+  0,
+  100
+),
+qrGlowColor: parseColor(
+  params.get("qrGlowColor"),
+  DEFAULT_DESIGN.qrGlowColor
+),
+brandX: parseNumber(params.get("brandX"), DEFAULT_DESIGN.brandX, -60, 60),
+brandY: parseNumber(params.get("brandY"), DEFAULT_DESIGN.brandY, -60, 60),
+sloganX: parseNumber(params.get("sloganX"), DEFAULT_DESIGN.sloganX, -60, 60),
+sloganY: parseNumber(params.get("sloganY"), DEFAULT_DESIGN.sloganY, -60, 60),
+nfcX: parseNumber(params.get("nfcX"), DEFAULT_DESIGN.nfcX, -60, 60),
+nfcY: parseNumber(params.get("nfcY"), DEFAULT_DESIGN.nfcY, -60, 60),
+brandSloganGap: parseNumber(
+  params.get("brandSloganGap"),
+  DEFAULT_DESIGN.brandSloganGap,
+  0,
+  16
+),
+nfcStyle:
+  params.get("nfcStyle") === "text" ||
+  params.get("nfcStyle") === "both"
+    ? (params.get("nfcStyle") as NfcStyle)
+    : DEFAULT_DESIGN.nfcStyle,
+    nfcIconGap: parseNumber(
+  params.get("nfcIconGap"),
+  DEFAULT_DESIGN.nfcIconGap,
+  0,
+  30
+),
+brandAlign:
+  params.get("brandAlign") === "left" ||
+  params.get("brandAlign") === "right" ||
+  params.get("brandAlign") === "center"
+    ? (params.get("brandAlign") as OverlayAlign)
+    : DEFAULT_DESIGN.brandAlign,
+sloganAlign:
+  params.get("sloganAlign") === "left" ||
+  params.get("sloganAlign") === "right" ||
+  params.get("sloganAlign") === "center"
+    ? (params.get("sloganAlign") as OverlayAlign)
+    : DEFAULT_DESIGN.sloganAlign,
+nfcAlign:
+  params.get("nfcAlign") === "left" ||
+  params.get("nfcAlign") === "right" ||
+  params.get("nfcAlign") === "center"
+    ? (params.get("nfcAlign") as OverlayAlign)
+    : DEFAULT_DESIGN.nfcAlign
+};
 }
 
 function buildDesignQuery(design: DesignState) {
   const params = new URLSearchParams();
-
+  params.set("customWidthCm", String(design.customWidthCm));
+  params.set("customHeightCm", String(design.customHeightCm));
+  params.set("nfcIconGap", String(design.nfcIconGap));
+  params.set("brandAlign", design.brandAlign);
+  params.set("sloganAlign", design.sloganAlign);
+  params.set("nfcAlign", design.nfcAlign);
+  params.set("qrGlowSize", String(design.qrGlowSize));
+  params.set("qrGlowOpacity", String(design.qrGlowOpacity));
+  params.set("qrGlowColor", design.qrGlowColor);
+  params.set("qrGlowSize", String(design.qrGlowSize));
+  params.set("qrGlowOpacity", String(design.qrGlowOpacity));
   params.set("size", design.size);
   params.set("shape", design.shape);
   params.set("hasHole", design.hasHole ? "true" : "false");
@@ -198,7 +467,26 @@ function buildDesignQuery(design: DesignState) {
   params.set("showGuide", design.showGuide ? "true" : "false");
   params.set("outputMode", design.outputMode);
   params.set("designType", "tag");
-
+  params.set("brandSide", design.brandSide);
+  params.set("sloganSide", design.sloganSide);
+  params.set("nfcSide", design.nfcSide);
+  params.set("codeSide", design.codeSide);
+  params.set("brandColor", design.brandColor);
+  params.set("sloganColor", design.sloganColor);
+  params.set("nfcColor", design.nfcColor);
+  params.set("brandSize", String(design.brandSize));
+  params.set("sloganSize", String(design.sloganSize));
+  params.set("nfcSize", String(design.nfcSize));
+  params.set("brandFont", design.brandFont);
+  params.set("sloganFont", design.sloganFont);
+  params.set("brandX", String(design.brandX));
+  params.set("brandY", String(design.brandY));
+  params.set("sloganX", String(design.sloganX));
+  params.set("sloganY", String(design.sloganY));
+  params.set("nfcX", String(design.nfcX));
+  params.set("nfcY", String(design.nfcY));
+  params.set("brandSloganGap", String(design.brandSloganGap));
+  params.set("nfcStyle", design.nfcStyle);
   return params.toString();
 }
 
@@ -311,9 +599,46 @@ function SectionCard({
   children
 }: {
   title: string;
-  id: "template" | "front" | "measure" | "qr" | "color";
-  openPanel: "template" | "front" | "measure" | "qr" | "color" | null;
-  setOpenPanel: (value: "template" | "front" | "measure" | "qr" | "color" | null) => void;
+  id:
+  | "template"
+  | "front"
+  | "measure"
+  | "qr"
+  | "color"
+  | "production"
+  | "qrGlow"
+  | "code"
+  | "brand"
+  | "slogan"
+  | "nfc";
+  openPanel:
+  | "template"
+  | "front"
+  | "measure"
+  | "qr"
+  | "color"
+  | "production"
+  | "qrGlow"
+  | "code"
+  | "brand"
+  | "slogan"
+  | "nfc"
+    | null;
+  setOpenPanel: (
+  value:
+    | "template"
+    | "front"
+    | "measure"
+    | "qr"
+    | "color"
+    | "production"
+    | "qrGlow"
+    | "code"
+    | "brand"
+    | "slogan"
+    | "nfc"
+    | null
+) => void;
   children: ReactNode;
 }) {
   const isOpen = openPanel === id;
@@ -344,9 +669,20 @@ export default function QrPage() {
   const [artwork, setArtwork] = useState<ArtworkState>(DEFAULT_ARTWORK);
   const [frontArtwork, setFrontArtwork] = useState<ArtworkState>(DEFAULT_ARTWORK);
   const [copied, setCopied] = useState(false);
-  const [openPanel, setOpenPanel] = useState<
-  "template" | "front" | "measure" | "qr" | "color" | null
-  >("template");
+const [openPanel, setOpenPanel] = useState<
+  | "template"
+  | "front"
+  | "measure"
+  | "qr"
+  | "color"
+  | "production"
+  | "qrGlow"
+  | "code"
+  | "brand"
+  | "slogan"
+  | "nfc"
+  | null
+>("template");
 
   useEffect(() => {
     const parts = window.location.pathname.split("/");
@@ -397,6 +733,13 @@ setFrontArtwork(savedFront ? { ...DEFAULT_ARTWORK, ...savedFront } : DEFAULT_ART
     [code, designQuery]
   );
 
+  const previewQrImageUrl = useMemo(() => {
+    const params = new URLSearchParams(designQuery);
+    params.set("transparent", "true");
+    params.set("showGuide", "false");
+    return `/api/qr/${code}?${params.toString()}`;
+  }, [code, designQuery]);
+
   const qrDownloadUrl = useMemo(
     () => `/api/qr-download/${code}?${designQuery}`,
     [code, designQuery]
@@ -407,7 +750,15 @@ setFrontArtwork(savedFront ? { ...DEFAULT_ARTWORK, ...savedFront } : DEFAULT_ART
     [code, designQuery]
   );
 
-  const frame = previewSize(design.size);
+  const frame = previewSize(
+  design.size,
+  design.customWidthCm,
+  design.customHeightCm
+);
+const scaleFactor =
+  design.size === "custom"
+    ? Math.max(0.8, Math.min(2.4, frame.width / 240))
+    : 1;
   const displayCode = design.codeText.trim() || code;
   const showQr = design.outputMode === "qr" || design.outputMode === "both";
   const showFront = design.outputMode === "front";
@@ -485,11 +836,34 @@ function handleFrontArtworkUpload(file: File | undefined) {
     qrOffsetY: 0
   }));
 }
+function centerBrand() {
+  setDesign((prev) => ({
+    ...prev,
+    brandAlign: "center",
+    brandX: 0
+  }));
+}
+
+function centerSlogan() {
+  setDesign((prev) => ({
+    ...prev,
+    sloganAlign: "center",
+    sloganX: 0
+  }));
+}
+
+function centerNfc() {
+  setDesign((prev) => ({
+    ...prev,
+    nfcAlign: "center",
+    nfcX: 0
+  }));
+}
 function applyPreset(type: "pet" | "key" | "person") {
   const presets: Record<typeof type, Partial<DesignState>> = {
     pet: {
       size: "3cm",
-      shape: "round",
+      shape: "pebble",
       qrScale: 78,
       codeScale: 95,
       codeGap: 70,
@@ -503,7 +877,7 @@ function applyPreset(type: "pet" | "key" | "person") {
     },
     key: {
       size: "3cm",
-      shape: "round",
+      shape: "pebble",
       qrScale: 82,
       codeScale: 90,
       codeGap: 55,
@@ -517,7 +891,7 @@ function applyPreset(type: "pet" | "key" | "person") {
     },
     person: {
       size: "3cm",
-      shape: "round",
+      shape: "pebble",
       qrScale: 86,
       codeScale: 105,
       codeGap: 60,
@@ -614,38 +988,40 @@ function snapQr(position: "center" | "top" | "bottom" | "left" | "right") {
     }
   }
 
-  function openPrintView() {
-    try {
-      const storageKey = `dokuntag_batch_${Date.now()}`;
-      const savedItems = tryParseJson<Array<{ code: string; label?: string }>>(
-        window.localStorage.getItem(BATCH_ITEMS_STORAGE_KEY)
-      );
+ function openPrintView() {
+  try {
+    const storageKey = `dokuntag_batch_${Date.now()}`;
 
-      const items = Array.isArray(savedItems) && savedItems.length ? savedItems : [{ code }];
+    const savedItems = tryParseJson<Array<{ code: string; label?: string }>>(
+      window.localStorage.getItem(BATCH_ITEMS_STORAGE_KEY)
+    );
 
-      window.sessionStorage.setItem(storageKey, JSON.stringify(items));
-      window.sessionStorage.setItem(
-        `${storageKey}:payload`,
-        JSON.stringify({
-          items,
-          design,
-          templateArtwork: artwork,
-          frontArtwork
-        })
-      );
-      window.localStorage.setItem(BATCH_ITEMS_STORAGE_KEY, JSON.stringify(items));
-      window.localStorage.setItem(DESIGN_STORAGE_KEY, JSON.stringify(design));
-      window.localStorage.setItem(TEMPLATE_STORAGE_KEY, JSON.stringify(artwork));
-      window.localStorage.setItem(FRONT_ARTWORK_STORAGE_KEY, JSON.stringify(frontArtwork));
-      window.open(
-        `/admin/batch/print?storageKey=${encodeURIComponent(storageKey)}&outputMode=${design.outputMode}`,
-        "_blank",
-        "noopener,noreferrer"
-      );
-    } catch {
-      window.open(`/admin/batch/print?outputMode=${design.outputMode}`, "_blank");
-    }
+    const items = Array.isArray(savedItems) && savedItems.length ? savedItems : [{ code }];
+
+    const safeDesign = {
+      ...design,
+      codeText: ""
+    };
+
+    const payload = {
+      items,
+      design: safeDesign
+    };
+
+    window.sessionStorage.setItem(storageKey, JSON.stringify(items));
+    window.sessionStorage.setItem(`${storageKey}:payload`, JSON.stringify(payload));
+    window.localStorage.setItem(BATCH_ITEMS_STORAGE_KEY, JSON.stringify(items));
+    window.localStorage.setItem(DESIGN_STORAGE_KEY, JSON.stringify(safeDesign));
+
+    window.open(
+      `/admin/batch/print?storageKey=${encodeURIComponent(storageKey)}&outputMode=${safeDesign.outputMode}`,
+      "_blank",
+      "noopener,noreferrer"
+    );
+  } catch (err) {
+    alert(err instanceof Error ? err.message : "Baskı görünümü açılamadı.");
   }
+}
 
   const templateLayer = artwork.imageUrl ? (
     <img
@@ -664,7 +1040,215 @@ function snapQr(position: "center" | "top" | "bottom" | "left" | "right") {
       Matbaa şablonu / arka plan görseli yükleyin
     </div>
   ) : null;
+function getAlignStyle(align: OverlayAlign) {
+  if (align === "left") {
+    return {
+      left: "16px",
+      right: "16px",
+      textAlign: "left" as const,
+      transformBase: "translate(0, 0)"
+    };
+  }
 
+  if (align === "right") {
+    return {
+      left: "16px",
+      right: "16px",
+      textAlign: "right" as const,
+      transformBase: "translate(0, 0)"
+    };
+  }
+
+  return {
+    left: "16px",
+    right: "16px",
+    textAlign: "center" as const,
+    transformBase: "translate(0, 0)"
+  };
+}
+
+function renderProductionOverlay(side: "front" | "qr") {
+  const showBrand = shouldShowOverlay(design.brandSide, side);
+  const showSlogan = shouldShowOverlay(design.sloganSide, side);
+  const showNfc = shouldShowOverlay(design.nfcSide, side);
+  const showCode = shouldShowOverlay(design.codeSide, side);
+  const productCode = design.codeText.trim() || code;
+
+  const brandAlign = getAlignStyle(design.brandAlign);
+  const sloganAlign = getAlignStyle(design.sloganAlign);
+  const nfcAlign = getAlignStyle(design.nfcAlign);
+
+  return (
+    <>
+      {showNfc ? (
+        <div
+          className="absolute top-3 flex items-center text-[10px] font-bold"
+style={{
+  left: nfcAlign.left,
+  right: nfcAlign.right,
+  justifyContent:
+    design.nfcAlign === "left"
+      ? "flex-start"
+      : design.nfcAlign === "right"
+        ? "flex-end"
+        : "center",
+        gap: `${design.nfcIconGap}px`,
+  color: design.nfcColor,
+  fontSize: `${10 * (design.nfcSize / 100) * scaleFactor}px`,
+  transform: `${nfcAlign.transformBase} translate(${design.nfcX}px, ${design.nfcY}px)`
+}}
+        >
+          {design.nfcStyle === "text" || design.nfcStyle === "both" ? (
+          <span>NFC</span>
+        ) : null}
+
+        {design.nfcStyle === "waves" || design.nfcStyle === "both" ? (
+          <NfcWaveIcon
+            color={design.nfcColor}
+            size={Math.round(14 * (design.nfcSize / 100) * scaleFactor)}
+          />
+        ) : null}
+        </div>
+      ) : null}
+
+      {showBrand ? (
+        <div
+          className={`absolute bottom-8 font-extrabold tracking-tight drop-shadow-sm ${getFontClass(
+            design.brandFont
+          )}`}
+          style={{
+            left: brandAlign.left,
+            right: brandAlign.right,
+            color: design.brandColor,
+            fontSize: `${11 * (design.brandSize / 100) * scaleFactor}px`,
+            textAlign: brandAlign.textAlign,
+            transform: `${brandAlign.transformBase} translate(${design.brandX}px, ${design.brandY}px)`
+          }}
+        >
+          dokuntag<span className="align-super text-[0.55em]">®</span>
+        </div>
+      ) : null}
+
+      {showSlogan ? (
+        <div
+          className={`absolute font-semibold ${getFontClass(design.sloganFont)}`}
+          style={{
+            left: sloganAlign.left,
+            right: sloganAlign.right,
+            bottom: `${24 - design.brandSloganGap}px`,
+            color: design.sloganColor,
+            fontSize: `${8 * (design.sloganSize / 100) * scaleFactor}px`,
+            textAlign: sloganAlign.textAlign,
+            transform: `${sloganAlign.transformBase} translate(${design.sloganX}px, ${design.sloganY}px)`
+          }}
+        >
+          bul • buluştur
+        </div>
+      ) : null}
+
+{showCode && productCode && !design.hideCode ? (
+  <div
+    className="absolute bottom-2 left-0 right-0 text-center font-bold tracking-wider"
+    style={{
+      color: design.codeColor,
+      fontSize: `${8 * scaleFactor}px`
+    }}
+  >
+    {productCode}
+  </div>
+) : null}
+    </>
+  );
+}
+
+
+  const previewFrame = showBoth
+    ? {
+        width: Math.max(150, Math.round(frame.width * 0.72)),
+        height: Math.max(150, Math.round(frame.height * 0.72))
+      }
+    : frame;
+
+  function renderPreviewFace(side: "front" | "qr") {
+    const isFront = side === "front";
+    const clipPath =
+      design.size === "custom" ? "inset(0 round 18px)" : getShapeClip(design.shape);
+
+    return (
+      <div
+        className="relative overflow-hidden bg-white shadow-sm"
+        style={{
+          width: previewFrame.width,
+          height: previewFrame.height,
+          clipPath
+        }}
+      >
+        {isFront ? (
+          frontArtwork.imageUrl ? (
+            <img
+              src={frontArtwork.imageUrl}
+              alt={frontArtwork.fileName || "Ön yüz"}
+              className="absolute left-1/2 top-1/2 h-full w-full"
+              style={{
+                objectFit: frontArtwork.fit,
+                transform: `translate(-50%, -50%) translate(${frontArtwork.x}px, ${frontArtwork.y}px) scale(${frontArtwork.scale / 100})`
+              }}
+            />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center px-6 text-center text-sm text-neutral-400">
+              Ön yüz görseli yükleyin
+            </div>
+          )
+        ) : (
+          <>
+            {artwork.imageUrl ? (
+              <img
+                src={artwork.imageUrl}
+                alt={artwork.fileName || "QR yüzü"}
+                className="absolute left-1/2 top-1/2 h-full w-full"
+                style={{
+                  objectFit: artwork.fit,
+                  transform: `translate(-50%, -50%) translate(${artwork.x}px, ${artwork.y}px) scale(${artwork.scale / 100})`
+                }}
+              />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center px-6 text-center text-sm text-neutral-400">
+                Matbaa şablonu / arka plan görseli yükleyin
+              </div>
+            )}
+
+            {code && design.qrGlowOpacity > 0 ? (
+              <div
+                className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-[1.4rem] blur-md"
+                style={{
+                  width: `${design.qrGlowSize}%`,
+                  height: `${design.qrGlowSize}%`,
+                  backgroundColor: hexToRgba(
+                    design.qrGlowColor,
+                    design.qrGlowOpacity / 100
+                  )
+                }}
+              />
+            ) : null}
+
+            {code ? (
+              <img
+                src={previewQrImageUrl}
+                alt={`Dokuntag QR ${code}`}
+                className="absolute inset-0 h-full w-full"
+              />
+            ) : null}
+          </>
+        )}
+
+        {renderProductionOverlay(side)}
+
+        {design.showGuide ? (
+          <div className="pointer-events-none absolute inset-0 border-2 border-dashed border-red-500/80" />
+        ) : null}
+      </div>
+    );
+  }
   return (
     <main className="min-h-screen bg-neutral-50 px-3 py-4 pb-28 text-neutral-900 sm:px-4 sm:py-6">
       <div className="mx-auto max-w-7xl space-y-5">
@@ -681,8 +1265,8 @@ function snapQr(position: "center" | "top" | "bottom" | "left" | "right") {
           </div>
 
           <div className="grid gap-4 p-3 sm:p-5 xl:grid-cols-[minmax(420px,520px)_1fr]">
-            <aside className="space-y-3 xl:sticky xl:top-5 xl:self-start xl:mt-8">
-              <section className="rounded-[1.6rem] border border-neutral-200 bg-gradient-to-b from-white to-neutral-100 p-4 shadow-md sm:rounded-[2rem] sm:p-6">
+              <aside className="space-y-3 lg:sticky lg:top-8 lg:self-start xl:mt-8">                
+                <section className="rounded-[1.6rem] border border-neutral-200 bg-gradient-to-b from-white to-neutral-100 p-4 shadow-md sm:rounded-[2rem] sm:p-6">
                 <div className="flex items-center justify-between gap-3">
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-[0.16em] text-neutral-400">
@@ -695,31 +1279,7 @@ function snapQr(position: "center" | "top" | "bottom" | "left" | "right") {
                         ? "Ön yüz"
                         : "Ön + QR"}
                     </h2>
-                    <div className="mt-4 grid gap-2 sm:grid-cols-3">
-                    <button
-                      type="button"
-                      onClick={() => applyPreset("pet")}
-                      className="rounded-2xl border border-neutral-300 bg-white px-3 py-2 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-50"
-                    >
-                      🐾 Evcil preset
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => applyPreset("key")}
-                      className="rounded-2xl border border-neutral-300 bg-white px-3 py-2 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-50"
-                    >
-                      🔑 Anahtar preset
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => applyPreset("person")}
-                      className="rounded-2xl border border-neutral-300 bg-white px-3 py-2 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-50"
-                    >
-                      👤 Kişi preset
-                    </button>
-                  </div>
+                 
                   </div>
 
                   <button
@@ -731,112 +1291,31 @@ function snapQr(position: "center" | "top" | "bottom" | "left" | "right") {
                   </button>
                 </div>
 
-                <div className="mt-4 flex justify-center overflow-auto rounded-3xl bg-white p-3 shadow-inner sm:mt-6 sm:p-6">
-                  <div
-                    className="relative overflow-hidden bg-white shadow-sm"
-                    style={{
-                      width: frame.width,
-                      height: frame.height,
-                      clipPath: getShapeClip(design.shape)
-                    }}
-                  >
-                    {showFront ? (
-  frontArtwork.imageUrl ? (
-    <img
-      src={frontArtwork.imageUrl}
-      alt={frontArtwork.fileName || "Ön yüz"}
-      className="absolute left-1/2 top-1/2 h-full w-full"
-      style={{
-        objectFit: frontArtwork.fit,
-        transform: `translate(-50%, -50%) translate(${frontArtwork.x}px, ${frontArtwork.y}px) scale(${frontArtwork.scale / 100})`
-      }}
-    />
-  ) : (
-    <div className="flex h-full w-full items-center justify-center px-6 text-center text-sm text-neutral-400">
-      Ön yüz görseli yükleyin
-    </div>
-  )
-) : null}
-
-{showQr ? templateLayer : null}
-{showQr ? templateEmptyState : null}
-
-{showQr && code ? (
-  <img
-    src={transparentQrImageUrl}
-                        alt={`Dokuntag QR ${code}`}
-                        className="absolute inset-0 h-full w-full"
-                      />
-                    ) : null}
-
-                    {design.showGuide ? (
-                      <div className="pointer-events-none absolute inset-0 border-2 border-dashed border-red-500/80" />
-                    ) : null}
+                <div className="mt-4 overflow-auto rounded-3xl bg-white p-3 shadow-inner sm:mt-6 sm:p-6">
+                  <div className={`flex min-w-max items-start ${showBoth ? "gap-4" : "justify-center"}`}>
+                    {showBoth ? (
+                      <>
+                        <div className="space-y-2 text-center">
+                          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-neutral-400">Ön yüz</p>
+                          {renderPreviewFace("front")}
+                        </div>
+                        <div className="space-y-2 text-center">
+                          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-neutral-400">QR yüzü</p>
+                          {renderPreviewFace("qr")}
+                        </div>
+                      </>
+                    ) : (
+                      <div className="space-y-2 text-center">
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-neutral-400">
+                          {showFront ? "Ön yüz" : "QR yüzü"}
+                        </p>
+                        {renderPreviewFace(showFront ? "front" : "qr")}
+                      </div>
+                    )}
                   </div>
                 </div>
                 
-                {frontArtwork.imageUrl || artwork.imageUrl ? (
-  <div className="mt-4 rounded-3xl border border-neutral-200 bg-white p-4">
-    <p className="mb-3 text-xs font-semibold uppercase tracking-[0.16em] text-neutral-400">
-      Ön + QR yan yana prova
-    </p>
-
-    <div className="grid gap-4 sm:grid-cols-2">
-      <div className="space-y-2">
-        <p className="text-center text-xs font-semibold text-neutral-500">Ön yüz</p>
-        <div className="flex justify-center rounded-2xl bg-neutral-50 p-4">
-          <div
-            className="relative overflow-hidden bg-white shadow-sm"
-            style={{
-              width: Math.min(frame.width, 180),
-              height: Math.min(frame.height, 180),
-              clipPath: getShapeClip(design.shape)
-            }}
-          >
-            {frontArtwork.imageUrl ? (
-              <img
-                src={frontArtwork.imageUrl}
-                alt={frontArtwork.fileName || "Ön yüz"}
-                className="absolute left-1/2 top-1/2 h-full w-full"
-                style={{
-                  objectFit: frontArtwork.fit,
-                  transform: `translate(-50%, -50%) translate(${frontArtwork.x}px, ${frontArtwork.y}px) scale(${frontArtwork.scale / 100})`
-                }}
-              />
-            ) : (
-              <div className="flex h-full w-full items-center justify-center px-4 text-center text-xs text-neutral-400">
-                Ön yüz yok
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
-          <div className="space-y-2">
-            <p className="text-center text-xs font-semibold text-neutral-500">QR yüzü</p>
-            <div className="flex justify-center rounded-2xl bg-neutral-50 p-4">
-              <div
-                className="relative overflow-hidden bg-white shadow-sm"
-                style={{
-                  width: Math.min(frame.width, 180),
-                  height: Math.min(frame.height, 180),
-                  clipPath: getShapeClip(design.shape)
-                }}
-              >
-                {templateLayer}
-                {code ? (
-                  <img
-                    src={transparentQrImageUrl}
-                    alt={`Dokuntag QR ${code}`}
-                    className="absolute inset-0 h-full w-full"
-                  />
-                ) : null}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    ) : null}
+            
                 <div className="mt-4 grid gap-2 sm:grid-cols-3">
                   <button
                     type="button"
@@ -891,8 +1370,9 @@ function snapQr(position: "center" | "top" | "bottom" | "left" | "right") {
                 <button type="button" onClick={() => snapQr("right")} className="rounded-xl border border-neutral-300 bg-white px-3 py-2 text-xs font-semibold">
                   Sağ
                 </button>
-              </div>     
-              ) : null}  
+
+            </div>
+          ) : null}
               <section className="fixed inset-x-3 bottom-3 z-50 grid grid-cols-1 gap-2 rounded-[1.5rem] border border-neutral-200 bg-white/95 p-3 shadow-2xl backdrop-blur sm:static sm:flex sm:flex-wrap sm:shadow-sm sm:backdrop-blur-0">
                 <a
                   href={qrDownloadUrl}
@@ -1001,49 +1481,21 @@ function snapQr(position: "center" | "top" | "bottom" | "left" | "right") {
     </button>
   </div>
 </SectionCard>
-    <SectionCard title="Renk" id="color" openPanel={openPanel} setOpenPanel={setOpenPanel}>
-      <label className="block rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3">
-        <span className="text-sm font-medium text-neutral-900">Renk modu</span>
-        <select
-          value={design.colorMode}
-          onChange={(e) => {
-            const mode = e.target.value as DesignState["colorMode"];
-            setDesign((prev) => ({
-              ...prev,
-              colorMode: mode,
-              codeColor: mode === "both" ? prev.foregroundColor : prev.codeColor
-            }));
-          }}
-          className="mt-3 w-full rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm"
-        >
-          <option value="both">QR + kod birlikte</option>
-          <option value="qr">Sadece QR</option>
-          <option value="code">Sadece kod</option>
-        </select>
-      </label>
 
-      {design.colorMode === "both" || design.colorMode === "qr" ? (
-        <ColorField
-          label={design.colorMode === "both" ? "QR + kod rengi" : "QR rengi"}
-          value={design.foregroundColor}
-          onChange={(value) => updateDesign("foregroundColor", value)}
-        />
-      ) : null}
-
-      {design.colorMode === "code" ? (
-        <ColorField
-          label="Kod rengi"
-          value={design.codeColor}
-          onChange={(value) => updateDesign("codeColor", value)}
-        />
-      ) : null}
-    </SectionCard>
     <SectionCard title="Ölçü ve çıktı" id="measure" openPanel={openPanel} setOpenPanel={setOpenPanel}>
       <label className="block rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3">
         <span className="text-sm font-medium text-neutral-900">Ölçü</span>
         <select
           value={design.size}
-          onChange={(e) => updateDesign("size", e.target.value as SizeOption)}
+          onChange={(e) => {
+  const nextSize = e.target.value as SizeOption;
+
+  setDesign((prev) => ({
+    ...prev,
+    size: nextSize,
+    shape: nextSize === "custom" ? "square" : prev.shape
+  }));
+}}
           className="mt-3 w-full rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm"
         >
           {SIZE_OPTIONS.map((item) => (
@@ -1052,6 +1504,43 @@ function snapQr(position: "center" | "top" | "bottom" | "left" | "right") {
             </option>
           ))}
         </select>
+        {design.size === "custom" ? (
+  <div className="grid gap-3 sm:grid-cols-2">
+    <label className="block rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3">
+      <span className="text-sm font-medium text-neutral-900">
+        Genişlik / sağ-sol
+      </span>
+      <input
+        type="number"
+        step="0.1"
+        min="1"
+        max="10"
+        value={design.customWidthCm}
+        onChange={(e) =>
+          updateDesign("customWidthCm", Number(e.target.value))
+        }
+        className="mt-3 w-full rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm"
+      />
+    </label>
+
+    <label className="block rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3">
+      <span className="text-sm font-medium text-neutral-900">
+        Yükseklik / yukarı-aşağı
+      </span>
+      <input
+        type="number"
+        step="0.1"
+        min="1"
+        max="15"
+        value={design.customHeightCm}
+        onChange={(e) =>
+          updateDesign("customHeightCm", Number(e.target.value))
+        }
+        className="mt-3 w-full rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm"
+      />
+    </label>
+  </div>
+) : null}
       </label>
 
       <label className="block rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3">
@@ -1061,9 +1550,11 @@ function snapQr(position: "center" | "top" | "bottom" | "left" | "right") {
           onChange={(e) => updateDesign("shape", e.target.value as ShapeOption)}
           className="mt-3 w-full rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm"
         >
-          <option value="round">Daire</option>
-          <option value="square">Kare</option>
-          <option value="drop">Damla / Şablon</option>
+        <option value="round">Yuvarlak</option>
+        <option value="square">Özel kesim kare</option>
+        <option value="drop">Damla</option>
+        <option value="pebble">Pebble</option>
+        <option value="shield">Shield</option>
         </select>
       </label>
 
@@ -1076,10 +1567,7 @@ function snapQr(position: "center" | "top" | "bottom" | "left" | "right") {
         Kırmızı dış kılavuz çizgisi
       </label>
     </SectionCard>
-  </div>
-
-  <div className="space-y-4">
-        <SectionCard title="QR ve kod ayarı" id="qr" openPanel={openPanel} setOpenPanel={setOpenPanel}>
+            <SectionCard title="QR ayarı" id="qr" openPanel={openPanel} setOpenPanel={setOpenPanel}>
       <label className="block rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3">
         <span className="text-sm font-medium text-neutral-900">Ürün kodu</span>
         <input
@@ -1093,22 +1581,38 @@ function snapQr(position: "center" | "top" | "bottom" | "left" | "right") {
           className="mt-3 w-full rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm"
         />
       </label>
-
-      <label className="flex items-center gap-2 rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm font-medium text-neutral-800">
-        <input
-          type="checkbox"
-          checked={design.hideCode}
-          onChange={(e) => updateDesign("hideCode", e.target.checked)}
-        />
-        Ürün kodunu gizle
-      </label>
-
-      <SliderField label="QR büyüklüğü" value={design.qrScale} min={35} max={95} suffix="%" onChange={(value) => updateDesign("qrScale", value)} />
+      <SliderField label="QR büyüklüğü" value={design.qrScale} min={15} max={95} suffix="%" onChange={(value) => updateDesign("qrScale", value)} />
       <SliderField label="Kod boyutu" value={design.codeScale} min={50} max={180} suffix="%" onChange={(value) => updateDesign("codeScale", value)} />
       <SliderField label="QR–kod mesafesi" value={design.codeGap} min={20} max={180} suffix="%" onChange={(value) => updateDesign("codeGap", value)} />
       <SliderField label="QR + kod sağ / sol" value={design.qrOffsetX} min={-45} max={45} onChange={(value) => updateDesign("qrOffsetX", value)} />
       <SliderField label="QR + kod yukarı / aşağı" value={design.qrOffsetY} min={-45} max={45} onChange={(value) => updateDesign("qrOffsetY", value)} />
+            <ColorField
+  label="QR rengi"
+  value={design.foregroundColor}
+  onChange={(value) => updateDesign("foregroundColor", value)}
+/>
 
+<ColorField
+  label="Ürün kodu rengi"
+  value={design.codeColor}
+  onChange={(value) => updateDesign("codeColor", value)}
+/>
+<label className="block">
+  <span className="mb-2 block text-sm font-medium text-neutral-700">
+    Renk modu
+  </span>
+  <select
+    value={design.colorMode}
+    onChange={(e) =>
+      updateDesign("colorMode", e.target.value as DesignState["colorMode"])
+    }
+    className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm"
+  >
+    <option value="both">QR + kod aynı</option>
+    <option value="qr">Sadece QR</option>
+    <option value="code">Sadece kod</option>
+  </select>
+</label>
             <button
         type="button"
         onClick={centerQr}
@@ -1117,6 +1621,263 @@ function snapQr(position: "center" | "top" | "bottom" | "left" | "right") {
         QR + kodu tam ortala
       </button>
     </SectionCard>
+          <SectionCard title="QR arkası" id="qrGlow" openPanel={openPanel} setOpenPanel={setOpenPanel}>
+  <SliderField
+    label="QR arkası alan"
+    value={design.qrGlowSize}
+    min={15}
+    max={70}
+    suffix="%"
+    onChange={(value) => updateDesign("qrGlowSize", value)}
+  />
+
+  <SliderField
+    label="QR arkası görünürlük"
+    value={design.qrGlowOpacity}
+    min={0}
+    max={100}
+    suffix="%"
+    onChange={(value) => updateDesign("qrGlowOpacity", value)}
+  />
+
+  <ColorField
+    label="QR arkası rengi"
+    value={design.qrGlowColor}
+    onChange={(value) => updateDesign("qrGlowColor", value)}
+  />
+</SectionCard>
+  </div>
+
+  <div className="space-y-4">
+
+
+
+<SectionCard title="Ürün kodu" id="code" openPanel={openPanel} setOpenPanel={setOpenPanel}>
+  <label className="block rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3">
+    <span className="text-sm font-medium text-neutral-900">Ürün kodu</span>
+    <input
+      value={design.codeText || displayCode}
+      onChange={(e) =>
+        updateDesign(
+          "codeText",
+          e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 20)
+        )
+      }
+      className="mt-3 w-full rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm"
+    />
+  </label>
+
+  <label className="flex items-center gap-2 rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm font-medium text-neutral-800">
+    <input
+      type="checkbox"
+      checked={design.hideCode}
+      onChange={(e) => updateDesign("hideCode", e.target.checked)}
+    />
+    QR içindeki ürün kodunu gizle
+  </label>
+
+  <label className="block">
+    <span className="mb-2 block text-sm font-medium text-neutral-700">
+      Production kod katmanı
+    </span>
+    <select
+      value={design.codeSide}
+      onChange={(e) => updateDesign("codeSide", e.target.value as OverlaySide)}
+      className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm"
+    >
+      <option value="off">Kapalı</option>
+      <option value="front">Ön yüzde</option>
+      <option value="qr">QR yüzünde</option>
+      <option value="both">İki yüzde</option>
+    </select>
+  </label>
+
+  <SliderField
+    label="Kod boyutu"
+    value={design.codeScale}
+    min={50}
+    max={180}
+    suffix="%"
+    onChange={(value) => updateDesign("codeScale", value)}
+  />
+
+  <SliderField
+    label="QR–kod mesafesi"
+    value={design.codeGap}
+    min={20}
+    max={180}
+    suffix="%"
+    onChange={(value) => updateDesign("codeGap", value)}
+  />
+</SectionCard>
+<SectionCard title="Marka" id="brand" openPanel={openPanel} setOpenPanel={setOpenPanel}>
+  <label className="block">
+    <span className="mb-2 block text-sm font-medium text-neutral-700">Dokuntag® marka</span>
+    <select
+      value={design.brandSide}
+      onChange={(e) => updateDesign("brandSide", e.target.value as OverlaySide)}
+      className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm"
+    >
+      <option value="off">Kapalı</option>
+      <option value="front">Ön yüzde</option>
+      <option value="qr">QR yüzünde</option>
+      <option value="both">İki yüzde</option>
+    </select>
+  </label>
+      
+  <ColorField label="Marka rengi" value={design.brandColor} onChange={(value) => updateDesign("brandColor", value)} />
+  <SliderField label="Marka boyutu" value={design.brandSize} min={60} max={300} onChange={(value) => updateDesign("brandSize", value)} />
+  <SliderField label="Marka sağ / sol" value={design.brandX} min={-60} max={60} onChange={(value) => updateDesign("brandX", value)} />
+  <SliderField label="Marka yukarı / aşağı" value={design.brandY} min={-60} max={60} onChange={(value) => updateDesign("brandY", value)} />
+<button
+  type="button"
+  onClick={centerBrand}
+  className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm font-semibold transition hover:bg-neutral-50"
+>
+  Markayı ortala
+</button>
+  <label className="block">
+    <span className="mb-2 block text-sm font-medium text-neutral-700">Marka hizalama</span>
+    <select
+      value={design.brandAlign}
+      onChange={(e) => updateDesign("brandAlign", e.target.value as OverlayAlign)}
+      className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm"
+    >
+      <option value="left">Sol</option>
+      <option value="center">Orta</option>
+      <option value="right">Sağ</option>
+    </select>
+  </label>
+
+  <label className="block">
+    <span className="mb-2 block text-sm font-medium text-neutral-700">Marka fontu</span>
+    <select
+      value={design.brandFont}
+      onChange={(e) => updateDesign("brandFont", e.target.value as DesignState["brandFont"])}
+      className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm"
+    >
+      <option value="sans">Modern</option>
+      <option value="serif">Klasik</option>
+      <option value="mono">Teknik</option>
+    </select>
+  </label>
+</SectionCard>
+<SectionCard title="Slogan" id="slogan" openPanel={openPanel} setOpenPanel={setOpenPanel}>
+  <label className="block">
+    <span className="mb-2 block text-sm font-medium text-neutral-700">Slogan</span>
+    <select
+      value={design.sloganSide}
+      onChange={(e) => updateDesign("sloganSide", e.target.value as OverlaySide)}
+      className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm"
+    >
+      <option value="off">Kapalı</option>
+      <option value="front">Ön yüzde</option>
+      <option value="qr">QR yüzünde</option>
+      <option value="both">İki yüzde</option>
+    </select>
+  </label>
+
+  <ColorField label="Slogan rengi" value={design.sloganColor} onChange={(value) => updateDesign("sloganColor", value)} />
+  <SliderField label="Slogan boyutu" value={design.sloganSize} min={60} max={300} onChange={(value) => updateDesign("sloganSize", value)} />
+  <button
+  type="button"
+  onClick={centerSlogan}
+  className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm font-semibold transition hover:bg-neutral-50"
+>
+  Sloganı ortala
+</button>
+  <SliderField label="Slogan sağ / sol" value={design.sloganX} min={-60} max={60} onChange={(value) => updateDesign("sloganX", value)} />
+    <SliderField label="Slogan yukarı / aşağı" value={design.sloganY} min={-60} max={60} onChange={(value) => updateDesign("sloganY", value)} />
+  <SliderField label="Marka / slogan mesafesi" value={design.brandSloganGap} min={0} max={16} suffix="px" onChange={(value) => updateDesign("brandSloganGap", value)} />
+
+  <label className="block">
+    <span className="mb-2 block text-sm font-medium text-neutral-700">Slogan hizalama</span>
+    <select
+      value={design.sloganAlign}
+      onChange={(e) => updateDesign("sloganAlign", e.target.value as OverlayAlign)}
+      className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm"
+    >
+      <option value="left">Sol</option>
+      <option value="center">Orta</option>
+      <option value="right">Sağ</option>
+    </select>
+  </label>
+
+  <label className="block">
+    <span className="mb-2 block text-sm font-medium text-neutral-700">Slogan fontu</span>
+    <select
+      value={design.sloganFont}
+      onChange={(e) => updateDesign("sloganFont", e.target.value as DesignState["sloganFont"])}
+      className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm"
+    >
+      <option value="sans">Modern</option>
+      <option value="serif">Klasik</option>
+      <option value="mono">Teknik</option>
+    </select>
+  </label>
+</SectionCard>
+<SectionCard title="NFC" id="nfc" openPanel={openPanel} setOpenPanel={setOpenPanel}>
+  <label className="block">
+    <span className="mb-2 block text-sm font-medium text-neutral-700">NFC simgesi</span>
+    <select
+      value={design.nfcSide}
+      onChange={(e) => updateDesign("nfcSide", e.target.value as OverlaySide)}
+      className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm"
+    >
+      <option value="off">Kapalı</option>
+      <option value="front">Ön yüzde</option>
+      <option value="qr">QR yüzünde</option>
+      <option value="both">İki yüzde</option>
+    </select>
+  </label>
+
+  <label className="block">
+    <span className="mb-2 block text-sm font-medium text-neutral-700">NFC görünümü</span>
+    <select
+      value={design.nfcStyle}
+      onChange={(e) => updateDesign("nfcStyle", e.target.value as NfcStyle)}
+      className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm"
+    >
+      <option value="waves">Sadece yay simgesi</option>
+      <option value="text">Sadece NFC yazısı</option>
+      <option value="both">NFC + yay simgesi</option>
+    </select>
+  </label>
+
+  <ColorField label="NFC rengi" value={design.nfcColor} onChange={(value) => updateDesign("nfcColor", value)} />
+
+  <SliderField label="NFC boyutu" value={design.nfcSize} min={60} max={300} onChange={(value) => updateDesign("nfcSize", value)} />
+  <SliderField
+  label="NFC yazı / yay mesafesi"
+  value={design.nfcIconGap}
+  min={0}
+  max={30}
+  suffix="px"
+  onChange={(value) => updateDesign("nfcIconGap", value)}
+/>
+<button
+  type="button"
+  onClick={centerNfc}
+  className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm font-semibold transition hover:bg-neutral-50"
+>
+  NFC’yi ortala
+</button>
+  <SliderField label="NFC sağ / sol" value={design.nfcX} min={-60} max={60} onChange={(value) => updateDesign("nfcX", value)} />
+  <SliderField label="NFC yukarı / aşağı" value={design.nfcY} min={-60} max={60} onChange={(value) => updateDesign("nfcY", value)} />
+
+  <label className="block">
+    <span className="mb-2 block text-sm font-medium text-neutral-700">NFC hizalama</span>
+    <select
+      value={design.nfcAlign}
+      onChange={(e) => updateDesign("nfcAlign", e.target.value as OverlayAlign)}
+      className="w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm"
+    >
+      <option value="left">Sol</option>
+      <option value="center">Orta</option>
+      <option value="right">Sağ</option>
+    </select>
+  </label>
+</SectionCard>
   </div>
 </div>
           </div>

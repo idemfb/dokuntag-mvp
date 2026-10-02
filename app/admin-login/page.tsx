@@ -5,15 +5,14 @@ import { useRouter } from "next/navigation";
 
 function getNextPath(search: string) {
   const params = new URLSearchParams(search);
-  const next = params.get("next")?.trim() || "/admin/batch";
+  const next = params.get("next")?.trim() || "/admin";
 
   if (!next.startsWith("/")) {
-    return "/admin/batch";
+    return "/admin";
   }
 
   if (next.startsWith("//")) {
-    return "/admin/batch";
-  }
+return "/admin";  }
 
   return next;
 }
@@ -24,7 +23,7 @@ export default function AdminLoginPage() {
   const [key, setKey] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [nextPath, setNextPath] = useState("/admin/batch");
+  const [nextPath, setNextPath] = useState("/admin");
 
   useEffect(() => {
     if (typeof window !== "undefined") {

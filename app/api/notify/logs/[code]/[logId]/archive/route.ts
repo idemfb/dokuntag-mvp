@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { toggleNotifyLogArchived } from "@/lib/notify";
-import { validateManageToken } from "@/lib/tags";
+import { validateManageTokenAsync } from "@/lib/tags";
 
 type Params = {
   params: Promise<{
@@ -36,7 +36,7 @@ export async function POST(request: Request, { params }: Params) {
       );
     }
 
-    const validated = validateManageToken(code, token);
+    const validated = await validateManageTokenAsync(code, token);
 
     if (!validated) {
       return NextResponse.json(

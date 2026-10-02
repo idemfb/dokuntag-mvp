@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getUnreadNotifyCount, readNotifyLog } from "@/lib/notify";
-import { validateManageToken } from "@/lib/tags";
+import { validateManageTokenAsync } from "@/lib/tags";
 
 type Params = {
   params: Promise<{ code: string }>;
@@ -20,7 +20,7 @@ export async function GET(request: Request, { params }: Params) {
       );
     }
 
-    const tag = validateManageToken(normalized, token);
+    const tag = await validateManageTokenAsync(normalized, token);
 
     if (!tag) {
       return NextResponse.json(

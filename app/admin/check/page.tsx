@@ -27,6 +27,44 @@ type MismatchLog = {
   reason: string;
 };
 
+type ProductionBatchAction =
+  | "send_to_print"
+  | "mark_received"
+  | "start_checking"
+  | "complete"
+  | "archive";
+
+type ProductionBatch = {
+  id: string;
+  name: string;
+  status: string;
+  statusLabel?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  sentToPrintAt?: string;
+  receivedAt?: string;
+  checkingAt?: string;
+  completedAt?: string;
+  archivedAt?: string;
+  items?: Array<{
+    code: string;
+    status?: string;
+  }>;
+  summary?: {
+    total?: number;
+    production_hold?: number;
+    unclaimed?: number;
+    active?: number;
+    inactive?: number;
+    void?: number;
+  };
+  canSendToPrint?: boolean;
+  canMarkReceived?: boolean;
+  canStartChecking?: boolean;
+  canComplete?: boolean;
+  canArchive?: boolean;
+};
+
 const BASE_URL = "https://dokuntag.com";
 
 function extractCode(value: string) {
@@ -80,6 +118,27 @@ function getStatusLabel(status: string) {
   return status || "-";
 }
 
+function getBatchStatusLabel(status: string) {
+  if (status === "preparing") return "Hazırlanıyor";
+  if (status === "sent_to_print") return "Matbaaya gönderildi";
+  if (status === "received") return "Matbaadan geldi";
+  if (status === "checking") return "Kontrol ediliyor";
+  if (status === "completed") return "Tamamlandı";
+  if (status === "archived") return "Arşivlendi";
+  if (status === "printing") return "Matbaaya gönderildi";
+  return status || "-";
+}
+
+function formatDate(value?: string) {
+  if (!value) return "-";
+
+  try {
+    return new Date(value).toLocaleString("tr-TR");
+  } catch {
+    return "-";
+  }
+}
+
 export default function AdminCheckPage() {
   const [code, setCode] = useState("");
   const [qrCode, setQrCode] = useState("");
@@ -91,6 +150,10 @@ export default function AdminCheckPage() {
   const [loading, setLoading] = useState(false);
   const [pendingItems, setPendingItems] = useState<PendingItem[]>([]);
   const [pendingLoading, setPendingLoading] = useState(false);
+  const [productionBatches, setProductionBatches] = useState<ProductionBatch[]>([]);
+  const [editingBatchId, setEditingBatchId] = useState<string | null>(null);
+  const [editingBatchName, setEditingBatchName] = useState("");
+  const [productionLoading, setProductionLoading] = useState(false);
   const [cameraOpen, setCameraOpen] = useState(false);
   const [mismatchLogs, setMismatchLogs] = useState<MismatchLog[]>([]);
 
@@ -124,6 +187,45 @@ export default function AdminCheckPage() {
       className: "border-red-200 bg-red-50 text-red-700",
     };
   }, [qrCode, nfcCode]);
+
+  const productionGroups = useMemo(
+    () => [
+      {
+        key: "preparing",
+        title: "Hazırlanıyor",
+        items: productionBatches.filter((batch) => batch.status === "preparing"),
+      },
+      {
+        key: "sent_to_print",
+        title: "Matbaada",
+        items: productionBatches.filter(
+          (batch) => batch.status === "sent_to_print" || batch.status === "printing"
+        ),
+      },
+      {
+        key: "received",
+        title: "Matbaadan geldi",
+        items: productionBatches.filter((batch) => batch.status === "received"),
+      },
+      {
+        key: "checking",
+        title: "Kontrol ediliyor",
+        items: productionBatches.filter((batch) => batch.status === "checking"),
+      },
+      {
+        key: "completed",
+        title: "Tamamlananlar",
+        items: productionBatches.filter((batch) => batch.status === "completed"),
+      },
+     {
+      key: "archived",
+      title: "Arşivlenenler",
+      items: productionBatches.filter((batch) => batch.status === "archived"),
+      muted: true,
+    },
+    ],
+    [productionBatches]
+  );
 
   const canRelease =
     Boolean(data) &&
@@ -213,6 +315,124 @@ export default function AdminCheckPage() {
     }
   }
 
+  async function fetchProductionBatches() {
+    try {
+      setProductionLoading(true);
+
+      const res = await fetch("/api/admin/production-batches", {
+        cache: "no-store",
+      });
+
+      const json = await res.json();
+
+      if (!res.ok) {
+        throw new Error(json.error || "Üretim listeleri alınamadı.");
+      }
+
+      setProductionBatches(Array.isArray(json.batches) ? json.batches : []);
+    } catch {
+      setProductionBatches([]);
+    } finally {
+      setProductionLoading(false);
+    }
+  }
+
+  async function updateProductionBatchStatus(id: string, action: ProductionBatchAction) {
+    const ok = window.confirm("Üretim listesi durumu güncellenecek. Onaylıyor musunuz?");
+    if (!ok) return;
+
+    try {
+      const res = await fetch("/api/admin/production-batches", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          id,
+          action,
+        }),
+      });
+
+      const json = await res.json();
+
+      if (!res.ok) {
+        throw new Error(json.error || "Üretim listesi güncellenemedi.");
+      }
+
+      fetchProductionBatches();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Üretim listesi güncellenemedi.");
+    }
+  }
+
+  async function renameProductionBatch(id: string) {
+  const nextName = editingBatchName.trim();
+
+  if (!nextName) {
+    alert("Liste adı boş olamaz.");
+    return;
+  }
+
+  try {
+    const res = await fetch("/api/admin/production-batches", {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        id,
+        action: "rename",
+        name: nextName,
+      }),
+    });
+
+    const json = await res.json();
+
+    if (!res.ok) {
+      throw new Error(json.error || "Liste adı güncellenemedi.");
+    }
+
+    setEditingBatchId(null);
+    setEditingBatchName("");
+
+    fetchProductionBatches();
+  } catch (err) {
+    alert(err instanceof Error ? err.message : "Liste adı güncellenemedi.");
+  }
+}
+
+async function removeItemFromBatch(batchId: string, code: string) {
+  const ok = window.confirm(
+    `${code} üretim listesinden çıkarılacak. Onaylıyor musunuz?`
+  );
+
+  if (!ok) return;
+
+  try {
+    const res = await fetch("/api/admin/production-batches", {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        id: batchId,
+        action: "remove_item",
+        code,
+      }),
+    });
+
+    const json = await res.json();
+
+    if (!res.ok) {
+      throw new Error(json.error || "Ürün listeden çıkarılamadı.");
+    }
+
+    fetchProductionBatches();
+  } catch (err) {
+    alert(err instanceof Error ? err.message : "Ürün listeden çıkarılamadı.");
+  }
+}
+
   async function updateStatus(action: "release" | "void") {
     if (!data?.code) return;
 
@@ -254,6 +474,7 @@ export default function AdminCheckPage() {
     );
 
     fetchPendingItems();
+    fetchProductionBatches();
   }
 
   async function startCamera() {
@@ -375,6 +596,7 @@ export default function AdminCheckPage() {
 
   useEffect(() => {
     fetchPendingItems();
+    fetchProductionBatches();
 
     return () => {
       scannerRef.current?.stop().catch(() => {});
@@ -409,13 +631,22 @@ export default function AdminCheckPage() {
               </p>
             </div>
 
-            <button
-              type="button"
-              onClick={resetReadings}
-              className="rounded-xl border border-neutral-300 bg-white px-4 py-3 text-sm font-semibold"
-            >
-              Okumaları sıfırla
-            </button>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={resetReadings}
+                className="rounded-xl border border-neutral-300 bg-white px-4 py-3 text-sm font-semibold"
+              >
+                Okumaları sıfırla
+              </button>
+
+              <a
+                href="/admin"
+                className="rounded-2xl border border-neutral-300 bg-white px-5 py-3 text-center text-sm font-semibold text-neutral-800 transition hover:bg-neutral-50"
+              >
+                ← Admin panele dön
+              </a>
+            </div>
           </div>
         </section>
 
@@ -648,59 +879,324 @@ export default function AdminCheckPage() {
           </section>
         ) : null}
 
-        <section className="rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div>
-              <h2 className="text-lg font-semibold">Üretim kontrol bekleyenler</h2>
-              <p className="mt-1 text-sm text-neutral-500">
-                Sadece bu listedeki ürünlerde kontrol işlemi yapılır.
-              </p>
+        <details className="rounded-2xl border border-neutral-200 bg-white shadow-sm">
+          <summary className="cursor-pointer list-none p-4">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <h2 className="text-lg font-semibold">Üretime gönderilen listeler</h2>
+                <p className="mt-1 text-sm text-neutral-500">
+                  {productionBatches.length} üretim listesi kayıtlı.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  fetchProductionBatches();
+                }}
+                className="rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold"
+              >
+                Yenile
+              </button>
             </div>
+          </summary>
 
-            <button
-              type="button"
-              onClick={fetchPendingItems}
-              className="rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold"
-            >
-              Yenile
-            </button>
-          </div>
+          <div className="space-y-3 border-t border-neutral-200 p-4">
+            {productionLoading ? (
+              <p className="text-sm text-neutral-500">Üretim listeleri yükleniyor...</p>
+            ) : productionBatches.length ? (
+              productionGroups.map((group) => (
+                <details
+                  key={group.key}
+                  open={group.key !== "archived"}
+                  className="overflow-hidden rounded-2xl border border-neutral-200 bg-neutral-50"
+                >
+                  <summary className="cursor-pointer list-none px-4 py-4 transition hover:bg-neutral-100">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-semibold text-neutral-950">
+                          {group.title}
+                        </p>
+                        <p className="mt-1 text-xs text-neutral-500">
+                          {group.items.length} üretim listesi
+                        </p>
+                      </div>
+                    </div>
+                  </summary>
 
-          {pendingLoading ? (
-            <p className="mt-4 text-sm text-neutral-500">Liste yükleniyor...</p>
-          ) : pendingItems.length ? (
-            <div className="mt-4 overflow-x-auto">
-              <table className="min-w-full text-sm">
-                <thead className="bg-neutral-50 text-left text-neutral-600">
-                  <tr>
-                    <th className="px-3 py-2 font-medium">Kod</th>
-                    <th className="px-3 py-2 font-medium">Durum</th>
-                    <th className="px-3 py-2 font-medium">Tip</th>
-                    <th className="px-3 py-2 font-medium">İşlem</th>
-                  </tr>
-                </thead>
+                  <div className="space-y-3 border-t border-neutral-200 bg-white p-4">
+                    {group.items.length ? (
+                      group.items.map((batch) => {
+                        const summary = batch.summary || {};
+                        const total = Number(summary.total || 0);
+                        const waiting = Number(summary.production_hold || 0);
+                        const ready = Number(summary.unclaimed || 0);
+                        const voidCount = Number(summary.void || 0);
+                        const percent = total
+                          ? Math.round(((ready + voidCount) / total) * 100)
+                          : 0;
 
-                <tbody>
-                  {pendingItems.map((item) => (
-                    <tr key={item.code} className="border-t border-neutral-200">
-                      <td className="px-3 py-2 font-semibold">{item.code}</td>
-                      <td className="px-3 py-2">
-                        <span className="rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-800">
-                          Kontrol bekliyor
-                        </span>
-                      </td>
-                      <td className="px-3 py-2">
-                        {item.isTest ? (
-                          <span className="rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
-                            Test
-                          </span>
-                        ) : (
-                          <span className="rounded-full border border-neutral-200 bg-neutral-50 px-3 py-1 text-xs font-semibold text-neutral-600">
-                            Üretim
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-3 py-2">
+                        return (
+                          <details
+                            key={batch.id}
+                            className={`overflow-hidden rounded-2xl border border-neutral-200 ${
+                            group.key === "archived" ? "bg-neutral-100 opacity-75" : "bg-neutral-50"
+                          }`}
+                          >
+                            <summary className="cursor-pointer list-none px-4 py-4 transition hover:bg-neutral-100">
+                              <div className="flex flex-wrap items-center justify-between gap-3">
+                                <div className="min-w-0">
+                  {editingBatchId === batch.id ? (
+                    <div className="flex flex-wrap items-center gap-2">
+                      <input
+                        value={editingBatchName}
+                        onChange={(e) => setEditingBatchName(e.target.value)}
+                        className="rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm font-semibold outline-none focus:border-neutral-500"
+                      />
+
+                      <button
+                        type="button"
+                        onClick={() => renameProductionBatch(batch.id)}
+                        className="rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-800"
+                      >
+                        Kaydet
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditingBatchId(null);
+                          setEditingBatchName("");
+                        }}
+                        className="rounded-lg border border-neutral-300 bg-white px-3 py-2 text-xs font-semibold"
+                      >
+                        Vazgeç
+                      </button>
+                    </div>
+                  ) : (
+                    <p className="truncate text-sm font-semibold text-neutral-950">
+                      {batch.name}
+                    </p>
+                  )}
+                                  <p className="mt-1 text-xs text-neutral-500">
+                                    {total} ürün · Tamamlanma %{percent}
+                                  </p>
+                                </div>
+
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <span className="rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
+                                    {batch.statusLabel || getBatchStatusLabel(batch.status)}
+                                  </span>
+                                  <span className="rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">
+                                    Bekleyen: {waiting}
+                                  </span>
+                                  <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
+                                    Hazır: {ready}
+                                  </span>
+                                  <span className="rounded-full border border-red-200 bg-red-50 px-3 py-1 text-xs font-semibold text-red-700">
+                                    Hatalı: {voidCount}
+                                  </span>
+                                </div>
+                              </div>
+                            </summary>
+
+                            <div className="border-t border-neutral-200 bg-white p-4">
+                              <div className="grid gap-3 md:grid-cols-4">
+                                <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4">
+                                  <p className="text-xs text-blue-600">Üretim durumu</p>
+                                  <p className="mt-1 text-sm font-semibold text-blue-900">
+                                    {batch.statusLabel || getBatchStatusLabel(batch.status)}
+                                  </p>
+                                </div>
+
+                                <div className="rounded-2xl border border-neutral-200 bg-neutral-50 p-4">
+                                  <p className="text-xs text-neutral-500">Batch ID</p>
+                                  <p className="mt-1 break-all text-sm font-semibold text-neutral-900">
+                                    {batch.id}
+                                  </p>
+                                </div>
+
+                                <div className="rounded-2xl border border-neutral-200 bg-neutral-50 p-4">
+                                  <p className="text-xs text-neutral-500">Hazırlanma tarihi</p>
+                                  <p className="mt-1 text-sm font-semibold text-neutral-900">
+                                    {formatDate(batch.createdAt)}
+                                  </p>
+                                </div>
+
+                                <div className="rounded-2xl border border-neutral-200 bg-neutral-50 p-4">
+                                  <p className="text-xs text-neutral-500">Son güncelleme</p>
+                                  <p className="mt-1 text-sm font-semibold text-neutral-900">
+                                    {formatDate(batch.updatedAt)}
+                                  </p>
+                                </div>
+                              </div>
+
+                              <div className="mt-3 grid gap-3 md:grid-cols-4">
+                                <div className="rounded-2xl border border-neutral-200 bg-neutral-50 p-4">
+                                  <p className="text-xs text-neutral-500">Matbaaya gönderim</p>
+                                  <p className="mt-1 text-sm font-semibold text-neutral-900">
+                                    {formatDate(batch.sentToPrintAt)}
+                                  </p>
+                                </div>
+
+                                <div className="rounded-2xl border border-neutral-200 bg-neutral-50 p-4">
+                                  <p className="text-xs text-neutral-500">Matbaadan geliş</p>
+                                  <p className="mt-1 text-sm font-semibold text-neutral-900">
+                                    {formatDate(batch.receivedAt)}
+                                  </p>
+                                </div>
+
+                                <div className="rounded-2xl border border-neutral-200 bg-neutral-50 p-4">
+                                  <p className="text-xs text-neutral-500">Kontrole alma</p>
+                                  <p className="mt-1 text-sm font-semibold text-neutral-900">
+                                    {formatDate(batch.checkingAt)}
+                                  </p>
+                                </div>
+
+                                <div className="rounded-2xl border border-neutral-200 bg-neutral-50 p-4">
+                                  <p className="text-xs text-neutral-500">Tamamlanma</p>
+                                  <p className="mt-1 text-sm font-semibold text-neutral-900">
+                                    {formatDate(batch.completedAt)}
+                                  </p>
+                                </div>
+                              </div>
+                              {batch.status === "preparing" ? (
+  <button
+    type="button"
+    onClick={() => {
+      setEditingBatchId(batch.id);
+      setEditingBatchName(batch.name);
+    }}
+    className="rounded-xl border border-neutral-300 bg-white px-3 py-2 text-xs font-semibold transition hover:bg-neutral-50"
+  >
+    Liste adını düzenle
+  </button>
+) : null}
+                              <div className="mt-4 flex flex-wrap gap-2">
+                                {batch.canSendToPrint ? (
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      updateProductionBatchStatus(batch.id, "send_to_print")
+                                    }
+                                    className="rounded-xl border border-blue-300 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-800 transition hover:bg-blue-100"
+                                  >
+                                    Matbaaya gönderildi
+                                  </button>
+                                ) : null}
+
+                                {batch.canMarkReceived ? (
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      updateProductionBatchStatus(batch.id, "mark_received")
+                                    }
+                                    className="rounded-xl border border-purple-300 bg-purple-50 px-3 py-2 text-xs font-semibold text-purple-800 transition hover:bg-purple-100"
+                                  >
+                                    Matbaadan geldi
+                                  </button>
+                                ) : null}
+
+                                {batch.canStartChecking ? (
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      updateProductionBatchStatus(batch.id, "start_checking")
+                                    }
+                                    className="rounded-xl border border-amber-300 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-800 transition hover:bg-amber-100"
+                                  >
+                                    Kontrole al
+                                  </button>
+                                ) : null}
+
+                                {batch.canComplete ? (
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      updateProductionBatchStatus(batch.id, "complete")
+                                    }
+                                    className="rounded-xl border border-emerald-300 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-800 transition hover:bg-emerald-100"
+                                  >
+                                    Tamamlandı
+                                  </button>
+                                ) : null}
+
+                                {batch.canArchive ? (
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      updateProductionBatchStatus(batch.id, "archive")
+                                    }
+                                    className="rounded-xl border border-neutral-300 bg-neutral-100 px-3 py-2 text-xs font-semibold text-neutral-800 transition hover:bg-neutral-200"
+                                  >
+                                    Arşivle
+                                  </button>
+                                ) : null}
+                                {batch.status !== "preparing" ? (
+                              <div className="rounded-xl border border-neutral-200 bg-neutral-100 px-3 py-2 text-xs font-semibold text-neutral-600">
+                                Bu üretim listesi kilitli durumda. Düzenleme yapılamaz.
+                              </div>
+                            ) : (
+                              <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700">
+                                Bu liste hâlâ düzenlenebilir.
+                              </div>
+                            )}
+                              </div>
+                                        {batch.status === "preparing" ? (
+                                <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-800">
+                                  Bu liste henüz matbaaya gönderilmediği için düzenlenebilir.
+                                </div>
+                              ) : (
+                                <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
+                                  Bu liste üretim sürecine girdiği için içerik düzenleme kilitlenmiştir.
+                                </div>
+                              )}
+                              <details className="mt-4 rounded-2xl border border-neutral-200 bg-white">
+                                <summary className="cursor-pointer px-4 py-3 text-xs font-semibold text-neutral-700">
+                                  Kod listesini göster
+                                </summary>
+
+                                <div className="grid gap-2 p-4 sm:grid-cols-2 lg:grid-cols-3">
+                                  {(batch.items || []).map((item) => (
+                                    <div
+                                      key={item.code}
+                                      className="flex items-center justify-between gap-2 rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2 text-xs"
+                                    >
+                               <div className="flex items-center gap-2">
+  <span className="font-semibold text-neutral-900">
+    {item.code}
+  </span>
+
+  {item.status === "production_hold" ? (
+    <button
+      type="button"
+      onClick={() => {
+        resetReadings();
+        setCode(item.code);
+        fetchCode(item.code);
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }}
+      className="rounded-lg border border-neutral-300 bg-white px-2 py-1 text-[11px] font-semibold transition hover:bg-neutral-50"
+    >
+      Kontrole al
+    </button>
+  ) : null}
+
+  {batch.status === "preparing" ? (
+    <button
+      type="button"
+      onClick={() => removeItemFromBatch(batch.id, item.code)}
+      className="rounded-lg border border-red-200 bg-red-50 px-2 py-1 text-[11px] font-semibold text-red-700 transition hover:bg-red-100"
+    >
+      Listeden çıkar
+    </button>
+  ) : null}
+</div>
+                                      <span className="rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 font-semibold text-amber-800">
+                                        {getStatusLabel(item.status || "")}
+                                      </span>
+                                      {item.status === "production_hold" ? (
                         <button
                           type="button"
                           onClick={() => {
@@ -709,23 +1205,120 @@ export default function AdminCheckPage() {
                             fetchCode(item.code);
                             window.scrollTo({ top: 0, behavior: "smooth" });
                           }}
-                          className="rounded-xl border border-neutral-300 px-3 py-2 text-xs font-semibold"
+                          className="rounded-lg border border-neutral-300 bg-white px-2 py-1 text-[11px] font-semibold transition hover:bg-neutral-50"
                         >
                           Kontrole al
                         </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                      ) : null}
+                                    </div>
+                                  ))}
+                                </div>
+                              </details>
+                            </div>
+                          </details>
+                        );
+                      })
+                    ) : (
+                      <p className="rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm text-neutral-500">
+                        Bu durumda üretim listesi yok.
+                      </p>
+                    )}
+                  </div>
+                </details>
+              ))
+            ) : (
+              <p className="rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm text-neutral-500">
+                Henüz üretime gönderilmiş liste yok.
+              </p>
+            )}
+          </div>
+        </details>
+
+        <details className="rounded-2xl border border-neutral-200 bg-white shadow-sm">
+          <summary className="cursor-pointer list-none p-4">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <h2 className="text-lg font-semibold">Üretim kontrol bekleyenler</h2>
+                <p className="mt-1 text-sm text-neutral-500">
+                  {pendingItems.length} ürün kontrol bekliyor.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  fetchPendingItems();
+                }}
+                className="rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold"
+              >
+                Yenile
+              </button>
             </div>
-          ) : (
-            <p className="mt-4 rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm text-neutral-500">
-              Kontrol bekleyen ürün yok.
-            </p>
-          )}
-        </section>
+          </summary>
+
+          <div className="border-t border-neutral-200 p-4">
+            {pendingLoading ? (
+              <p className="text-sm text-neutral-500">Liste yükleniyor...</p>
+            ) : pendingItems.length ? (
+              <div className="overflow-x-auto">
+                <table className="min-w-full text-sm">
+                  <thead className="bg-neutral-50 text-left text-neutral-600">
+                    <tr>
+                      <th className="px-3 py-2 font-medium">Kod</th>
+                      <th className="px-3 py-2 font-medium">Durum</th>
+                      <th className="px-3 py-2 font-medium">Tip</th>
+                      <th className="px-3 py-2 font-medium">İşlem</th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    {pendingItems.map((item) => (
+                      <tr key={item.code} className="border-t border-neutral-200">
+                        <td className="px-3 py-2 font-semibold">{item.code}</td>
+                        <td className="px-3 py-2">
+                          <span className="rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-800">
+                            Kontrol bekliyor
+                          </span>
+                        </td>
+                        <td className="px-3 py-2">
+                          {item.isTest ? (
+                            <span className="rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
+                              Test
+                            </span>
+                          ) : (
+                            <span className="rounded-full border border-neutral-200 bg-neutral-50 px-3 py-1 text-xs font-semibold text-neutral-600">
+                              Üretim
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-3 py-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              resetReadings();
+                              setCode(item.code);
+                              fetchCode(item.code);
+                              window.scrollTo({ top: 0, behavior: "smooth" });
+                            }}
+                            className="rounded-xl border border-neutral-300 px-3 py-2 text-xs font-semibold"
+                          >
+                            Kontrole al
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <p className="rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm text-neutral-500">
+                Kontrol bekleyen ürün yok.
+              </p>
+            )}
+          </div>
+        </details>
       </div>
     </main>
   );
-} 
+}

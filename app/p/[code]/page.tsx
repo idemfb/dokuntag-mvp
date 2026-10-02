@@ -172,11 +172,11 @@ function getProductIcon(productType?: ProductType) {
 }
 
 function getHeadline(productType?: ProductType) {
-  if (productType === "pet") return "Bu evcil hayvanın sahibine ulaşabilirsiniz";
-  if (productType === "key") return "Bu anahtarın sahibine ulaşabilirsiniz";
-  if (productType === "person") return "Bu kişi için yakınını bilgilendirebilirsiniz";
-  if (productType === "other") return "Bu profilin sahibine ulaşabilirsiniz";
-  return "Bu eşyanın sahibine ulaşabilirsiniz";
+  if (productType === "pet") return "Bu evcil hayvan için doğru kişiye ulaşabilirsiniz";
+  if (productType === "key") return "Bu anahtar için doğru kişiye ulaşabilirsiniz";
+  if (productType === "person") return "Bu kişi için yakınına bilgi verebilirsiniz";
+  if (productType === "other") return "Bu profil için doğru kişiye ulaşabilirsiniz";
+  return "Bu eşya için doğru kişiye ulaşabilirsiniz";
 }
 
 function getPrimaryNameLabel(productType?: ProductType) {
@@ -189,7 +189,7 @@ function getPrimaryNameLabel(productType?: ProductType) {
 
 function getOwnerLabel(productType?: ProductType) {
   if (productType === "person") return "Yakını";
-  return "Sahibi";
+  return "Profil sahibi";
 }
 
 function getFallbackName(productType?: ProductType) {
@@ -371,6 +371,8 @@ export default function PublicPage({
   const [senderPhone, setSenderPhone] = useState("");
   const [senderEmail, setSenderEmail] = useState("");
   const [message, setMessage] = useState("");
+  const [shareApproxLocation, setShareApproxLocation] = useState(false);
+  const [approximateLocation, setApproximateLocation] = useState("");
   const [contactPhone, setContactPhone] = useState(false);
   const [contactWhatsapp, setContactWhatsapp] = useState(false);
   const [contactEmail, setContactEmail] = useState(false);
@@ -382,6 +384,7 @@ export default function PublicPage({
   const isDemoProfile = ["DKNTG", "DEMO01", "DEMO02", "DEMO03"].includes(
   code.toUpperCase()
 );
+
   useEffect(() => {
     let cancelled = false;
 
@@ -445,6 +448,29 @@ if (
       cancelled = true;
     };
   }, [code]);
+
+  useEffect(() => {
+  if (!data || data.status !== "active") return;
+
+  const controller = new AbortController();
+
+  fetch("/api/scan", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      code
+    }),
+    signal: controller.signal
+  }).catch(() => {
+    // Sessiz log: public deneyimi asla bozmasın.
+  });
+
+  return () => {
+    controller.abort();
+  };
+  }, [code, data?.status]);
 
   const allowDirectCall = Boolean(
     data?.allowDirectCall ?? data?.contactOptions?.allowDirectCall
@@ -570,14 +596,15 @@ if (
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          code,
-          senderName,
-          senderPhone,
-          senderEmail,
-          preferredContactMethods,
-          message,
-          website: ""
-        })
+        code,
+        senderName,
+        senderPhone,
+        senderEmail,
+        preferredContactMethods,
+        approximateLocation: shareApproxLocation ? approximateLocation : "",
+        message,
+        website: ""
+      })
       });
 
       const json = await res.json();
@@ -586,10 +613,15 @@ if (
         throw new Error(json?.error || "Mesaj gönderilemedi.");
       }
 
-      setSendSuccess(json?.message || "Mesaj gönderildi.");
+      setSendSuccess(
+  json?.message ||
+    "Mesajınız profil sahibine iletildi. Geri dönüş için iletişim bilgisi paylaşabilirsiniz."
+);
       setSenderName("");
       setSenderPhone("");
       setSenderEmail("");
+      setShareApproxLocation(false);
+      setApproximateLocation("");
       setMessage("");
       setContactPhone(false);
       setContactWhatsapp(false);
@@ -702,10 +734,10 @@ if (
     <main
       className={`min-h-screen px-4 py-6 pb-28 text-neutral-900 sm:px-5 sm:py-8 sm:pb-10 ${theme.pageBg}`}
     >
-      <div className="mx-auto max-w-3xl space-y-3 sm:space-y-4">
+      <div className="mx-auto max-w-3xl space-y-2.5 sm:space-y-4">
         <section className="overflow-hidden rounded-[2rem] border border-neutral-200 bg-white shadow-sm">
-          <div
-            className={`border-b border-neutral-200 px-6 py-5 sm:px-8 sm:py-6 ${theme.heroBg}`}
+        <div
+            className={`border-b border-neutral-200 px-5 py-4 sm:px-8 sm:py-6 ${theme.heroBg}`}
           >
             <div className="flex flex-wrap items-center justify-between gap-3">
               <a
@@ -757,7 +789,7 @@ if (
             </div>
           </div>
 
-          <div className="px-6 py-3.5 sm:px-8 sm:py-4">
+          <div className="px-5 py-3 sm:px-8 sm:py-4">
             {showCallAction || showWhatsappAction || showEmailAction ? (
               <div className="grid grid-cols-2 gap-2">
                 {showCallAction ? (
@@ -845,14 +877,17 @@ if (
           </section>
         ) : null}
 
-        <section className="overflow-hidden rounded-[2rem] border border-neutral-200 bg-white shadow-sm">
+        <section className="overflow-hidden rounded-[1.8rem] border border-neutral-200 bg-white shadow-sm">
           <div className="border-b border-neutral-200 px-6 py-2.5 sm:px-8">
             <h2 className="text-xl font-semibold text-neutral-900">
               Ulaşamazsanız kısa bir mesaj bırakın.
             </h2>
+            <p className="mt-1 text-sm text-neutral-500">
+            Profil sahibine kısa bir bilgi iletebilirsiniz.
+          </p>
           </div>
 
-          <div className="px-6 py-3.5 sm:px-8 sm:py-4">
+          <div className="px-5 py-3 sm:px-8 sm:py-4">
             {sendError ? (
               <div className="mb-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-4 text-sm text-red-700">
                 {sendError}
@@ -903,17 +938,54 @@ if (
               <div>
                 <textarea
                   value={message}
+                  maxLength={500}
                   onChange={(e) => setMessage(e.target.value)}
                   rows={3}
                   className={`w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition focus:ring-2 ${theme.ring}`}
                   placeholder={
                   isDemoProfile
                     ? "Demo mesajı deneyebilirsiniz. Gerçek mesaj gönderilmez."
-                    : "Kısa bir bilgi yazın (nerede bulduğunuz gibi)"
+                    : "Örn: Nerede gördüğünüzü, bıraktığınız yeri veya kısa bir bilgi paylaşabilirsiniz."
                 }
                 />
-              </div>
+                <p className="mt-1 text-xs leading-5 text-neutral-500">
+              İsminizi veya iletişim bilginizi paylaşmak zorunda değilsiniz. Mesajınız profil sahibine iletilir.
+            </p>  
+                <p
+                className={`mt-1 text-right text-[11px] ${
+                  message.length > 450 ? "text-amber-600" : "text-neutral-400"
+                }`}
+              >
+                {message.length}/500
+              </p>
+                <div className="mt-3 rounded-2xl border border-neutral-200 bg-neutral-50 p-3">
+  <label className="flex items-start gap-3 text-sm text-neutral-800">
+    <input
+      type="checkbox"
+      checked={shareApproxLocation}
+      onChange={(e) => setShareApproxLocation(e.target.checked)}
+      className="mt-1 h-4 w-4"
+    />
+    <span>
+      Yaklaşık konum bilgisi paylaşmak istiyorum
+      <span className="mt-1 block text-xs leading-5 text-neutral-500">
+        Tam konum veya GPS paylaşılmaz. Sadece yazdığınız yaklaşık bilgi iletilir.
+      </span>
+    </span>
+  </label>
 
+          {shareApproxLocation ? (
+            <input
+              value={approximateLocation}
+              onChange={(e) => setApproximateLocation(e.target.value)}
+              className={`mt-3 w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition focus:ring-2 ${theme.ring}`}
+              placeholder="Örn: Kadıköy / İstanbul"
+              maxLength={80}
+            />
+          ) : null}
+        </div>
+              </div>
+                  
               <div>
                 <p className="mb-1.5 text-sm font-medium text-neutral-900">
                   Size nasıl dönüş yapılsın?
@@ -944,11 +1016,15 @@ if (
               </div>
 
               <button
-                type="submit"
-                disabled={sending}
+              type="submit"
+              disabled={sending || message.trim().length < 5}
                 className={`inline-flex min-h-12 w-full items-center justify-center rounded-2xl px-5 py-3 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${theme.accentButton}`}
               >
-                {sending ? "Gönderiliyor..." : "Mesajı Gönder"}
+                {sending
+              ? "Gönderiliyor..."
+              : message.trim().length < 5
+                ? "Kısa bir mesaj yazın"
+                : "Mesajı Gönder"}
               </button>
             </form>
           </div>

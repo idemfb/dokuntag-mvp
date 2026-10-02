@@ -6,7 +6,7 @@ type Params = {
 };
 
 type SizeOption = "1cm" | "2cm" | "2.5cm" | "3cm" | "4cm" | "5cm" | "6cm";
-type ShapeOption = "round" | "square" | "drop";
+type ShapeOption = "round" | "square" | "drop" | "pebble" | "shield";
 
 type Layout = {
   size: SizeOption;
@@ -20,6 +20,7 @@ type Layout = {
   codeColor: string;
   showGuide: boolean;
   transparent: boolean;
+  hideCode: boolean;
 };
 
 const SIZE_VALUES: Record<SizeOption, { width: string; height: string }> = {
@@ -72,6 +73,8 @@ function normalizeSize(value: string | null): SizeOption {
 function normalizeShape(value: string | null): ShapeOption {
   if (value === "square") return "square";
   if (value === "drop") return "drop";
+  if (value === "pebble") return "pebble";
+  if (value === "shield") return "shield";
   return "round";
 }
 
@@ -99,15 +102,15 @@ function readLayout(searchParams: URLSearchParams): Layout {
     size: normalizeSize(searchParams.get("size")),
     transparent: normalizeBoolean(searchParams.get("transparent"), false),
     shape: normalizeShape(searchParams.get("shape")),
-    qrScale: parseNumber(searchParams.get("qrScale"), 76, 35, 95),
+    qrScale: parseNumber(searchParams.get("qrScale"), 76, 15, 95),
     codeScale: parseNumber(searchParams.get("codeScale"), 100, 50, 180),
     qrOffsetX: parseNumber(searchParams.get("qrOffsetX"), 0, -45, 45),
     qrOffsetY: parseNumber(searchParams.get("qrOffsetY"), 0, -45, 45),
     codeGap: parseNumber(searchParams.get("codeGap"), 100, 20, 180),
     foregroundColor,
     codeColor: normalizeColor(searchParams.get("codeColor"), foregroundColor),
-    showGuide: normalizeBoolean(searchParams.get("showGuide"), false)
-  };
+    showGuide: normalizeBoolean(searchParams.get("showGuide"), false),
+    hideCode: normalizeBoolean(searchParams.get("hideCode"), false)  };
 }
 
 function getShapeMarkup(shape: ShapeOption) {
@@ -121,7 +124,27 @@ function getShapeMarkup(shape: ShapeOption) {
       guide: `<path d="${path}" fill="none" stroke="#ef4444" stroke-width="1.4" stroke-dasharray="6 5" opacity="0.75" />`
     };
   }
+    if (shape === "pebble") {
+  const path =
+    "M128 8 C184 10 246 62 248 150 C250 238 194 314 124 312 C54 310 8 250 10 170 C12 90 72 6 128 8 Z";
 
+  return {
+    clip: `<path d="${path}" />`,
+    background: `<path d="${path}" fill="#ffffff" />`,
+    guide: `<path d="${path}" fill="none" stroke="#ef4444" stroke-width="1.4" stroke-dasharray="6 5" opacity="0.75" />`
+  };
+}
+
+if (shape === "shield") {
+  const path =
+    "M128 8 L232 42 L216 188 C204 244 166 288 128 312 C90 288 52 244 40 188 L24 42 Z";
+
+  return {
+    clip: `<path d="${path}" />`,
+    background: `<path d="${path}" fill="#ffffff" />`,
+    guide: `<path d="${path}" fill="none" stroke="#ef4444" stroke-width="1.4" stroke-dasharray="6 5" opacity="0.75" />`
+  };
+}
   if (shape === "square") {
     return {
       clip: `<rect x="0" y="0" width="256" height="320" rx="22" ry="22" />`,
@@ -146,7 +169,23 @@ function getSafeArea(shape: ShapeOption) {
       bottom: 34
     };
   }
+  if (shape === "pebble") {
+  return {
+    left: 28,
+    right: 28,
+    top: 34,
+    bottom: 34
+  };
+}
 
+if (shape === "shield") {
+  return {
+    left: 34,
+    right: 34,
+    top: 34,
+    bottom: 42
+  };
+}
   if (shape === "square") {
     return {
       left: 18,
@@ -206,14 +245,15 @@ async function buildSvg(code: string, layout: Layout) {
   const codeFontSize = clamp(12 * (layout.codeScale / 100), 7, 22);
   const codeGap = clamp(10 * (layout.codeGap / 100), 2, 24);
 
-  const maxQrBySafeHeight = safeHeight - codeGap - codeFontSize * 1.5;
+  const codeBlockHeight = layout.hideCode ? 0 : codeGap + codeFontSize * 1.5;
+  const maxQrBySafeHeight = safeHeight - codeBlockHeight;  
   const maxQrBySafeWidth = safeWidth;
   const maxQrSize = Math.max(80, Math.min(maxQrBySafeWidth, maxQrBySafeHeight));
 
   const preferredQrSize = 196 * (layout.qrScale / 76);
   const qrSize = clamp(preferredQrSize, 70, maxQrSize);
 
-  const groupHeight = qrSize + codeGap + codeFontSize * 1.5;
+  const groupHeight = qrSize + codeBlockHeight;
   const groupWidth = qrSize;
 
   const baseGroupX = safeX + (safeWidth - groupWidth) / 2;
@@ -245,8 +285,8 @@ async function buildSvg(code: string, layout: Layout) {
   </defs>
   ${layout.transparent ? "" : shape.background}
   <g clip-path="url(#dokuntagShapeClip)">
-    <svg viewBox="${escapeXml(qrViewBox)}" x="${qrX}" y="${qrY}" width="${qrSize}" height="${qrSize}">${qrInner}</svg>
-    <text
+        <svg viewBox="${escapeXml(qrViewBox)}" x="${qrX}" y="${qrY}" width="${qrSize}" height="${qrSize}">${qrInner}</svg>
+    ${layout.hideCode ? "" : `<text
       x="${qrX + qrSize / 2}"
       y="${codeY}"
       text-anchor="middle"
@@ -255,7 +295,7 @@ async function buildSvg(code: string, layout: Layout) {
       font-weight="800"
       letter-spacing="1.2"
       fill="${layout.codeColor}"
-    >${escapeXml(code)}</text>
+    >${escapeXml(code)}</text>`}
   </g>
   ${layout.showGuide ? shape.guide : ""}
 </svg>`.trim();

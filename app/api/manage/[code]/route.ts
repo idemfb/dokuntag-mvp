@@ -158,19 +158,10 @@ export async function GET(request: Request, { params }: Params) {
       );
     }
 
-    const updated = await updateTagByManageTokenAsync({
-      manageToken: token
-    });
+    const updated = tag;
 
-    if (!updated) {
-      return NextResponse.json(
-        { error: "Token yenilenemedi." },
-        { status: 500 }
-      );
-    }
-
-    const resolvedProductType = updated.productType || "item";
-    const managePath = `/manage/${updated.code}?token=${updated.manageToken}`;
+const resolvedProductType = updated.productType || "item";
+const managePath = `/manage/${updated.code}?token=${token}`;
 
     return NextResponse.json({
       code: updated.code,
