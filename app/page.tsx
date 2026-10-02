@@ -173,7 +173,7 @@ export default function HomePage() {
           href="/satis"
           className="rounded-full bg-neutral-950 px-8 py-4 text-center text-sm font-semibold text-white transition hover:scale-[1.02] hover:bg-neutral-800"
         >
-          İlk üretim için bilgi al
+          Ürünler hakkında bilgi al
         </Link>
 
         <Link
@@ -442,6 +442,40 @@ export default function HomePage() {
         </div>
       </section>
 
+      <section className="px-5 py-10 sm:px-8 sm:py-14">
+        <div className="mx-auto max-w-7xl">
+          <div className="rounded-[2.5rem] border border-neutral-200 bg-white p-8 shadow-sm sm:p-10 lg:flex lg:items-center lg:justify-between lg:gap-10">
+            <div className="max-w-3xl">
+              <p className="text-sm font-semibold uppercase tracking-[0.22em] text-neutral-500">
+                DOKUNTAG Dijital Araçlar
+              </p>
+              <h2 className="mt-4 text-3xl font-semibold tracking-tight sm:text-4xl">
+                Aynı sade yaklaşım, dijital araçlarda da.
+              </h2>
+              <p className="mt-4 text-base leading-7 text-neutral-600 sm:text-lg">
+                Mobil uygulamalar ve DOKUNTAG Publish; günlük ihtiyaçları ve
+                profesyonel işleri gereksiz karmaşa olmadan çözmek için geliştirildi.
+              </p>
+              <div className="mt-5 flex flex-wrap gap-2 text-sm text-neutral-600">
+                <span className="rounded-full bg-[#f7f3ea] px-4 py-2">
+                  Mobil uygulamalar
+                </span>
+                <span className="rounded-full bg-[#f7f3ea] px-4 py-2">
+                  DOKUNTAG Publish
+                </span>
+              </div>
+            </div>
+
+            <a
+              href="https://publish.dokuntag.com/tr"
+              className="mt-7 inline-flex shrink-0 rounded-full bg-neutral-950 px-6 py-3 text-sm font-semibold text-white transition hover:scale-[1.02] hover:bg-neutral-800 lg:mt-0"
+            >
+              Dijital araçları keşfet →
+            </a>
+          </div>
+        </div>
+      </section>
+
       <section id="rehberler" className="px-5 py-20 sm:px-8">
         <div className="mx-auto max-w-6xl">
           <p className="text-sm font-semibold uppercase tracking-[0.22em] text-neutral-500">
@@ -599,7 +633,7 @@ export default function HomePage() {
               href="/satis"
               className="rounded-full bg-neutral-950 px-8 py-4 text-center text-sm font-semibold text-white transition hover:scale-[1.02] hover:bg-neutral-800"
             >
-              İlk üretim için bilgi al
+              Ürünler hakkında bilgi al
             </Link>
 
             <Link

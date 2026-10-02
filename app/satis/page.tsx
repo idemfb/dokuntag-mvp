@@ -64,9 +64,6 @@ export default function SalesPage() {
         </p>
 
         <div className="mt-6 flex flex-wrap justify-center gap-2">
-          <span className="rounded-full bg-neutral-950 px-5 py-2 text-sm font-semibold text-white">
-            Sınırlı ilk üretim
-          </span>
           <span className="rounded-full border border-neutral-300 bg-white/70 px-5 py-2 text-sm font-semibold text-neutral-700">
             Uygulama gerekmez
           </span>
@@ -81,7 +78,7 @@ export default function SalesPage() {
             onClick={scrollToForm}
             className="rounded-xl bg-neutral-950 px-6 py-4 text-sm font-semibold text-white transition hover:bg-neutral-800"
           >
-            İlk üretim için bilgi al
+            Ürünler hakkında bilgi al
           </button>
 
           <a
@@ -196,7 +193,7 @@ export default function SalesPage() {
         className="mx-auto mt-12 max-w-xl scroll-mt-8 rounded-[2rem] border border-neutral-200 bg-white p-6 shadow-sm"
       >
         <h3 className="text-center text-xl font-semibold">
-          İlk üretim için bilgi alın
+          Ürünler hakkında bilgi alın
         </h3>
 
         <p className="mt-2 text-center text-sm leading-6 text-neutral-600">
@@ -243,7 +240,7 @@ export default function SalesPage() {
             disabled={loading}
             className="w-full rounded-xl bg-neutral-950 px-4 py-3 text-sm font-semibold text-white transition hover:bg-neutral-800 disabled:opacity-60"
           >
-            {loading ? "Gönderiliyor..." : "İlk üretim için bilgi al"}
+            {loading ? "Gönderiliyor..." : "Ürünler hakkında bilgi al"}
           </button>
 
           <a

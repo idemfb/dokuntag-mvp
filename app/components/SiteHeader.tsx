@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
 type SiteHeaderProps = {
@@ -15,7 +16,9 @@ const navItems = [
 ];
 
 export default function SiteHeader({ variant = "default" }: SiteHeaderProps) {
+  const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const salesCtaLabel = pathname === "/" ? "Ürünler hakkında bilgi al" : "İlk üretim için bilgi al";
   const touchStartX = useRef<number | null>(null);
   const touchStartY = useRef<number | null>(null);
 
@@ -109,7 +112,7 @@ export default function SiteHeader({ variant = "default" }: SiteHeaderProps) {
             onClick={() => setOpen(false)}
             className="hidden rounded-full bg-neutral-950 px-4 py-2 text-sm font-semibold text-white transition hover:scale-[1.02] hover:bg-neutral-800 sm:inline-flex"
           >
-            İlk üretim için bilgi al
+            {salesCtaLabel}
           </Link>
 
           <button
@@ -176,7 +179,7 @@ export default function SiteHeader({ variant = "default" }: SiteHeaderProps) {
                 onClick={() => setOpen(false)}
                 className="mt-6 block rounded-2xl bg-neutral-950 px-4 py-3 text-center text-sm font-semibold text-white transition hover:bg-neutral-800"
               >
-                İlk üretim için bilgi al
+                {salesCtaLabel}
               </Link>
 
               <p className="mt-auto pt-8 text-xs leading-5 text-neutral-500">
