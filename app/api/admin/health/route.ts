@@ -13,8 +13,7 @@ import { buildNotifyAnalytics } from "@/lib/notifyAnalytics";
 import { getSmsAnalyticsSummaryAsync } from "@/lib/smsAnalytics";
 import { getSmsHealth } from "@/lib/smsHealth";
 import { getPushHealth } from "@/lib/pushHealth";
-import fs from "fs";
-import path from "path";
+import { getBackupStorageMode } from "@/lib/backupData";
 import {
   isMaintenanceMode,
   isNotifyDisabled,
@@ -61,25 +60,15 @@ const [logs, tags, abuseSummary, smsAnalytics, adminActions] =
 
     const mailConfigured = isMailConfigured();
     const alerts: string[] = [];
-    const backupPath = path.join(process.cwd(), "data");
+    const storage = getBackupStorageMode();
 
-    const criticalBackupFiles = [
-      "db.json",
-      "tags.json",
-      "notify-log.json"
-    ];
-
-    const missingBackupFiles = criticalBackupFiles.filter((file) => {
-      return !fs.existsSync(path.join(backupPath, file));
-    });
     if (!mailConfigured) {
       alerts.push("Mail sistemi yapılandırılmamış.");
     }
-    if (missingBackupFiles.length > 0) {
-    alerts.push(
-      `Bazı kritik kayıt dosyaları eksik: ${missingBackupFiles.join(", ")}`
-    );
-    } 
+
+    if (process.env.VERCEL && !storage.redisConfigured) {
+      alerts.push("Production veri deposu yapılandırılmamış.");
+    }
     if (recentErrors.length >= 5) {
       alerts.push("Son mesaj bildirimlerinde hata artışı var.");
     }
@@ -91,6 +80,7 @@ const [logs, tags, abuseSummary, smsAnalytics, adminActions] =
     return NextResponse.json({
       success: true,
       generatedAt: generatedAt.toISOString(),
+      storage,
       push: getPushHealth(),
       analytics: {
         notifyToday: analyticsSummary.today,

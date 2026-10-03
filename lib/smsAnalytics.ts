@@ -189,15 +189,23 @@ export function getSmsAnalyticsSummary(): SmsAnalyticsSummary {
   return buildSummary([]);
 }
 
-export async function getSmsAnalyticsSummaryAsync(): Promise<SmsAnalyticsSummary> {
+export async function readSmsAnalyticsLogAsync(): Promise<SmsAnalyticsItem[]> {
   const redis = getRedis();
 
   if (redis) {
     const current = await redis.get<SmsAnalyticsItem[]>(REDIS_KEY);
-    const items = Array.isArray(current) ? current : [];
-
-    return buildSummary(items);
+    return Array.isArray(current)
+      ? current.filter(isValidSmsAnalyticsItem).slice(0, MAX_ITEMS)
+      : [];
   }
 
-  return getSmsAnalyticsSummary();
+  if (shouldUseFileStorage()) {
+    return safeReadFileLogs();
+  }
+
+  return memoryLogs.slice(0, MAX_ITEMS);
+}
+
+export async function getSmsAnalyticsSummaryAsync(): Promise<SmsAnalyticsSummary> {
+  return buildSummary(await readSmsAnalyticsLogAsync());
 }

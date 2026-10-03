@@ -1,21 +1,13 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
-import fs from "fs/promises";
-import path from "path";
 import { addAdminActionLog } from "@/lib/adminActionLog";
+import {
+  getBackupStorageMode,
+  readFullBackupFiles
+} from "@/lib/backupData";
 
 const ADMIN_COOKIE_NAME = "dokuntag_admin_session";
 
-const FILES = [
-  "db.json",
-  "tags.json",
-  "notify-log.json",
-  "recover-log.json",
-  "admin-actions.json",
-  "abuse-log.json",
-  "sms-analytics.json"
-];
-const MAX_EXPORT_ITEMS = 5000;
 export async function GET() {
   try {
     const cookieStore = await cookies();
@@ -28,58 +20,35 @@ export async function GET() {
       );
     }
 
-    const dataDir = path.join(process.cwd(), "data");
-
-    const files = await Promise.all(
-      FILES.map(async (fileName) => {
-        try {
-  const raw = await fs.readFile(
-    path.join(dataDir, fileName),
-    "utf8"
-  );
-
-  const parsed = JSON.parse(raw);
-
-  return {
-    fileName,
-    exists: true,
-    content: Array.isArray(parsed)
-      ? parsed.slice(-MAX_EXPORT_ITEMS)
-      : parsed
-  };
-} catch {
-  return {
-    fileName,
-    exists: false,
-    content: null
-  };
-}
-      })
-    );
-
+    const files = await readFullBackupFiles();
     const generatedAt = new Date().toISOString();
+    const storage = getBackupStorageMode();
+
     addAdminActionLog({
-  type: "full_backup_download",
-  message: "Full backup indirildi.",
-  metadata: {
-    generatedAt
-  }
-});
-  return new NextResponse(
-  JSON.stringify(
-    {
-      success: true,
-      generatedAt,
-      meta: {
-        source: "dokuntag-admin-backup",
-        version: 1,
-        files: FILES
-      },
-      files
-    },
-    null,
-    2
-  ),
+      type: "full_backup_download",
+      message: "Full backup indirildi.",
+      metadata: {
+        generatedAt,
+        storageMode: storage.mode
+      }
+    });
+
+    return new NextResponse(
+      JSON.stringify(
+        {
+          success: true,
+          generatedAt,
+          meta: {
+            source: "dokuntag-authoritative-runtime-backup",
+            version: 2,
+            storage,
+            files: files.map((item) => item.fileName)
+          },
+          files
+        },
+        null,
+        2
+      ),
       {
         status: 200,
         headers: {
@@ -87,7 +56,8 @@ export async function GET() {
           "Content-Disposition": `attachment; filename="dokuntag-full-backup-${generatedAt.slice(
             0,
             10
-          )}.json"`
+          )}.json"`,
+          "Cache-Control": "no-store"
         }
       }
     );

@@ -242,15 +242,23 @@ export function getAdminActionSummary(): AdminActionSummary {
   return buildSummary([]);
 }
 
-export async function getAdminActionSummaryAsync(): Promise<AdminActionSummary> {
+export async function readAdminActionLogAsync(): Promise<AdminActionLogItem[]> {
   const redis = getRedis();
 
   if (redis) {
     const current = await redis.get<AdminActionLogItem[]>(REDIS_KEY);
-    const items = Array.isArray(current) ? current : [];
-
-    return buildSummary(items);
+    return Array.isArray(current)
+      ? current.filter(isValidAdminActionLogItem).slice(0, MAX_ITEMS)
+      : [];
   }
 
-  return getAdminActionSummary();
+  if (shouldUseFileStorage()) {
+    return safeReadFileLogs();
+  }
+
+  return memoryLogs.slice(0, MAX_ITEMS);
+}
+
+export async function getAdminActionSummaryAsync(): Promise<AdminActionSummary> {
+  return buildSummary(await readAdminActionLogAsync());
 }

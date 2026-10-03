@@ -37,6 +37,7 @@ export function readDB() {
 }
 
 export function writeDB(data: any) {
+  fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
   fs.writeFileSync(DB_PATH, JSON.stringify(data, null, 2));
 }
 
@@ -46,17 +47,12 @@ export async function readDBAsync() {
   if (redis) {
     const data = await redis.get<any>(REDIS_DB_KEY);
 
-    // 🔥 KRİTİK: Redis boşsa → local db.json'dan yükle
-    if (!data || !data.products || data.products.length === 0) {
-      const local = readDB();
-
-      if (local.products?.length) {
-        await redis.set(REDIS_DB_KEY, local);
-        return local;
-      }
+    if (!data) {
+      console.warn("DB_REDIS_EMPTY_NO_LOCAL_SEED");
+      return { products: [] };
     }
 
-    return data || { products: [] };
+    return data;
   }
 
   return readDB();

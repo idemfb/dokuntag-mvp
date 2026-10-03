@@ -210,15 +210,23 @@ export function getAbuseSummary(): AbuseSummary {
   return buildSummary([]);
 }
 
-export async function getAbuseSummaryAsync(): Promise<AbuseSummary> {
+export async function readAbuseLogAsync(): Promise<AbuseLogItem[]> {
   const redis = getRedis();
 
   if (redis) {
     const current = await redis.get<AbuseLogItem[]>(REDIS_KEY);
-    const items = Array.isArray(current) ? current : [];
-
-    return buildSummary(items);
+    return Array.isArray(current)
+      ? current.filter(isValidAbuseLogItem).slice(0, MAX_ITEMS)
+      : [];
   }
 
-  return getAbuseSummary();
+  if (shouldUseFileStorage()) {
+    return safeReadFileLogs();
+  }
+
+  return memoryLogs.slice(0, MAX_ITEMS);
+}
+
+export async function getAbuseSummaryAsync(): Promise<AbuseSummary> {
+  return buildSummary(await readAbuseLogAsync());
 }

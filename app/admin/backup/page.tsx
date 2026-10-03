@@ -3,23 +3,26 @@ import AdminBackButton from "../components/AdminBackButton";
 import AdminPageHeader from "../components/AdminPageHeader";
 
 const files = [
-  
   {
-    name: "tags.json",
-    description: "Ürün ve profil kayıtları",
-    href: "/api/admin/backup/download?file=tags"
+    name: "db.json",
+    description: "Ana ürün ve profil veritabanı",
+    href: "/api/admin/backup/download?file=db"
   },
   {
     name: "notify-log.json",
-    description: "Mesaj ve notify kayıtları",
+    description: "Mesaj ve bildirim kayıtları",
     href: "/api/admin/backup/download?file=notify"
   },
   {
-  name: "db.json",
-  description: "Ana production veritabanı",
-  href: "/api/admin/backup/download?file=db"
-}
-
+    name: "recover-log.json",
+    description: "Kurtarma talebi kayıtları",
+    href: "/api/admin/backup/download?file=recover"
+  },
+  {
+    name: "scan-log.json",
+    description: "Tarama hareketleri",
+    href: "/api/admin/backup/download?file=scan"
+  }
 ];
 
 export default function AdminBackupPage() {
@@ -57,7 +60,8 @@ export default function AdminBackupPage() {
   </h2>
 
   <p className="mt-2 text-sm leading-6 text-neutral-500">
-    db.json, tags.json, notify-log.json ve recover-log.json dosyalarını tek JSON backup içinde indirir.
+    Production&apos;da aktif veri kaynağını kullanarak ürün, mesaj, kurtarma, tarama,
+    güvenlik ve yönetim kayıtlarını tek JSON backup içinde indirir.
   </p>
 
   <a
@@ -98,7 +102,7 @@ export default function AdminBackupPage() {
   </h2>
 
   <p className="mt-2 text-sm leading-6 text-neutral-500">
-    Backup dosyaları ürün, mesaj ve kurtarma kayıtları içerebilir. Bu dosyaları herkese açık alanda paylaşmayın.
+    Backup dosyaları ürün, mesaj, kurtarma ve yönetim kayıtları içerebilir. Bu dosyaları herkese açık alanda paylaşmayın.
   </p>
 
   <p className="mt-2 text-sm leading-6 text-neutral-500">
